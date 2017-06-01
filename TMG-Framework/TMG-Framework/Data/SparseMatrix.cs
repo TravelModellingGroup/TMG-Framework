@@ -35,5 +35,15 @@ namespace TMG.Data
             RowLength = Map.Count;
             Data = new T[Map.Count * Map.Count];
         }
+
+        public (int Row, int Column) GetSparseIndex(int flatIndex)
+        {
+            return (flatIndex / RowLength, flatIndex % RowLength);
+        }
+
+        public int GetFlatIndex(int flatRow, int floatColumn)
+        {
+            return RowLength * flatRow + floatColumn;
+        }
     }
 }

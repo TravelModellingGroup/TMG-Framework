@@ -26,11 +26,42 @@ namespace TMG
     {
         public int Count => Elements.Count;
 
+        /// <summary>
+        /// TODO: Update the representation later on to something more efficient
+        /// </summary>
         private readonly List<int> Elements;
 
+        /// <summary>
+        /// Create a SparseMap from a list of elements
+        /// </summary>
+        /// <param name="elements">The elements to use</param>
         public SparseMap(List<int> elements)
         {
             Elements = elements ?? throw new ArgumentNullException(nameof(elements));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sparseIndex"></param>
+        /// <returns></returns>
+        public int GetFlatIndex(int sparseIndex)
+        {
+            return Elements.IndexOf(sparseIndex);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="flatIndex"></param>
+        /// <returns></returns>
+        public int GetSparseIndex(int flatIndex)
+        {
+            if(flatIndex < 0 || flatIndex >= Elements.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(flatIndex));
+            }
+            return Elements[flatIndex];
         }
     }
 }
