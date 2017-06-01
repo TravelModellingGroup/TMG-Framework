@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.6</TargetFramework>
+    <RootNamespace>TMG</RootNamespace>
+    <Authors>University of Toronto</Authors>
+    <Company>University of Toronto</Company>
+    <Description>A set of modules for XTMF2 to provide assistance in Travel Demand Modelling.</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\XTMF2\XTMF2\XTMF2\XTMF2.csproj" />
+    <ProjectReference Include="..\..\XTMF2\XTMF2\XTMFInterfaces\XTMFInterfaces.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Loading\" />
+    <Folder Include="Saving\" />
+    <Folder Include="Processing\" />
+  </ItemGroup>
+
+</Project>
