@@ -21,6 +21,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using XTMF2;
 
 namespace TMG.Utilities
 {
@@ -66,7 +67,7 @@ namespace TMG.Utilities
             SpacesAsSeperator = spacesAsSeperator;
         }
 
-        public CsvReader(Stream stream, bool spacesAsSeperator = false)
+        public CsvReader(ReadStream stream, bool spacesAsSeperator = false)
         {
             FileName = "Stream";
             Reader = new BinaryReader(stream);
