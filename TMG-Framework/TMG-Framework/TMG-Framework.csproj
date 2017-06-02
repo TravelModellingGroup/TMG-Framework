@@ -18,7 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Loading\" />
     <Folder Include="Saving\" />
     <Folder Include="Processing\" />
   </ItemGroup>
