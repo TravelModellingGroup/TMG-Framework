@@ -34,7 +34,7 @@ namespace TMG
         /// <summary>
         /// Create a SparseMap from a list of elements
         /// </summary>
-        /// <param name="elements">The elements to use</param>
+        /// <param name="elements">The sorted elements to use</param>
         public SparseMap(List<int> elements)
         {
             Elements = elements ?? throw new ArgumentNullException(nameof(elements));
@@ -47,7 +47,7 @@ namespace TMG
         /// <returns></returns>
         public int GetFlatIndex(int sparseIndex)
         {
-            return Elements.IndexOf(sparseIndex);
+            return Elements.BinarySearch(sparseIndex);
         }
 
         /// <summary>

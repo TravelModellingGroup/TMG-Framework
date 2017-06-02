@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace TMG.Data
+namespace TMG
 {
     public sealed class SparseMatrix
     {
