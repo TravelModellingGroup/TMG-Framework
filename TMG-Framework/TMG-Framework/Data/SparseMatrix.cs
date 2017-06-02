@@ -22,10 +22,10 @@ using System.Text;
 
 namespace TMG.Data
 {
-    public sealed class SparseMatrix<T>
+    public sealed class SparseMatrix
     {
         public SparseMap Map { get; private set; }
-        public T[] Data { get; private set; }
+        public float[] Data { get; private set; }
 
         private int RowLength;
 
@@ -33,7 +33,7 @@ namespace TMG.Data
         {
             Map = map;
             RowLength = Map.Count;
-            Data = new T[Map.Count * Map.Count];
+            Data = new float[Map.Count * Map.Count];
         }
 
         public (int Row, int Column) GetSparseIndex(int flatIndex)

@@ -26,12 +26,15 @@ namespace TMG.Loading
 {
     [Module(Name = "Load SparseMap From CSV", Description = "Loads a map where each row has a different sparse index.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadSparseMapFromCSV : BaseFunction<ReadStream, SparseMap>
+    public sealed class LoadSparseMapFromCSV : BaseFunction<SparseMap>
     {
-        public override SparseMap Invoke(ReadStream stream)
+        [SubModule(Required = true, Name = "Read From", Description = "The stream to load the CSV from.", Index = 0)]
+        public IFunction<ReadStream> Stream;
+
+        public override SparseMap Invoke()
         {
             var record = new List<int>();
-            using(var reader = new CsvReader(stream, false))
+            using(var reader = new CsvReader(Stream.Invoke(), false))
             {
                 reader.LoadLine();
                 while(reader.LoadLine(out var columns))
