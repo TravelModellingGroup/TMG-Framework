@@ -37,10 +37,10 @@ namespace TMG.Loading
         [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the origin.")]
         public IFunction<int> OriginColumn;
 
-        [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the destination.")]
+        [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the destination.")]
         public IFunction<int> DestinationColumn;
 
-        [Parameter(DefaultValue = "2", Name = "Data Column", Index = 3, Description = "The 0 indexed column containing the data to load index.")]
+        [Parameter(DefaultValue = "2", Name = "Data Column", Index = 4, Description = "The 0 indexed column containing the data to load index.")]
         public IFunction<int> DataColumn;
 
         public override SparseMatrix Invoke()

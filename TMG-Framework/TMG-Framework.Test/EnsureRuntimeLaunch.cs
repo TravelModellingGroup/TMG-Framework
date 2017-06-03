@@ -30,7 +30,7 @@ namespace TMG.Test
         public void LaunchRuntime()
         {
             var runtime = XTMFRuntime.CreateRuntime();
-            runtime.SystemConfiguration.LoadAssembly(typeof(Range).GetTypeInfo().Assembly.Location);
+            runtime.SystemConfiguration.LoadAssembly(typeof(Range).GetTypeInfo().Assembly);
         }
     }
 }
