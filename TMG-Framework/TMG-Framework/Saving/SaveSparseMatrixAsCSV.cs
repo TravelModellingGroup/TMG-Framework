@@ -26,7 +26,7 @@ namespace TMG.Saving
 {
     [Module(Name = "Save SparseMatrix To CSV", Description = "Saves a sparse matrix to the given write stream.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public class SaveSparseMatrixToCSV : BaseAction<(SparseMatrix Matrix, WriteStream Stream)>
+    public class SaveSparseMatrixAsCSV : BaseAction<(SparseMatrix Matrix, WriteStream Stream)>
     {
         [Parameter(Name = "Third Normalized", DefaultValue = "True", Index = 0,
             Description = "Should the data be saved in third normalized form?  If not it will be saved as a CSV Matrix")]
