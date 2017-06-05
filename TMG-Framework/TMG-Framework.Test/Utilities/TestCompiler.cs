@@ -50,7 +50,7 @@ namespace XTMF.Testing.TMG.Data
         }
 
         /// <summary>
-        /// Createa a new simple vector for testing.
+        /// Create a new simple vector for testing.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="m1"></param>

@@ -121,13 +121,20 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var flatRet = retMatrix.Data;
                         var flatLhs = lhs.OdData.Data;
                         var flatRhs = rhs.VectorData.Data;
+                        var rowSize = retMatrix.Map.Count;
                         if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < flatRhs.Length; i++)
+                            {
+                                VectorHelper.Subtract(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs[i], rowSize);
+                            }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < flatRhs.Length; i++)
+                            {
+                                VectorHelper.Subtract(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, rowSize);
+                            }
                         }
                         else
                         {

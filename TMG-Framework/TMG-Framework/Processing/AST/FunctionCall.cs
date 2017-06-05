@@ -63,7 +63,7 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             for (int i = 0; i < Parameters.Length; i++)
             {
-                if(!Parameters[i].OptimizeAst(ref Parameters[i], ref error))
+                if (!Parameters[i].OptimizeAst(ref Parameters[i], ref error))
                 {
                     return false;
                 }
@@ -358,11 +358,11 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         private ComputationResult Log(ComputationResult[] values)
         {
-            if(values[0].IsValue)
+            if (values[0].IsValue)
             {
                 return new ComputationResult((float)Math.Log(values[0].LiteralValue));
             }
-            else if(values[0].IsVectorResult)
+            else if (values[0].IsVectorResult)
             {
                 var saveTo = values[0].Accumulator ? values[0].VectorData : new SparseVector(values[0].VectorData);
                 var flat = saveTo.Data;
@@ -373,7 +373,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 var saveTo = values[0].Accumulator ? values[0].OdData : new SparseMatrix(values[0].OdData);
                 var flat = saveTo.Data;
-                VectorHelper.Log(flat, 0, flat, 0, flat.Length);               
+                VectorHelper.Log(flat, 0, flat, 0, flat.Length);
                 return new ComputationResult(saveTo, true);
             }
         }
@@ -393,7 +393,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             }
             var step = ret.Map.Count + 1;
             var flatRet = ret.Data;
-            for (int i = 0; i < flatRet.Length; i+=step)
+            for (int i = 0; i < flatRet.Length; i += step)
             {
                 flatRet[i] = 1.0f;
             }
@@ -404,6 +404,7 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             var vectorData = computationResult.VectorData;
             var newMatrix = new SparseMatrix(vectorData);
+            var rowSize = newMatrix.Map.Count;
             var flatVector = vectorData.Data;
             var flatMatrix = newMatrix.Data;
             switch (computationResult.Direction)
@@ -412,16 +413,16 @@ namespace TMG.Frameworks.Data.Processing.AST
                     return new ComputationResult("Matrix was executed with an unassigned orientation vector!");
                 case ComputationResult.VectorDirection.Vertical:
                     // each row is the single value
-                    for (int i = 0; i < flatMatrix.Length; i++)
+                    for (int i = 0; i < flatVector.Length; i ++)
                     {
-                        throw new NotImplementedException();
+                        VectorHelper.Set(flatMatrix, i * rowSize, flatVector[i], rowSize);
                     }
                     break;
                 case ComputationResult.VectorDirection.Horizontal:
                     // each column is the single value
-                    for (int i = 0; i < flatMatrix.Length; i++)
+                    for (int i = 0; i < flatMatrix.Length; i += flatVector.Length)
                     {
-                        throw new NotImplementedException();
+                        Array.Copy(flatVector, 0, flatMatrix, i, flatVector.Length);
                     }
                     break;
             }
@@ -496,7 +497,24 @@ namespace TMG.Frameworks.Data.Processing.AST
             var ret = computationResult.Accumulator ? computationResult.OdData : new SparseMatrix(computationResult.OdData);
             var flatRet = ret.Data;
             var flatOrigin = computationResult.OdData.Data;
-            throw new NotImplementedException();
+            var rowLength = ret.Map.Count;
+            for (int i = 0; i < rowLength; i++)
+            {
+                for (int j = i + 1; j < rowLength; j++)
+                {
+                    var temp = flatOrigin[i * rowLength + j];
+                    flatRet[i * rowLength + j] = flatOrigin[j * rowLength + i];
+                    flatRet[j * rowLength + i] = temp;
+                }
+            }
+            // if this is a new matrix copy the diagonal
+            if (!computationResult.Accumulator)
+            {
+                for (int i = 0; i < rowLength; i++)
+                {
+                    flatRet[i * rowLength] = flatOrigin[i * rowLength];
+                }
+            }
             return new ComputationResult(ret, true);
         }
 
@@ -505,7 +523,11 @@ namespace TMG.Frameworks.Data.Processing.AST
             var ret = new SparseVector(computationResult.OdData.Map);
             var flatRet = ret.Data;
             var flatData = computationResult.OdData.Data;
-            throw new NotImplementedException();
+            var rowSize = ret.Map.Count;
+            for (int i = 0; i < flatRet.Length; i++)
+            {
+                VectorHelper.Add(flatRet, 0, flatRet, 0, flatData, i * rowSize, rowSize);
+            }
             return new ComputationResult(ret, true, ComputationResult.VectorDirection.Horizontal);
         }
 
@@ -514,7 +536,11 @@ namespace TMG.Frameworks.Data.Processing.AST
             var ret = new SparseVector(computationResult.OdData.Map);
             var flatRet = ret.Data;
             var flatData = computationResult.OdData.Data;
-            throw new NotImplementedException();
+            var rowSize = ret.Map.Count;
+            for (int i = 0; i < flatRet.Length; i++)
+            {
+                flatRet[i] = VectorHelper.Sum(flatData, i * rowSize, rowSize);
+            }
             return new ComputationResult(ret, true, ComputationResult.VectorDirection.Vertical);
         }
 
@@ -524,7 +550,12 @@ namespace TMG.Frameworks.Data.Processing.AST
             var ret = new SparseVector(data.Map);
             var flatRet = ret.Data;
             var flatData = data.Data;
-            throw new NotImplementedException();
+            var rowSize = ret.Map.Count;
+            for (int i = 0; i < flatRet.Length; i++)
+            {
+                VectorHelper.Add(flatRet, 0, flatRet, 0, flatData, i * rowSize, rowSize);
+            }
+            VectorHelper.Multiply(flatRet, flatRet, 1.0f / flatRet.Length);
             return new ComputationResult(ret, true, ComputationResult.VectorDirection.Horizontal);
         }
 
@@ -534,7 +565,12 @@ namespace TMG.Frameworks.Data.Processing.AST
             var ret = new SparseVector(data.Map);
             var flatRet = ret.Data;
             var flatData = data.Data;
-            throw new NotImplementedException();
+            var rowSize = ret.Map.Count;
+            for (int i = 0; i < flatRet.Length; i++)
+            {
+                flatRet[i] = VectorHelper.Sum(flatData, i * rowSize, rowSize);
+            }
+            VectorHelper.Multiply(flatRet, flatRet, 1.0f / flatRet.Length);
             return new ComputationResult(ret, true, ComputationResult.VectorDirection.Vertical);
         }
 

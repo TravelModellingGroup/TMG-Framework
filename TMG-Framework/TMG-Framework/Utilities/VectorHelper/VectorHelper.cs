@@ -294,7 +294,7 @@ namespace TMG.Utilities
             {
                 int i = 0;
                 var vValue = new Vector<float>(value);
-                for (; i < dest.Length - Vector<float>.Count; i++)
+                for (; i < dest.Length - Vector<float>.Count; i+= Vector<float>.Count)
                 {
                     vValue.CopyTo(dest, i);
                 }
@@ -308,6 +308,37 @@ namespace TMG.Utilities
                 for (int i = 0; i < dest.Length; i++)
                 {
                     dest[i] = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Assign the given value to the whole array
+        /// </summary>
+        /// <param name="dest">The array to set</param>
+        /// <param name="offset">The offset into the destination to start</param>
+        /// <param name="value">The value to assign to it</param>
+        /// <param name="length">The number of elements to assign</param>
+        public static void Set(float[] dest, int offset, float value, int length)
+        {
+            if (Vector.IsHardwareAccelerated)
+            {
+                int i = 0;
+                var vValue = new Vector<float>(value);
+                for (; i < length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    vValue.CopyTo(dest, offset + i);
+                }
+                for (; i < length; i++)
+                {
+                    dest[offset + i] = value;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < length; i++)
+                {
+                    dest[offset + i] = value;
                 }
             }
         }

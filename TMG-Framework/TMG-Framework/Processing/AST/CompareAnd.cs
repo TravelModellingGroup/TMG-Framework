@@ -127,7 +127,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else
                 {
                     var retMatrix = lhs.Accumulator ? lhs.OdData : (rhs.Accumulator ? rhs.OdData : new SparseMatrix(lhs.OdData));
-                    throw new NotImplementedException();
+                    VectorHelper.FlagAnd(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.OdData.Data, 0, retMatrix.Data.Length);
                     return new ComputationResult(retMatrix, true);
                 }
             }
