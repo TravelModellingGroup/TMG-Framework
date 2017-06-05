@@ -36,6 +36,20 @@ namespace TMG
             Data = new float[Map.Count * Map.Count];
         }
 
+        public SparseMatrix(SparseVector vector)
+        {
+            Map = vector.Map;
+            RowLength = Map.Count;
+            Data = new float[Map.Count * Map.Count];
+        }
+
+        public SparseMatrix(SparseMatrix matrix)
+        {
+            Map = matrix.Map;
+            RowLength = matrix.RowLength;
+            Data = new float[Map.Count * Map.Count];
+        }
+
         public (int Row, int Column) GetSparseIndex(int flatIndex)
         {
             return (flatIndex / RowLength, flatIndex % RowLength);

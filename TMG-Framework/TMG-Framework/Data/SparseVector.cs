@@ -31,6 +31,12 @@ namespace TMG
             Data = new float[Map.Count];
         }
 
+        public SparseVector(SparseVector vector)
+        {
+            Map = vector.Map;
+            Data = new float[Map.Count];
+        }
+
         public float this[int sparseIndex]
         {
             get
