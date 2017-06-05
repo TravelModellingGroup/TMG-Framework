@@ -26,21 +26,18 @@ namespace TMG.Loading
 {
     [Module(Name = "Load SparseVector From CSV", Description = "Loads a map where each row has a different sparse index.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadSparseVectorFromCSV : BaseFunction<SparseVector>
+    public sealed class LoadSparseVectorFromCSV : BaseFunction<ReadStream, SparseVector>
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
         public IFunction<SparseMap> SparseMap;
 
-        [SubModule(Required = true, Name = "Data Stream", Index = 1, Description = "The CSV stream (Index,Data) to load.  Must contain a header.")]
-        public IFunction<ReadStream> Data;
-
-        [Parameter(DefaultValue = "0", Name = "Map Column", Index = 2, Description = "The 0 indexed column containing the sparse map index.")]
+        [Parameter(DefaultValue = "0", Name = "Map Column", Index = 1, Description = "The 0 indexed column containing the sparse map index.")]
         public IFunction<int> MapColumn;
 
-        [Parameter(DefaultValue = "1", Name = "Data Column", Index = 3, Description = "The 0 indexed column containing the data to load index.")]
+        [Parameter(DefaultValue = "1", Name = "Data Column", Index = 2, Description = "The 0 indexed column containing the data to load index.")]
         public IFunction<int> DataColumn;
 
-        public override SparseVector Invoke()
+        public override SparseVector Invoke(ReadStream stream)
         {
             var map = SparseMap.Invoke();
             var ret = new SparseVector(map);
@@ -52,7 +49,7 @@ namespace TMG.Loading
                 throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
             }
             var minColumnSize = Math.Max(mapColumn, dataColumn);
-            using (var reader = new CsvReader(Data.Invoke(), true))
+            using (var reader = new CsvReader(stream, true))
             {
                 reader.LoadLine();
                 while(reader.LoadLine(out var columns))

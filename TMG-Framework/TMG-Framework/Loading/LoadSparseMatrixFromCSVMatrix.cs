@@ -27,21 +27,18 @@ namespace TMG.Loading
 {
     [Module(Name = "Load SparseMatrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadSparseMatrixFromCSVMatrix : BaseFunction<SparseMatrix>
+    public sealed class LoadSparseMatrixFromCSVMatrix : BaseFunction<ReadStream, SparseMatrix>
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
         public IFunction<SparseMap> SparseMap;
 
-        [SubModule(Required = true, Name = "Data Stream", Index = 1, Description = "The CSV stream (Index,Data) to load.  Must contain a header.")]
-        public IFunction<ReadStream> Data;
-
-        public override SparseMatrix Invoke()
+        public override SparseMatrix Invoke(ReadStream stream)
         {
             var map = SparseMap.Invoke();
             var ret = new SparseMatrix(map);
             var flatData = ret.Data;
             var rowSize = map.Count;
-            using (var reader = new CsvReader(Data.Invoke()))
+            using (var reader = new CsvReader(stream, true))
             {
                 int columns = reader.LoadLine();
                 // read in the destination indexes

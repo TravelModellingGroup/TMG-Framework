@@ -26,24 +26,21 @@ namespace TMG.Loading
 {
     [Module(Name = "Load SparseMatrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadSparseMatrixFromCSVThirdNormalized : BaseFunction<SparseMatrix>
+    public sealed class LoadSparseMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, SparseMatrix>
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
         public IFunction<SparseMap> SparseMap;
 
-        [SubModule(Required = true, Name = "Data Stream", Index = 1, Description = "The CSV stream (Index,Data) to load.  Must contain a header.")]
-        public IFunction<ReadStream> Data;
-
-        [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the origin.")]
+        [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 1, Description = "The 0 indexed column containing the sparse map index for the origin.")]
         public IFunction<int> OriginColumn;
 
-        [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the destination.")]
+        [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the destination.")]
         public IFunction<int> DestinationColumn;
 
-        [Parameter(DefaultValue = "2", Name = "Data Column", Index = 4, Description = "The 0 indexed column containing the data to load index.")]
+        [Parameter(DefaultValue = "2", Name = "Data Column", Index = 3, Description = "The 0 indexed column containing the data to load index.")]
         public IFunction<int> DataColumn;
 
-        public override SparseMatrix Invoke()
+        public override SparseMatrix Invoke(ReadStream stream)
         {
             var map = SparseMap.Invoke();
             var rowSize = map.Count;
@@ -57,7 +54,7 @@ namespace TMG.Loading
                 throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
             }
             var minColumnSize = Math.Max(originColumn, dataColumn);
-            using (var reader = new CsvReader(Data.Invoke(), true))
+            using (var reader = new CsvReader(stream, true))
             {
                 reader.LoadLine();
                 while (reader.LoadLine(out var columns))
