@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace TMG
 {
@@ -37,7 +38,8 @@ namespace TMG
         /// <param name="elements">The sorted elements to use</param>
         public SparseMap(List<int> elements)
         {
-            Elements = elements ?? throw new ArgumentNullException(nameof(elements));
+            Elements = elements?.ToList() ?? throw new ArgumentNullException(nameof(elements));
+            Elements.Sort();
         }
 
         /// <summary>

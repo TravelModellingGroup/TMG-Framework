@@ -46,8 +46,6 @@ namespace TMG.Loading
                     }
                 }
             }
-            // make sure things are in order before creating the map.
-            record.Sort();
             return new SparseMap(record);
         }
     }
