@@ -41,9 +41,40 @@ namespace TMG
             return (flatIndex / RowLength, flatIndex % RowLength);
         }
 
+        /// <summary>
+        /// Get the index in data given the flat row and columns
+        /// </summary>
+        /// <param name="flatRow">The row to lookup</param>
+        /// <param name="floatColumn">The column to lookup</param>
+        /// <returns>The index in data for this data.</returns>
         public int GetFlatIndex(int flatRow, int floatColumn)
         {
             return RowLength * flatRow + floatColumn;
+        }
+
+        /// <summary>
+        /// Get the index in the data for the starting point of a given row
+        /// </summary>
+        /// <param name="flatRow">The flat index of the row to get</param>
+        /// <returns></returns>
+        public int GetFlatRowIndex(int flatRow)
+        {
+            return RowLength * flatRow;
+        }
+
+        /// <summary>
+        /// Get the index int he data for the starting point given a sparse row
+        /// </summary>
+        /// <param name="sparseRow">The sparse row index to lookup</param>
+        /// <returns>The index in data for the start of this row</returns>
+        public int GetSparseRowIndex(int sparseRow)
+        {
+            var index = Map.GetFlatIndex(sparseRow);
+            if(index < 0)
+            {
+                return -1;
+            }
+            return index * RowLength;
         }
     }
 }

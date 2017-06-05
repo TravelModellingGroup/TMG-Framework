@@ -24,7 +24,7 @@ using System.Reflection;
 namespace TMG.Test.Data
 {
     [TestClass]
-    public class TestRangeSet
+    public class RangeSetTest
     {
         [TestMethod]
         public void TestRangeSetIntList()

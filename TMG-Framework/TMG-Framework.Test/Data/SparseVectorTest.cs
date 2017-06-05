@@ -17,41 +17,36 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
-
-namespace TMG
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using XTMF2;
+using System.Reflection;
+using System.Collections.Generic;
+namespace TMG.Test.Data
 {
-    public sealed class SparseVector
+    [TestClass]
+    public class SparseVectorTest
     {
-        public SparseMap Map { get; private set; }
-        public float[] Data { get; private set; }
-
-        public SparseVector(SparseMap map)
+        [TestMethod]
+        public void CreateVector()
         {
-            Map = map;
-            Data = new float[Map.Count];
+            var map = CreateMap();
+            var vector = new SparseVector(map);
+            var flatData = vector.Data;
+            for (int i = 0; i < flatData.Length; i++)
+            {
+                flatData[i] = i;
+            }
+            Assert.AreEqual(0, vector[2]);
+            Assert.AreEqual(1, vector[4]);
+            Assert.AreEqual(2, vector[6]);
+            Assert.AreEqual(3, vector[8]);
+            Assert.AreEqual(4, vector[10]);
+            Assert.AreEqual(0, vector[12]);
         }
 
-        public float this[int sparseIndex]
+        private static SparseMap CreateMap()
         {
-            get
-            {
-                var index = Map.GetFlatIndex(sparseIndex);
-                if(index >= 0)
-                {
-                    return Data[index];
-                }
-                return 0.0f;
-            }
-
-            set
-            {
-                var index = Map.GetFlatIndex(sparseIndex);
-                if (index >= 0)
-                {
-                    Data[index] = value;
-                }
-                throw new ArgumentOutOfRangeException(nameof(sparseIndex));
-            }
+            return new SparseMap(new List<int>() { 2, 6, 4, 8, 10 });
         }
     }
 }
