@@ -38,8 +38,7 @@ namespace TMG.Processing
         {
             string error = null;
             // compile and optimize the expression
-            if (!TMG.Frameworks.Data.Processing.AST.Compiler.Compile(Expression.Invoke(), out var expression, ref error)
-                || !expression.OptimizeAst(ref expression, ref error))
+            if (!TMG.Frameworks.Data.Processing.AST.Compiler.Compile(Expression.Invoke(), out var expression, ref error))
             {
                 throw new XTMFRuntimeException(this, error);
             }
