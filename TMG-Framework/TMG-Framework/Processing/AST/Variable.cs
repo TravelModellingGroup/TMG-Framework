@@ -49,6 +49,10 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 return new ComputationResult(valueSource.Invoke());
             }
+            if(source is IFunction<SparseMap> map)
+            {
+                return new ComputationResult(new SparseVector(map.Invoke()), true, ComputationResult.VectorDirection.Unassigned);
+            }
             return new ComputationResult("The data source '" + Name + "' was not of a valid resource type!");
         }
     }

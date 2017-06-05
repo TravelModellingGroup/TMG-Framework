@@ -61,7 +61,6 @@ namespace TMG.Frameworks.Data.Processing.AST
         public VectorDirection Direction { get; private set; }
 
         public SparseMatrix OdData { get; }
-        
 
         public SparseVector VectorData { get; }
 
