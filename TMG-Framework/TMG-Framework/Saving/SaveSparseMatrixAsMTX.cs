@@ -25,6 +25,8 @@ using TMG.Utilities;
 
 namespace TMG.Saving
 {
+    [Module(Name = "Save SparseMatrix To MTX", Description = "Saves a sparse matrix to the given write stream.",
+    DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
     public class SaveSparseMatrixAsMTX : BaseAction<(SparseMatrix Matrix, WriteStream Stream)>
     {
         private const uint MagicNumber = 0xC4D4F1B2;
