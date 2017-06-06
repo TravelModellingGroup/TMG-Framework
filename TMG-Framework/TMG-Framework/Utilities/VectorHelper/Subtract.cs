@@ -109,6 +109,34 @@ namespace TMG.Utilities
             }
         }
 
+        public static void Subtract(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
+        {
+            if (Vector.IsHardwareAccelerated)
+            {
+                Vector<float> lhsV = new Vector<float>(lhs);
+
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var rhsV = new Vector<float>(rhs, rhsIndex + i);
+                    (lhsV - rhsV).CopyTo(dest, destIndex + i);
+                }
+                // copy the remainder
+                for (; i < length; i++)
+                {
+                    dest[destIndex + i] = lhs - rhs[rhsIndex + i];
+                }
+            }
+            else
+            {
+                for (int i = 0; i < length; i++)
+                {
+                    dest[destIndex + i] = lhs - rhs[rhsIndex + i];
+                }
+            }
+        }
+
         public static void Subtract(float[][] destination, float lhs, float[][] rhs)
         {
             if (Vector.IsHardwareAccelerated)

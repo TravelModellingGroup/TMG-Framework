@@ -196,6 +196,46 @@ namespace XTMF.Testing.TMG.Data
         }
 
         [TestMethod]
+        public void TestSubtractLHSVectorRHSMatrixHorizontal()
+        {
+            CompareMatrix("AsHorizontal(A) - B", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, -1.0f, -2.0f, -5.0f, -6.0f);
+        }
+
+        [TestMethod]
+        public void TestSubtractLHSVectorRHSMatrixVertical()
+        {
+            CompareMatrix("AsVertical(A) - B", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, -1.0f, -3.0f, -4.0f, -6.0f);
+        }
+
+        [TestMethod]
+        public void TestSubtractLHSMatrixRHSVectorHorizontal()
+        {
+            CompareMatrix("B - AsHorizontal(A)", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 1.0f, 2.0f, 5.0f, 6.0f);
+        }
+
+        [TestMethod]
+        public void TestSubtractLHSMatrixRHSVectorVertical()
+        {
+            CompareMatrix("B - AsVertical(A)", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 1.0f, 3.0f, 4.0f, 6.0f);
+        }
+
+        [TestMethod]
         public void TestMatrixSubtract()
         {
             CompareMatrix("A - B", new IModule[]
@@ -204,7 +244,6 @@ namespace XTMF.Testing.TMG.Data
                 CreateData("B", 2, 4, 6, 8)
             }, -1.0f, -2.0f, -3.0f, -4.0f);
         }
-
         [TestMethod]
         public void TestMatrixVectorSubtract()
         {
