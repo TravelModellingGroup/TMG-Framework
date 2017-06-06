@@ -156,6 +156,46 @@ namespace XTMF.Testing.TMG.Data
         }
 
         [TestMethod]
+        public void TestDivideLHSVectorRHSMatrixHorizontal()
+        {
+            CompareMatrix("AsHorizontal(A) / B", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 0.5f, 0.5f, 1.0f / 6.0f, 0.25f);
+        }
+
+        [TestMethod]
+        public void TestDivideLHSVectorRHSMatrixVertical()
+        {
+            CompareMatrix("AsVertical(A) / B", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 0.5f, 0.25f, 2.0f / 6.0f, 0.25f);
+        }
+
+        [TestMethod]
+        public void TestDivideLHSMatrixRHSVectorHorizontal()
+        {
+            CompareMatrix("B / AsHorizontal(A)", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 2.0f, 2.0f, 6.0f, 4.0f);
+        }
+
+        [TestMethod]
+        public void TestDivideLHSMatrixRHSVectorVertical()
+        {
+            CompareMatrix("B / AsVertical(A)", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 2.0f, 4.0f, 3.0f, 4.0f);
+        }
+
+        [TestMethod]
         public void TestMatrixSubtract()
         {
             CompareMatrix("A - B", new IModule[]
