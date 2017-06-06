@@ -76,6 +76,86 @@ namespace XTMF.Testing.TMG.Data
         }
 
         [TestMethod]
+        public void TestAddLHSVectorRHSMatrixHorizontal()
+        {
+            CompareMatrix("AsHorizontal(A) + B", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 3.0f, 6.0f, 7.0f, 10.0f);
+        }
+
+        [TestMethod]
+        public void TestAddLHSVectorRHSMatrixVertical()
+        {
+            CompareMatrix("AsVertical(A) + B", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 3.0f, 5.0f, 8.0f, 10.0f);
+        }
+
+        [TestMethod]
+        public void TestAddLHSMatrixRHSVectorHorizontal()
+        {
+            CompareMatrix("B + AsHorizontal(A)", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 3.0f, 6.0f, 7.0f, 10.0f);
+        }
+
+        [TestMethod]
+        public void TestAddLHSMatrixRHSVectorVertical()
+        {
+            CompareMatrix("B + AsVertical(A)", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 3.0f, 5.0f, 8.0f, 10.0f);
+        }
+
+        [TestMethod]
+        public void TestMultiplyLHSVectorRHSMatrixHorizontal()
+        {
+            CompareMatrix("AsHorizontal(A) * B", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 2.0f, 8.0f, 6.0f, 16.0f);
+        }
+
+        [TestMethod]
+        public void TestMultiplyLHSVectorRHSMatrixVertical()
+        {
+            CompareMatrix("AsVertical(A) * B", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 2.0f, 4.0f, 12.0f, 16.0f);
+        }
+
+        [TestMethod]
+        public void TestMultiplyLHSMatrixRHSVectorHorizontal()
+        {
+            CompareMatrix("B * AsHorizontal(A)", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 2.0f, 8.0f, 6.0f, 16.0f);
+        }
+
+        [TestMethod]
+        public void TestMultiplyLHSMatrixRHSVectorVertical()
+        {
+            CompareMatrix("B * AsVertical(A)", new IModule[]
+            {
+                CreateData("A", 1, 2),
+                CreateData("B", 2, 4, 6, 8)
+            }, 2.0f, 4.0f, 12.0f, 16.0f);
+        }
+
+        [TestMethod]
         public void TestMatrixSubtract()
         {
             CompareMatrix("A - B", new IModule[]

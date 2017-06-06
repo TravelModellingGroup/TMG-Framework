@@ -136,13 +136,20 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var flatRet = retMatrix.Data;
                         var flatRhs = rhs.OdData.Data;
                         var flatLhs = lhs.VectorData.Data;
+                        var rowSize = flatLhs.Length;
                         if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.Add(retMatrix.Data, i * rowSize, flatRhs, i * rowSize, flatLhs[i], rowSize);
+                            }
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.Add(retMatrix.Data, i * rowSize, flatLhs, 0, flatRhs, i * rowSize, rowSize);
+                            }
                         }
                         else
                         {
@@ -156,13 +163,20 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var flatRet = retMatrix.Data;
                         var flatLhs = lhs.OdData.Data;
                         var flatRhs = rhs.VectorData.Data;
+                        var rowSize = flatRhs.Length;
                         if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.Add(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs[i], rowSize);
+                            }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.Add(retMatrix.Data, i * rowSize, flatRhs, 0, flatLhs, i * rowSize, rowSize);
+                            }
                         }
                         else
                         {

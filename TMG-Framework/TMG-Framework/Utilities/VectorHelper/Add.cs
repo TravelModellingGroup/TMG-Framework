@@ -52,6 +52,34 @@ namespace TMG.Utilities
             }
         }
 
+        public static void Add(float[] dest, int destIndex, float[] source, int sourceIndex, float scalar, int length)
+        {
+            if (Vector.IsHardwareAccelerated)
+            {
+                Vector<float> constant = new Vector<float>(scalar);
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var dynamic = new Vector<float>(source, sourceIndex + i);
+                    (constant + dynamic).CopyTo(dest, destIndex + i);
+                }
+                // copy the remainder
+                for (; i < length; i++)
+                {
+                    dest[destIndex + i] = source[sourceIndex + i] + scalar;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < length; i++)
+                {
+                    dest[destIndex + i] = source[sourceIndex + i] + scalar;
+                }
+            }
+        }
+
+
         public static void Add(float[] dest, float[] lhs, float[] rhs)
         {
             if (Vector.IsHardwareAccelerated)
