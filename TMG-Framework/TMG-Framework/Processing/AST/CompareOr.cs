@@ -47,7 +47,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var retVector = rhs.Accumulator ? rhs.VectorData : new SparseVector(rhs.VectorData);
                     var flat = retVector.Data;
                     VectorHelper.FlagOr(flat, lhs.LiteralValue, rhs.VectorData.Data);
-                    return new ComputationResult(retVector, true);
+                    return new ComputationResult(retVector, true, rhs.Direction);
                 }
                 else
                 {
@@ -63,7 +63,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var retVector = lhs.Accumulator ? lhs.VectorData : new SparseVector(lhs.VectorData);
                     var flat = retVector.Data;
                     VectorHelper.FlagOr(flat, lhs.VectorData.Data, rhs.LiteralValue);
-                    return new ComputationResult(retVector, true);
+                    return new ComputationResult(retVector, true, lhs.Direction);
                 }
                 else
                 {

@@ -236,6 +236,46 @@ namespace XTMF.Testing.TMG.Data
         }
 
         [TestMethod]
+        public void TestAndLHSVectorRHSMatrixHorizontal()
+        {
+            CompareMatrix("AsHorizontal(A) == 1 & B == 1", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 1, 1)
+            }, 1.0f, 0.0f, 1.0f, 0.0f);
+        }
+
+        [TestMethod]
+        public void TestAndLHSVectorRHSMatrixVertical()
+        {
+            CompareMatrix("AsVertical(A) == 1 & B == 1", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 1, 1)
+            }, 1.0f, 0.0f, 0.0f, 0.0f);
+        }
+
+        [TestMethod]
+        public void TestAndLHSMatrixRHSVectorHorizontal()
+        {
+            CompareMatrix("B == 1 & AsHorizontal(A) == 1", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 1, 1)
+            }, 1.0f, 0.0f, 1.0f, 0.0f);
+        }
+
+        [TestMethod]
+        public void TestAndLHSMatrixRHSVectorVertical()
+        {
+            CompareMatrix("B == 1 & AsVertical(A) == 1", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 1, 1)
+            }, 1.0f, 0.0f, 0.0f, 0.0f);
+        }
+
+        [TestMethod]
         public void TestMatrixSubtract()
         {
             CompareMatrix("A - B", new IModule[]
@@ -755,7 +795,7 @@ namespace XTMF.Testing.TMG.Data
             string error = null;
             Assert.IsTrue(Compiler.Compile(equation, out Expression ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
             var result = ex.Evaluate(data);
-            Assert.IsTrue(result.IsOdResult);
+            Assert.IsTrue(result.IsOdResult, result.ErrorMessage);
             var flat = result.OdData.Data;
             Assert.AreEqual(m11, flat[0], 0.00001f);
             Assert.AreEqual(m12, flat[1], 0.00001f);

@@ -69,6 +69,43 @@ namespace TMG.Utilities
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
+        public static void FlagAnd(float[] dest, int destIndex, float value, float[] data, int dataIndex, int length)
+        {
+            // check if we are supposed to just clear everything and use a faster function for that
+            if (value == 0.0f)
+            {
+                Array.Clear(dest, destIndex, length);
+            }
+            else
+            {
+                if (Vector.IsHardwareAccelerated)
+                {
+                    int i;
+                    Vector<float> zero = Vector<float>.Zero;
+                    Vector<float> vValue = new Vector<float>(value);
+                    for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
+                    {
+                        var vData = new Vector<float>(data, dataIndex + i);
+                        Vector.ConditionalSelect(Vector.Equals(vData, zero), zero, vValue).CopyTo(dest, destIndex + i);
+                    }
+                    for (; i < length; i++)
+                    {
+                        dest[destIndex + i] = data[dataIndex + i] == 0 ? 0.0f : value;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < length; i++)
+                    {
+                        dest[destIndex + i] = data[dataIndex + i] == 0 ? 0.0f : value;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set the value to one if the condition is met.
+        /// </summary>
         public static void FlagAnd(float[] destination, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
             if (Vector.IsHardwareAccelerated)

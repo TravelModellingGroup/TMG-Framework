@@ -47,7 +47,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var retVector = rhs.Accumulator ? rhs.VectorData : new SparseVector(rhs.VectorData);
                     var flat = retVector.Data;
                     VectorHelper.FlagAnd(flat, lhs.LiteralValue, rhs.VectorData.Data);
-                    return new ComputationResult(retVector, true);
+                    return new ComputationResult(retVector, true, rhs.Direction);
                 }
                 else
                 {
@@ -63,7 +63,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var retVector = lhs.Accumulator ? lhs.VectorData : new SparseVector(lhs.VectorData);
                     var flat = retVector.Data;
                     VectorHelper.FlagAnd(flat, lhs.VectorData.Data, rhs.LiteralValue);
-                    return new ComputationResult(retVector, true);
+                    return new ComputationResult(retVector, true, lhs.Direction);
                 }
                 else
                 {
@@ -89,13 +89,20 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var flatRet = retMatrix.Data;
                         var flatRhs = rhs.OdData.Data;
                         var flatLhs = lhs.VectorData.Data;
+                        var rowSize = flatLhs.Length;
                         if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FlagAnd(retMatrix.Data, i * rowSize, flatLhs[i], flatRhs, i * rowSize, rowSize);
+                            }
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FlagAnd(retMatrix.Data, i * rowSize, flatLhs, 0, flatRhs, i * rowSize, rowSize);
+                            }
                         }
                         else
                         {
@@ -109,13 +116,20 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var flatRet = retMatrix.Data;
                         var flatLhs = lhs.OdData.Data;
                         var flatRhs = rhs.VectorData.Data;
+                        var rowSize = flatRhs.Length;
                         if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FlagAnd(retMatrix.Data, i * rowSize, flatRhs[i], flatLhs, i * rowSize, rowSize);
+                            }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FlagAnd(retMatrix.Data, i * rowSize, flatRhs, 0, flatLhs, i * rowSize, rowSize);
+                            }
                         }
                         else
                         {
