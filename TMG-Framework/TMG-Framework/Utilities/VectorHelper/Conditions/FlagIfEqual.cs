@@ -28,83 +28,29 @@ namespace TMG.Utilities
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
-        /// <param name="dest"></param>
-        /// <param name="value"></param>
-        /// <param name="data"></param>
-        public static void FlagIfEqual(float[] dest, float value, float[] data)
+        public static void FlagIfEqual(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
         {
             if (Vector.IsHardwareAccelerated)
             {
                 int i;
-                if (dest.Length != data.Length)
-                {
-                    throw new ArgumentException("The size of the arrays are not the same!", nameof(dest));
-                }
                 Vector<float> zero = Vector<float>.Zero;
                 Vector<float> one = Vector<float>.One;
-                Vector<float> vValue = new Vector<float>(value);
-                for (i = 0; i < data.Length - Vector<float>.Count; i += Vector<float>.Count)
+                Vector<float> vLhs = new Vector<float>(lhs);
+                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    var vData = new Vector<float>(data, i);
-                    Vector.ConditionalSelect(Vector.Equals(vData, vValue), one, zero).CopyTo(dest, i);
+                    var vRhs = new Vector<float>(rhs, rhsIndex + i);
+                    Vector.ConditionalSelect(Vector.Equals(vLhs, vRhs), one, zero).CopyTo(dest, i);
                 }
-                for (; i < data.Length; i++)
+                for (; i < length; i++)
                 {
-                    dest[i] = data[i] == value ? 1 : 0;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < data.Length; i++)
-                {
-                    dest[i] = data[i] == value ? 1 : 0;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Set the value to one if the condition is met.
-        /// </summary>
-        public static void FlagIfEqual(float[] destination, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
-        {
-            if (Vector.IsHardwareAccelerated)
-            {
-                Vector<float> zero = Vector<float>.Zero;
-                Vector<float> one = Vector<float>.One;
-                if ((destIndex | lhsIndex | rhsIndex) == 0)
-                {
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(lhs, i);
-                        var s = new Vector<float>(rhs, i);
-                        Vector.ConditionalSelect(Vector.Equals(f, s), one, zero).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = lhs[i] == rhs[i] ? 1 : 0;
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        Vector.ConditionalSelect(Vector.Equals(new Vector<float>(lhs, i + lhsIndex), new Vector<float>(rhs, i + rhsIndex)), one, zero)
-                            .CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        destination[i + destIndex] = lhs[i + lhsIndex] == rhs[i + rhsIndex] ? 1 : 0;
-                    }
+                    dest[destIndex + i] = lhs == rhs[rhsIndex + i] ? 1 : 0;
                 }
             }
             else
             {
                 for (int i = 0; i < length; i++)
                 {
-                    destination[i + destIndex] = lhs[i + lhsIndex] == rhs[i + rhsIndex] ? 1 : 0;
+                    dest[destIndex + i] = lhs == rhs[rhsIndex + i] ? 1 : 0;
                 }
             }
         }
@@ -112,42 +58,61 @@ namespace TMG.Utilities
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
-        public static void FlagIfEqual(float[][] dest, float[][] data, float literalValue)
+        public static void FlagIfEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
         {
-            Parallel.For(0, dest.Length, i =>
+            if (Vector.IsHardwareAccelerated)
             {
-                FlagIfEqual(dest[i], data[i], literalValue);
-            });
+                int i;
+                Vector<float> zero = Vector<float>.Zero;
+                Vector<float> one = Vector<float>.One;
+                Vector<float> vRhs = new Vector<float>(rhs);
+                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var vLhs = new Vector<float>(lhs, lhsIndex + i);
+                    Vector.ConditionalSelect(Vector.Equals(vLhs, vRhs), one, zero).CopyTo(dest, destIndex + i);
+                }
+                for (; i < length; i++)
+                {
+                    dest[destIndex + i] = lhs[lhsIndex + i] == rhs ? 1 : 0;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < length; i++)
+                {
+                    dest[destIndex + i] = lhs[lhsIndex + i] == rhs ? 1 : 0;
+                }
+            }
         }
 
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
-        public static void FlagIfEqual(float[] dest, float[] data, float literalValue)
+        public static void FlagIfEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
-            FlagIfEqual(dest, literalValue, data);
-        }
-
-        /// <summary>
-        /// Set the value to one if the condition is met.
-        /// </summary>
-        public static void FlagIfEqual(float[][] dest, float[][] lhs, float[][] rhs)
-        {
-            Parallel.For(0, dest.Length, i =>
+            if (Vector.IsHardwareAccelerated)
             {
-                FlagIfEqual(dest[i], 0, lhs[i], 0, rhs[i], 0, dest.Length);
-            });
-        }
-
-        /// <summary>
-        /// Set the value to one if the condition is met.
-        /// </summary>
-        public static void FlagIfEqual(float[][] dest, float literalValue, float[][] data)
-        {
-            Parallel.For(0, dest.Length, i =>
+                int i;
+                Vector<float> zero = Vector<float>.Zero;
+                Vector<float> one = Vector<float>.One;
+                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var vLhs = new Vector<float>(lhs, lhsIndex + i);
+                    var vRhs = new Vector<float>(rhs, rhsIndex + i);
+                    Vector.ConditionalSelect(Vector.Equals(vLhs, vRhs), one, zero).CopyTo(dest, destIndex + i);
+                }
+                for (; i < length; i++)
+                {
+                    dest[destIndex + i] = lhs[lhsIndex + i] == rhs[rhsIndex + i] ? 1 : 0;
+                }
+            }
+            else
             {
-                FlagIfEqual(dest[i], literalValue, data[i]);
-            });
+                for (int i = 0; i < length; i++)
+                {
+                    dest[destIndex + i] = lhs[lhsIndex + i] == rhs[rhsIndex + i] ? 1 : 0;
+                }
+            }
         }
     }
 }
