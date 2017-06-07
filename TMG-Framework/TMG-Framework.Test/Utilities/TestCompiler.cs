@@ -316,6 +316,86 @@ namespace XTMF.Testing.TMG.Data
         }
 
         [TestMethod]
+        public void TestLessThanLHSVectorRHSMatrixHorizontal()
+        {
+            CompareMatrix("(AsHorizontal(A) == 1) < (B == 1)", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        [TestMethod]
+        public void TestLessThanLHSVectorRHSMatrixVertical()
+        {
+            CompareMatrix("(AsVertical(A) == 1) < (B == 1)", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        [TestMethod]
+        public void TestLessThanLHSMatrixRHSVectorHorizontal()
+        {
+            CompareMatrix("(B == 1) < (AsHorizontal(A) == 1)", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 0.0f, 0.0f, 1.0f, 0.0f);
+        }
+
+        [TestMethod]
+        public void TestLessThanLHSMatrixRHSVectorVertical()
+        {
+            CompareMatrix("(B == 1) < (AsVertical(A) == 1)", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 0.0f, 1.0f, 0.0f, 0.0f);
+        }
+
+        [TestMethod]
+        public void TestLessThanOrEqualLHSVectorRHSMatrixHorizontal()
+        {
+            CompareMatrix("(AsHorizontal(A) == 1) <= (B == 1)", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 1.0f, 1.0f, 0.0f, 1.0f);
+        }
+
+        [TestMethod]
+        public void TestLessThanOrEqualLHSVectorRHSMatrixVertical()
+        {
+            CompareMatrix("(AsVertical(A) == 1) <= (B == 1)", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 1.0f, 0.0f, 1.0f, 1.0f);
+        }
+
+        [TestMethod]
+        public void TestLessThanOrEqualLHSMatrixRHSVectorHorizontal()
+        {
+            CompareMatrix("(B == 1) <= (AsHorizontal(A) == 1)", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 1.0f, 1.0f, 1.0f, 0.0f);
+        }
+
+        [TestMethod]
+        public void TestLessThanOrEqualLHSMatrixRHSVectorVertical()
+        {
+            CompareMatrix("(B == 1) <= (AsVertical(A) == 1)", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 1.0f, 1.0f, 1.0f, 0.0f);
+        }
+
+        [TestMethod]
         public void TestMatrixSubtract()
         {
             CompareMatrix("A - B", new IModule[]
