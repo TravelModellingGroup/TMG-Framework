@@ -55,6 +55,33 @@ namespace TMG.Utilities
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
+        public static void FlagOr(float[] dest, int destIndex, float value, float[] data, int dataIndex, int length)
+        {
+            // check if we are supposed to just copy everything and use a faster function for that
+            if (value == 0.0f)
+            {
+                Array.Copy(dest, destIndex, data, dataIndex, length);
+            }
+            else
+            {
+                // the vector implementation performed faster than the serial version by multiples
+                int i = 0;
+                var one = Vector<float>.One;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    one.CopyTo(dest, destIndex + i);
+                }
+                // copy the remainder
+                for (; i < length; i++)
+                {
+                    dest[destIndex + i] = 1.0f;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set the value to one if the condition is met.
+        /// </summary>
         public static void FlagOr(float[] destination, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
             if (Vector.IsHardwareAccelerated)

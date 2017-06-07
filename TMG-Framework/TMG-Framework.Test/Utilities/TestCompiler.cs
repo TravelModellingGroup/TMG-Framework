@@ -276,6 +276,46 @@ namespace XTMF.Testing.TMG.Data
         }
 
         [TestMethod]
+        public void TestOrLHSVectorRHSMatrixHorizontal()
+        {
+            CompareMatrix("AsHorizontal(A) == 1 | B == 1", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 1.0f, 0.0f, 1.0f, 1.0f);
+        }
+
+        [TestMethod]
+        public void TestOrLHSVectorRHSMatrixVertical()
+        {
+            CompareMatrix("AsVertical(A) == 1 | B == 1", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 1.0f, 1.0f, 0.0f, 1.0f);
+        }
+
+        [TestMethod]
+        public void TestOrLHSMatrixRHSVectorHorizontal()
+        {
+            CompareMatrix("B == 1 | AsHorizontal(A) == 1", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 1.0f, 0.0f, 1.0f, 1.0f);
+        }
+
+        [TestMethod]
+        public void TestOrLHSMatrixRHSVectorVertical()
+        {
+            CompareMatrix("B == 1 | AsVertical(A) == 1", new IModule[]
+            {
+                CreateData("A", 1, 0),
+                CreateData("B", 1, 0, 0, 1)
+            }, 1.0f, 1.0f, 0.0f, 1.0f);
+        }
+
+        [TestMethod]
         public void TestMatrixSubtract()
         {
             CompareMatrix("A - B", new IModule[]
