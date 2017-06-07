@@ -105,9 +105,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             }
             return t == typeof(CompareEqual)
                 || t == typeof(CompareNotEquals)
-                || t == typeof(CompareLessThan)
                 || t == typeof(CompareGreaterThan)
-                || t == typeof(CompareLessThanOrEqual)
                 || t == typeof(CompareGreaterThanOrEqual)
                 || t == typeof(CompareAnd)
                 || t == typeof(CompareOr);
@@ -238,17 +236,19 @@ namespace TMG.Frameworks.Data.Processing.AST
                         {
                             if (i + 1 < endPlusOne && buffer[i + 1] == '=')
                             {
-                                BinaryExpression toReturn = new CompareLessThanOrEqual(i);
-                                if (!Compile(buffer, start, i - start, out toReturn.Lhs, ref error)) return false;
-                                if (!Compile(buffer, i + 2, endPlusOne - i - 2, out toReturn.Rhs, ref error)) return false;
+                                // Inverse the LHS and RHS to reuse the greater comparisons
+                                BinaryExpression toReturn = new CompareGreaterThanOrEqual(i); 
+                                if (!Compile(buffer, i + 2, endPlusOne - i - 2, out toReturn.Lhs, ref error)) return false;
+                                if (!Compile(buffer, start, i - start, out toReturn.Rhs, ref error)) return false;
                                 ex = toReturn;
                                 return true;
                             }
                             else
                             {
-                                BinaryExpression toReturn = new CompareLessThan(i);
-                                if (!Compile(buffer, start, i - start, out toReturn.Lhs, ref error)) return false;
-                                if (!Compile(buffer, i + 1, endPlusOne - i - 1, out toReturn.Rhs, ref error)) return false;
+                                // Inverse the LHS and RHS to reuse the greater comparisons
+                                BinaryExpression toReturn = new CompareGreaterThan(i);
+                                if (!Compile(buffer, i + 1, endPlusOne - i - 1, out toReturn.Lhs, ref error)) return false;
+                                if (!Compile(buffer, start, i - start, out toReturn.Rhs, ref error)) return false;
                                 ex = toReturn;
                                 return true;
                             }
