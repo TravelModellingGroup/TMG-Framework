@@ -595,7 +595,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 var ret = new SparseVector(data.Map);
                 var flatRet = ret.Data;
                 var flatData = data.Data;
-                throw new NotImplementedException();
+                VectorHelper.Set(flatData, flatRet.Length);
                 return new ComputationResult(ret, true, ComputationResult.VectorDirection.Vertical);
             }
             return new ComputationResult("An unknown data type was processed through LengthRows!");
@@ -609,7 +609,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 var ret = new SparseVector(data.Map);
                 var flatRet = ret.Data;
                 var flatData = data.Data;
-                throw new NotImplementedException();
+                VectorHelper.Set(flatData, flatRet.Length);
                 return new ComputationResult(ret, true, ComputationResult.VectorDirection.Horizontal);
             }
             return new ComputationResult("An unknown data type was processed through LengthColumns!");

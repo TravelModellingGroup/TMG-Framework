@@ -32,6 +32,15 @@ namespace TMG.Utilities
             }
         }
 
+        public static void Pow(float[] flat, int flatIndex, float[] lhs, int lhsIndex, float rhs, int length)
+        {
+            // Vectorize this when possible
+            for (int i = 0; i < length; i++)
+            {
+                flat[flatIndex + i] = (float)Math.Pow(lhs[lhsIndex + i], rhs);
+            }
+        }
+
         public static void Pow(float[] flat, float lhs, float[] rhs)
         {
             // Vectorize this when possible
@@ -41,12 +50,30 @@ namespace TMG.Utilities
             }
         }
 
+        public static void Pow(float[] flat, int flatIndex, float lhs, float[] rhs, int rhsIndex, int length)
+        {
+            // Vectorize this when possible
+            for (int i = 0; i < length; i++)
+            {
+                flat[flatIndex + i] = (float)Math.Pow(lhs, rhs[rhsIndex + i]);
+            }
+        }
+
         public static void Pow(float[] flat, float[] lhs, float[] rhs)
         {
             // Vectorize this when possible
             for (int i = 0; i < flat.Length; i++)
             {
                 flat[i] = (float)Math.Pow(lhs[i], rhs[i]);
+            }
+        }
+
+        public static void Pow(float[] flat, int flatIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
+        {
+            // Vectorize this when possible
+            for (int i = 0; i < length; i++)
+            {
+                flat[flatIndex + i] = (float)Math.Pow(lhs[lhsIndex + i], rhs[rhsIndex + i]);
             }
         }
 
