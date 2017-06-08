@@ -226,45 +226,59 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retMatrix = rhs.Accumulator ? rhs.OdData :
                         (lhs.Accumulator ? lhs.OdData : new SparseMatrix(lhs.OdData));
+                    var rowSize = add.VectorData.Data.Length;
                     if (add.Direction == ComputationResult.VectorDirection.Vertical)
                     {
-                        //VectorHelper.FusedMultiplyAddVerticalAdd(retMatrix.Data, lhs.OdData.Data, rhs.OdData.Data, add.VectorData.Data);
-                        throw new NotImplementedException();
+                        for(int i = 0; i < rowSize; i++)
+                        {
+                            VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.OdData.Data, i * rowSize, add.VectorData[i], rowSize);
+                        }
                     }
                     else
                     {
-                        //VectorHelper.FusedMultiplyAddHorizontalAdd(retMatrix.Data, lhs.OdData.Data, rhs.OdData.Data, add.VectorData.Data);
-                        throw new NotImplementedException();
+                        for (int i = 0; i < rowSize; i++)
+                        {
+                            VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.OdData.Data, i * rowSize, add.VectorData.Data, 0, rowSize);
+                        }
                     }
                     return new ComputationResult(retMatrix, true);
                 }
                 else if (rhs.IsVectorResult)
                 {
                     var retMatrix = lhs.Accumulator ? lhs.OdData : new SparseMatrix(lhs.OdData);
+                    var rowSize = add.VectorData.Data.Length;
                     if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                     {
                         if (add.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            //VectorHelper.FusedMultiplyAddVerticalRhsVerticalAdd(retMatrix.Data, lhs.OdData.Data, rhs.VectorData.Data, add.VectorData.Data);
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data[i], add.VectorData.Data[i], rowSize);
+                            }
                         }
                         else
                         {
-                            //VectorHelper.FusedMultiplyAddVerticalRhsHorizontalAdd(retMatrix.Data, lhs.OdData.Data, rhs.VectorData.Data, add.VectorData.Data);
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data[i], add.VectorData.Data, 0, rowSize);
+                            }
                         }
                     }
                     else
                     {
                         if (add.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            //VectorHelper.FusedMultiplyAddHorizontalRhsVerticalAdd(retMatrix.Data, lhs.OdData.Data, rhs.VectorData.Data, add.VectorData.Data);
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data, 0, add.VectorData.Data[i], rowSize);
+                            }
                         }
                         else
                         {
-                            //VectorHelper.FusedMultiplyAddHorizontalRhsHorizontalAdd(retMatrix.Data, lhs.OdData.Data, rhs.VectorData.Data, add.VectorData.Data);
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data, 0, add.VectorData.Data, 0, rowSize);
+                            }
                         }
                     }
                     return new ComputationResult(retMatrix, true);
@@ -273,15 +287,20 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     //RHS is a scalar
                     var retMatrix = lhs.Accumulator ? lhs.OdData : new SparseMatrix(lhs.OdData);
+                    var rowSize = add.VectorData.Data.Length;
                     if (add.Direction == ComputationResult.VectorDirection.Vertical)
                     {
-                        //VectorHelper.FusedMultiplyAddVerticalAdd(retMatrix.Data, lhs.OdData.Data, rhs.LiteralValue, add.VectorData.Data);
-                        throw new NotImplementedException();
+                        for (int i = 0; i < rowSize; i++)
+                        {
+                            VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.LiteralValue, add.VectorData.Data[i], rowSize);
+                        }
                     }
                     else
                     {
-                        //VectorHelper.FusedMultiplyAddHorizontalAdd(retMatrix.Data, lhs.OdData.Data, rhs.LiteralValue, add.VectorData.Data);
-                        throw new NotImplementedException();
+                        for (int i = 0; i < rowSize; i++)
+                        {
+                            VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.LiteralValue, add.VectorData.Data, 0, rowSize);
+                        }
                     }
                     return new ComputationResult(retMatrix, true);
                 }
@@ -348,15 +367,24 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retMatrix = add.Accumulator ? add.OdData :
                         (lhs.Accumulator ? lhs.OdData : new SparseMatrix(add.OdData));
+                    var flatRet = retMatrix.Data;
+                    var flatLhs = lhs.OdData.Data;
+                    var flatRhs = rhs.VectorData.Data;
+                    var flatAdd = add.OdData.Data;
+                    var rowSize = retMatrix.Map.Count;
                     if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                     {
-                        //VectorHelper.FusedMultiplyAddVerticalRhs(retMatrix.Data, lhs.OdData.Data, rhs.VectorData.Data, add.OdData.Data);
-                        throw new NotImplementedException();
+                        for (int i = 0; i < rowSize; i++)
+                        {
+                            VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs[i], flatAdd, i * rowSize, rowSize);
+                        }
                     }
                     else
                     {
-                        //VectorHelper.FusedMultiplyAddHorizontalRhs(retMatrix.Data, lhs.OdData.Data, rhs.VectorData.Data, add.OdData.Data);
-                        throw new NotImplementedException();
+                        for (int i = 0; i < rowSize; i++)
+                        {
+                            VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, flatAdd, i * rowSize, rowSize);
+                        }
                     }
                     return new ComputationResult(retMatrix, true);
                 }
@@ -373,6 +401,9 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 var retMatrix = add.Accumulator ? add.OdData : new SparseMatrix(add.OdData);
                 var tempVector = lhs.Accumulator ? lhs.VectorData : (rhs.IsVectorResult && rhs.Accumulator ? rhs.VectorData : new SparseVector(lhs.VectorData));
+                var flatRet = retMatrix.Data;
+                var flatAdd = add.OdData.Data;
+                var rowSize = tempVector.Data.Length;
                 // compute the multiplication separately in this case for better performance (n multiplies instead of n^2)
                 if (rhs.IsVectorResult)
                 {
@@ -387,15 +418,20 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     VectorHelper.Multiply(tempVector.Data, lhs.VectorData.Data, rhs.LiteralValue);
                 }
+                var flatTemp = tempVector.Data;
                 if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                 {
-                    //VectorHelper.AddVertical(retMatrix.Data, add.OdData.Data, tempVector.Data);
-                    throw new NotImplementedException();
+                    for (int i = 0; i < rowSize; i++)
+                    {
+                        VectorHelper.Add(flatRet, i * rowSize, flatAdd, i * rowSize, flatTemp[i], rowSize);
+                    }
                 }
                 else
                 {
-                    //VectorHelper.AddHorizontal(retMatrix.Data, add.OdData.Data, tempVector.Data);
-                    throw new NotImplementedException();
+                    for (int i = 0; i < rowSize; i++)
+                    {
+                        VectorHelper.Add(flatRet, i * rowSize, flatAdd, i * rowSize, flatTemp, 0, rowSize);
+                    }
                 }
                 return new ComputationResult(retMatrix, true);
             }
