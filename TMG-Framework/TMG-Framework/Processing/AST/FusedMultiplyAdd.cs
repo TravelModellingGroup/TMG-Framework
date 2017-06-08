@@ -84,14 +84,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = rhs.Accumulator ? rhs.VectorData : new SparseVector(rhs.VectorData);
                     var flat = retVector.Data;
-                    VectorHelper.FusedMultiplyAdd(flat, rhs.VectorData.Data, lhs.LiteralValue, add.LiteralValue);
+                    VectorHelper.FusedMultiplyAdd(flat, 0, rhs.VectorData.Data, 0, lhs.LiteralValue, add.LiteralValue, flat.Length);
                     return new ComputationResult(retVector, true);
                 }
                 else
                 {
                     var retMatrix = rhs.Accumulator ? rhs.OdData : new SparseMatrix(rhs.OdData);
                     // inverted lhs, rhs since order does not matter
-                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, rhs.OdData.Data, lhs.LiteralValue, add.LiteralValue);
+                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, 0, rhs.OdData.Data, 0, lhs.LiteralValue, add.LiteralValue, retMatrix.Data.Length);
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -101,14 +101,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = lhs.Accumulator ? lhs.VectorData : new SparseVector(lhs.VectorData);
                     var flat = retVector.Data;
-                    VectorHelper.FusedMultiplyAdd(flat, lhs.VectorData.Data, rhs.LiteralValue, add.LiteralValue);
+                    VectorHelper.FusedMultiplyAdd(flat, 0, lhs.VectorData.Data, 0, rhs.LiteralValue, add.LiteralValue, flat.Length);
                     return new ComputationResult(retVector, true);
                 }
                 else
                 {
                     // matrix / float
                     var retMatrix = lhs.Accumulator ? lhs.OdData : new SparseMatrix(lhs.OdData);
-                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, lhs.OdData.Data, rhs.LiteralValue, add.LiteralValue);
+                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.LiteralValue, add.LiteralValue, retMatrix.Data.Length);
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -118,9 +118,9 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     if (lhs.IsVectorResult && rhs.IsVectorResult)
                     {
-                        var retMatrix = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new SparseVector(lhs.VectorData));
-                        VectorHelper.FusedMultiplyAdd(retMatrix.Data, lhs.VectorData.Data, rhs.VectorData.Data, add.LiteralValue);
-                        return new ComputationResult(retMatrix, true, lhs.Direction);
+                        var retVector = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new SparseVector(lhs.VectorData));
+                        VectorHelper.FusedMultiplyAdd(retVector.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, add.LiteralValue, retVector.Data.Length);
+                        return new ComputationResult(retVector, true, lhs.Direction);
                     }
                     else if (lhs.IsVectorResult)
                     {
@@ -128,13 +128,20 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var flatRet = retMatrix.Data;
                         var flatRhs = rhs.OdData.Data;
                         var flatLhs = lhs.VectorData.Data;
+                        var rowSize = flatLhs.Length;
                         if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatRhs, i * rowSize, flatLhs[i], add.LiteralValue, rowSize);
+                            }
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatRhs, i * rowSize, flatLhs, 0, add.LiteralValue, rowSize);
+                            }
                         }
                         else
                         {
@@ -148,13 +155,20 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var flatRet = retMatrix.Data;
                         var flatLhs = lhs.OdData.Data;
                         var flatRhs = rhs.VectorData.Data;
+                        var rowSize = flatRhs.Length;
                         if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs[i], add.LiteralValue, rowSize);
+                            }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            throw new NotImplementedException();
+                            for (int i = 0; i < rowSize; i++)
+                            {
+                                VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, add.LiteralValue, rowSize);
+                            }
                         }
                         else
                         {
@@ -166,7 +180,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else
                 {
                     var retMatrix = lhs.Accumulator ? lhs.OdData : (rhs.Accumulator ? rhs.OdData : new SparseMatrix(lhs.OdData));
-                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, lhs.OdData.Data, rhs.OdData.Data, add.LiteralValue);
+                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.OdData.Data, 0, add.LiteralValue, retMatrix.Data.Length);
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -286,7 +300,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var retVector = add.Accumulator ? add.VectorData :
                         (rhs.Accumulator ? rhs.VectorData :
                         (lhs.Accumulator ? lhs.VectorData : new SparseVector(lhs.VectorData)));
-                    VectorHelper.FusedMultiplyAdd(retVector.Data, lhs.VectorData.Data, rhs.VectorData.Data, add.VectorData.Data);
+                    VectorHelper.FusedMultiplyAdd(retVector.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, add.VectorData.Data, 0, retVector.Data.Length);
                     return new ComputationResult(retVector, true, add.Direction == lhs.Direction && add.Direction == rhs.Direction ? add.Direction : ComputationResult.VectorDirection.Unassigned);
                 }
                 // vector * lit + vector
@@ -294,7 +308,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = add.Accumulator ? add.VectorData :
                         (lhs.Accumulator ? lhs.VectorData : new SparseVector(lhs.VectorData));
-                    VectorHelper.FusedMultiplyAdd(retVector.Data, lhs.VectorData.Data, rhs.LiteralValue, add.VectorData.Data);
+                    VectorHelper.FusedMultiplyAdd(retVector.Data, 0, lhs.VectorData.Data, 0, rhs.LiteralValue, add.VectorData.Data, 0, add.VectorData.Data.Length);
                     return new ComputationResult(retVector, true, add.Direction == lhs.Direction && add.Direction == rhs.Direction ? add.Direction : ComputationResult.VectorDirection.Unassigned);
                 }
             }
@@ -327,7 +341,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var retMatrix = add.Accumulator ? add.OdData :
                         (lhs.Accumulator ? lhs.OdData :
                         (rhs.Accumulator ? rhs.OdData : new SparseMatrix(add.OdData)));
-                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, lhs.OdData.Data, rhs.OdData.Data, add.OdData.Data);
+                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.OdData.Data, 0, add.OdData.Data, 0, retMatrix.Data.Length);
                     return new ComputationResult(retMatrix, true);
                 }
                 else if (rhs.IsVectorResult)
@@ -351,7 +365,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     //RHS is scalar
                     var retMatrix = add.Accumulator ? add.OdData :
                         (lhs.Accumulator ? lhs.OdData : new SparseMatrix(add.OdData));
-                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, lhs.OdData.Data, rhs.LiteralValue, add.OdData.Data);
+                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.LiteralValue, add.OdData.Data, 0, retMatrix.Data.Length);
                     return new ComputationResult(retMatrix, true);
                 }
             }

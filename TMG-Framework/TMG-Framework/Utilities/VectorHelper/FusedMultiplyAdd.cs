@@ -27,28 +27,28 @@ namespace TMG.Utilities
         /// <summary>
         /// Dest[i] = hls[i] * rhs[i] + add
         /// </summary>
-        public static void FusedMultiplyAdd(float[] dest, float[] lhs, float[] rhs, float add)
+        public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float add, int length)
         {
             if (Vector.IsHardwareAccelerated)
             {
                 int i;
                 var vAdd = new Vector<float>(add);
-                for (i = 0; i < dest.Length - Vector<float>.Count; i++)
+                for (i = 0; i < length - Vector<float>.Count; i++)
                 {
-                    var l = new Vector<float>(lhs, i);
-                    var r = new Vector<float>(rhs, i);
-                    (l * r + vAdd).CopyTo(dest, i);
+                    var l = new Vector<float>(lhs, lhsIndex + i);
+                    var r = new Vector<float>(rhs, rhsIndex + i);
+                    (l * r + vAdd).CopyTo(dest, destIndex + i);
                 }
-                for (; i < dest.Length; i++)
+                for (; i < length; i++)
                 {
-                    dest[i] = lhs[i] * rhs[i] + add;
+                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add;
                 }
             }
             else
             {
-                for (int i = 0; i < dest.Length; i++)
+                for (int i = 0; i < length; i++)
                 {
-                    dest[i] = lhs[i] * rhs[i] + add;
+                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add;
                 }
             }
         }
@@ -56,29 +56,28 @@ namespace TMG.Utilities
         /// <summary>
         /// Dest[i] = hls[i] * rhs + add
         /// </summary>
-        public static void FusedMultiplyAdd(float[] dest, float[] lhs, float rhs, float add)
+        public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float add, int length)
         {
             if (Vector.IsHardwareAccelerated)
             {
                 int i;
                 var vAdd = new Vector<float>(add);
                 var r = new Vector<float>(rhs);
-                for (i = 0; i < dest.Length - Vector<float>.Count; i++)
+                for (i = 0; i < length - Vector<float>.Count; i++)
                 {
-                    var l = new Vector<float>(lhs, i);
-
-                    (l * r + vAdd).CopyTo(dest, i);
+                    var l = new Vector<float>(lhs, lhsIndex + i);
+                    (l * r + vAdd).CopyTo(dest, destIndex + i);
                 }
-                for (; i < dest.Length; i++)
+                for (; i < length; i++)
                 {
-                    dest[i] = lhs[i] * rhs + add;
+                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add;
                 }
             }
             else
             {
-                for (int i = 0; i < dest.Length; i++)
+                for (int i = 0; i < length; i++)
                 {
-                    dest[i] = lhs[i] * rhs + add;
+                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add;
                 }
             }
         }
@@ -86,28 +85,28 @@ namespace TMG.Utilities
         /// <summary>
         /// Dest[i] = hls[i] * rhs + add[i]
         /// </summary>
-        public static void FusedMultiplyAdd(float[] dest, float[] lhs, float rhs, float[] add)
+        public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float[] add, int addIndex, int length)
         {
             if (Vector.IsHardwareAccelerated)
             {
                 int i;
                 var r = new Vector<float>(rhs);
-                for (i = 0; i < dest.Length - Vector<float>.Count; i++)
+                for (i = 0; i < length - Vector<float>.Count; i++)
                 {
-                    var l = new Vector<float>(lhs, i);
-                    var vAdd = new Vector<float>(add, i);
-                    (l * r + vAdd).CopyTo(dest, i);
+                    var l = new Vector<float>(lhs, lhsIndex + i);
+                    var vAdd = new Vector<float>(add, addIndex + i);
+                    (l * r + vAdd).CopyTo(dest, destIndex + i);
                 }
-                for (; i < dest.Length; i++)
+                for (; i < length; i++)
                 {
-                    dest[i] = lhs[i] * rhs + add[i];
+                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add[addIndex + i];
                 }
             }
             else
             {
-                for (int i = 0; i < dest.Length; i++)
+                for (int i = 0; i < length; i++)
                 {
-                    dest[i] = lhs[i] * rhs + add[i];
+                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add[addIndex + i];
                 }
             }
         }
@@ -115,206 +114,30 @@ namespace TMG.Utilities
         /// <summary>
         /// Dest[i] = hls[i] * rhs[i] + add[i]
         /// </summary>
-        public static void FusedMultiplyAdd(float[] dest, float[] lhs, float[] rhs, float[] add)
+        public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float[] add, int addIndex, int length)
         {
             if (Vector.IsHardwareAccelerated)
             {
                 int i;
                 for (i = 0; i < dest.Length - Vector<float>.Count; i++)
                 {
-                    var l = new Vector<float>(lhs, i);
-                    var r = new Vector<float>(rhs, i);
-                    var vAdd = new Vector<float>(add, i);
-                    (l * r + vAdd).CopyTo(dest, i);
+                    var l = new Vector<float>(lhs, lhsIndex + i);
+                    var r = new Vector<float>(rhs, rhsIndex + i);
+                    var vAdd = new Vector<float>(add, addIndex + i);
+                    (l * r + vAdd).CopyTo(dest, destIndex + i);
                 }
                 for (; i < dest.Length; i++)
                 {
-                    dest[i] = lhs[i] * rhs[i] + add[i];
+                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add[addIndex + i];
                 }
             }
             else
             {
-                for (int i = 0; i < dest.Length; i++)
+                for (int i = 0; i < length; i++)
                 {
-                    dest[i] = lhs[i] * rhs[i] + add[i];
+                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add[addIndex + i];
                 }
             }
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i][j] + add
-        /// </summary>
-        public static void FusedMultiplyAdd(float[][] dest, float[][] lhs, float[][] rhs, float add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs[i], add);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i][j] + add
-        /// </summary>
-        public static void FusedMultiplyAdd(float[][] dest, float[][] lhs, float rhs, float add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs, add);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i][j] + add[i][j]
-        /// </summary>
-        public static void FusedMultiplyAdd(float[][] dest, float[][] lhs, float rhs, float[][] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs, add[i]);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i][j] + add[i][j]
-        /// </summary>
-        public static void FusedMultiplyAdd(float[][] dest, float[][] lhs, float[][] rhs, float[][] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs[i], add[i]);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i][j] + add[i]
-        /// </summary>
-        public static void FusedMultiplyAddVerticalAdd(float[][] dest, float[][] lhs, float[][] rhs, float[] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs[i], add[i]);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs + add[j]
-        /// </summary>
-        public static void FusedMultiplyAddHorizontalAdd(float[][] dest, float[][] lhs, float rhs, float[] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs, add);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs + add[i]
-        /// </summary>
-        public static void FusedMultiplyAddVerticalAdd(float[][] dest, float[][] lhs, float rhs, float[] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs, add[i]);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i][j] + add[j]
-        /// </summary>
-        public static void FusedMultiplyAddHorizontalAdd(float[][] dest, float[][] lhs, float[][] rhs, float[] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs[i], add);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i] + add
-        /// </summary>
-        public static void FusedMultiplyAddVerticalRhs(float[][] dest, float[][] lhs, float[] rhs, float add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs[i], add);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[j] + add
-        /// </summary>
-        public static void FusedMultiplyAddHorizontalRhs(float[][] dest, float[][] lhs, float[] rhs, float add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs, add);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i] + add[i][j]
-        /// </summary>
-        public static void FusedMultiplyAddVerticalRhs(float[][] dest, float[][] lhs, float[] rhs, float[][] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs[i], add[i]);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[j] + add[i][j]
-        /// </summary>
-        public static void FusedMultiplyAddHorizontalRhs(float[][] dest, float[][] lhs, float[] rhs, float[][] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs, add[i]);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i] + add[i]
-        /// </summary>
-        public static void FusedMultiplyAddVerticalRhsVerticalAdd(float[][] dest, float[][] lhs, float[] rhs, float[] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs[i], add[i]);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[j] + add[i]
-        /// </summary>
-        public static void FusedMultiplyAddHorizontalRhsVerticalAdd(float[][] dest, float[][] lhs, float[] rhs, float[] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs, add[i]);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[i] + add[j]
-        /// </summary>
-        public static void FusedMultiplyAddVerticalRhsHorizontalAdd(float[][] dest, float[][] lhs, float[] rhs, float[] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs[i], add);
-            });
-        }
-
-        /// <summary>
-        /// Dest[i][j] = hls[i][j] * rhs[j] + add[j]
-        /// </summary>
-        public static void FusedMultiplyAddHorizontalRhsHorizontalAdd(float[][] dest, float[][] lhs, float[] rhs, float[] add)
-        {
-            Parallel.For(0, dest.Length, i =>
-            {
-                FusedMultiplyAdd(dest[i], lhs[i], rhs, add);
-            });
         }
     }
 }
