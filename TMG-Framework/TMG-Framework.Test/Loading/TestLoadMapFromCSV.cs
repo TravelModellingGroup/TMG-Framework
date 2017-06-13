@@ -37,7 +37,7 @@ namespace TMG.Test.Loading
         [TestMethod]
         public void TestLoadingMapFromCSV()
         {
-            var mapFilePath = MapHelper.WriteCSV();
+            var mapFilePath = MapHelper.WriteCSV(64);
             Map result = MapHelper.LoadMap(mapFilePath);
             Assert.AreEqual(64, result.Count);
             for (int i = 0; i < result.Count; i++)
@@ -49,7 +49,7 @@ namespace TMG.Test.Loading
         [TestMethod]
         public void TestLoadingMapFromCSVDefinedBackwards()
         {
-            var mapFilePath = MapHelper.WriteBackwardsCSV();
+            var mapFilePath = MapHelper.WriteBackwardsCSV(64);
             Map result = MapHelper.LoadMap(mapFilePath);
             Assert.AreEqual(64, result.Count);
             for (int i = 0; i < result.Count; i++)

@@ -28,7 +28,7 @@ namespace TMG.Test.Utilities
 {
     static class MapHelper
     {
-        internal static string WriteCSV()
+        internal static string WriteCSV(int elements)
         {
             var tempName = Path.GetTempFileName();
             try
@@ -36,7 +36,7 @@ namespace TMG.Test.Utilities
                 using (StreamWriter writer = File.CreateText(tempName))
                 {
                     writer.WriteLine("Zone");
-                    for (int i = 0; i < 64; i++)
+                    for (int i = 0; i < elements; i++)
                     {
                         writer.WriteLine(i + 1);
                     }
@@ -50,7 +50,7 @@ namespace TMG.Test.Utilities
             return tempName;
         }
 
-        internal static string WriteBackwardsCSV()
+        internal static string WriteBackwardsCSV(int elements)
         {
             var tempName = Path.GetTempFileName();
             try
@@ -58,7 +58,7 @@ namespace TMG.Test.Utilities
                 using (StreamWriter writer = File.CreateText(tempName))
                 {
                     writer.WriteLine("Zone");
-                    for (int i = 64 - 1; i >= 0; i--)
+                    for (int i = elements - 1; i >= 0; i--)
                     {
                         writer.WriteLine(i + 1);
                     }
@@ -88,6 +88,5 @@ namespace TMG.Test.Utilities
                 File.Delete(fileName);
             }
         }
-
     }
 }
