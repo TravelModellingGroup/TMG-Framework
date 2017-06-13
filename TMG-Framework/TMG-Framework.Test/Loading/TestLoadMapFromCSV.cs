@@ -54,10 +54,56 @@ namespace TMG.Test.Loading
             return tempName;
         }
 
+        private static string WriteBackwardsCSV()
+        {
+            var tempName = Path.GetTempFileName();
+            try
+            {
+                using (StreamWriter writer = File.CreateText(tempName))
+                {
+                    writer.WriteLine("Zone");
+                    for (int i = 64 - 1; i >= 0; i--)
+                    {
+                        writer.WriteLine(i + 1);
+                    }
+                }
+            }
+            catch
+            {
+                File.Delete(tempName);
+                Assert.Fail("Unable to create map file!");
+            }
+            return tempName;
+        }
+
         [TestMethod]
         public void TestLoadingMapFromCSV()
         {
             var mapFilePath = WriteCSV();
+            try
+            {
+                LoadMapFromCSV mapLoader = new LoadMapFromCSV();
+                OpenReadStreamFromFile streamLoader = new OpenReadStreamFromFile();
+                using (var reader = streamLoader.Invoke(mapFilePath))
+                {
+                    var map = mapLoader.Invoke(reader);
+                    Assert.AreEqual(64, map.Count);
+                    for (int i = 0; i < map.Count; i++)
+                    {
+                        Assert.AreEqual(i + 1, map.GetSparseIndex(i));
+                    }
+                }
+            }
+            finally
+            {
+                File.Delete(mapFilePath);
+            }
+        }
+
+        [TestMethod]
+        public void TestLoadingMapFromCSVDefinedBackwards()
+        {
+            var mapFilePath = WriteBackwardsCSV();
             try
             {
                 LoadMapFromCSV mapLoader = new LoadMapFromCSV();
