@@ -26,101 +26,35 @@ using TMG.Frameworks.Data.Processing.AST;
 using XTMF2;
 using XTMF2.RuntimeModules;
 using TMG.Loading;
+using TMG.Test.Utilities;
 
 namespace TMG.Test.Loading
 {
     [TestClass]
     public class TestLoadMapFromCSV
     {
-        private static string WriteCSV()
-        {
-            var tempName = Path.GetTempFileName();
-            try
-            {
-                using (StreamWriter writer = File.CreateText(tempName))
-                {
-                    writer.WriteLine("Zone");
-                    for (int i = 0; i < 64; i++)
-                    {
-                        writer.WriteLine(i + 1);
-                    }
-                }
-            }
-            catch
-            {
-                File.Delete(tempName);
-                Assert.Fail("Unable to create map file!");
-            }
-            return tempName;
-        }
-
-        private static string WriteBackwardsCSV()
-        {
-            var tempName = Path.GetTempFileName();
-            try
-            {
-                using (StreamWriter writer = File.CreateText(tempName))
-                {
-                    writer.WriteLine("Zone");
-                    for (int i = 64 - 1; i >= 0; i--)
-                    {
-                        writer.WriteLine(i + 1);
-                    }
-                }
-            }
-            catch
-            {
-                File.Delete(tempName);
-                Assert.Fail("Unable to create map file!");
-            }
-            return tempName;
-        }
 
         [TestMethod]
         public void TestLoadingMapFromCSV()
         {
-            var mapFilePath = WriteCSV();
-            try
+            var mapFilePath = MapHelper.WriteCSV();
+            Map result = MapHelper.LoadMap(mapFilePath);
+            Assert.AreEqual(64, result.Count);
+            for (int i = 0; i < result.Count; i++)
             {
-                LoadMapFromCSV mapLoader = new LoadMapFromCSV();
-                OpenReadStreamFromFile streamLoader = new OpenReadStreamFromFile();
-                using (var reader = streamLoader.Invoke(mapFilePath))
-                {
-                    var map = mapLoader.Invoke(reader);
-                    Assert.AreEqual(64, map.Count);
-                    for (int i = 0; i < map.Count; i++)
-                    {
-                        Assert.AreEqual(i + 1, map.GetSparseIndex(i));
-                    }
-                }
-            }
-            finally
-            {
-                File.Delete(mapFilePath);
+                Assert.AreEqual(i + 1, result.GetSparseIndex(i));
             }
         }
 
         [TestMethod]
         public void TestLoadingMapFromCSVDefinedBackwards()
         {
-            var mapFilePath = WriteBackwardsCSV();
-            try
+            var mapFilePath = MapHelper.WriteBackwardsCSV();
+            Map result = MapHelper.LoadMap(mapFilePath);
+            Assert.AreEqual(64, result.Count);
+            for (int i = 0; i < result.Count; i++)
             {
-                LoadMapFromCSV mapLoader = new LoadMapFromCSV();
-                OpenReadStreamFromFile streamLoader = new OpenReadStreamFromFile();
-                using (var reader = streamLoader.Invoke(mapFilePath))
-                {
-                    var map = mapLoader.Invoke(reader);
-                    Assert.AreEqual(64, map.Count);
-                    for (int i = 0; i < map.Count; i++)
-                    {
-                        Assert.AreEqual(i + 1, map.GetSparseIndex(i));
-                    }
-                }
-            }
-            finally
-            {
-                File.Delete(mapFilePath);
+                Assert.AreEqual(i + 1, result.GetSparseIndex(i));
             }
         }
     }
