@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using TMG.Saving;
 
 namespace TMG.Test.Utilities
 {
@@ -35,15 +36,17 @@ namespace TMG.Test.Utilities
             var fileName = Path.GetTempFileName();
             try
             {
-                using (var writer = new StreamWriter(File.OpenWrite(fileName)))
+                var vector = new Vector(map);
+                Array.Copy(data, vector.Data, vector.Data.Length);
+                var save = new SaveVectorAsCSV()
                 {
-                    writer.WriteLine("Zone,Data");
-                    for (int i = 0; i < map.Count; i++)
-                    {
-                        writer.Write(map.GetSparseIndex(i));
-                        writer.Write(',');
-                        writer.WriteLine(data[i]);
-                    }
+                    MapColumnName = Helper.CreateParameter("Zone"),
+                    DataColumnName = Helper.CreateParameter("Data")
+                };
+                using (var writeStream = (new XTMF2.RuntimeModules.OpenWriteStreamFromFile())
+                    .Invoke(fileName))
+                {
+                    save.Invoke((vector, writeStream));
                 }
                 return fileName;
             }

@@ -33,6 +33,7 @@ namespace TMG.Saving
             using (var writer = new StreamWriter(context.Stream))
             {
                 var data = context.Data;
+                var flatData = data.Data;
                 var map = data.Map;
                 WriteHeaders(writer);
                 var length = map.Count;
@@ -40,7 +41,7 @@ namespace TMG.Saving
                 {
                     writer.Write(map.GetSparseIndex(i));
                     writer.Write(',');
-                    writer.WriteLine(data[i]);
+                    writer.WriteLine(flatData[i]);
                 }
             }
         }
