@@ -24,9 +24,9 @@ using XTMF2;
 
 namespace TMG.Saving
 {
-    [Module(Name = "Save SparseMatrix To CSV", Description = "Saves a sparse matrix to the given write stream.",
+    [Module(Name = "Save Matrix To CSV", Description = "Saves a matrix to the given write stream.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public class SaveSparseMatrixAsCSV : BaseAction<(SparseMatrix Matrix, WriteStream Stream)>
+    public class SaveMatrixAsCSV : BaseAction<(Matrix Matrix, WriteStream Stream)>
     {
         [Parameter(Name = "Third Normalized", DefaultValue = "True", Index = 0,
             Description = "Should the data be saved in third normalized form?  If not it will be saved as a CSV Matrix")]
@@ -44,7 +44,7 @@ namespace TMG.Saving
             Description = "The name of the Data index.")]
         public IFunction<string> DataIndexHeader;
 
-        public override void Invoke((SparseMatrix Matrix, WriteStream Stream) context)
+        public override void Invoke((Matrix Matrix, WriteStream Stream) context)
         {
             if(ThirdNormalized.Invoke())
             {
@@ -56,7 +56,7 @@ namespace TMG.Saving
             }
         }
 
-        private void WriteCSVMatrix((SparseMatrix Matrix, WriteStream Stream) context)
+        private void WriteCSVMatrix((Matrix Matrix, WriteStream Stream) context)
         {
             using (StreamWriter writer = new StreamWriter(context.Stream))
             {
@@ -96,7 +96,7 @@ namespace TMG.Saving
             writer.Write('"');
         }
 
-        private void WriteThirdNormalized((SparseMatrix Matrix, WriteStream Stream) context)
+        private void WriteThirdNormalized((Matrix Matrix, WriteStream Stream) context)
         {
             using (StreamWriter writer = new StreamWriter(context.Stream))
             {

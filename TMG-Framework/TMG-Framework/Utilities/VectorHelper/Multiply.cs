@@ -28,7 +28,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 if ((destIndex | firstIndex | secondIndex) == 0)
                 {
@@ -74,7 +74,7 @@ namespace TMG.Utilities
 
         public static void Multiply(float[] dest, float[] source, float scalar)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> constant = new Vector<float>(scalar);
 
@@ -102,7 +102,7 @@ namespace TMG.Utilities
 
         public static void Multiply(float[][] destination, float lhs, float[][] rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Parallel.For(0, destination.Length, row =>
                 {
@@ -138,7 +138,7 @@ namespace TMG.Utilities
 
         public static void Multiply(float[][] destination, float[][] lhs, float rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Parallel.For(0, destination.Length, row =>
                 {
@@ -174,7 +174,7 @@ namespace TMG.Utilities
 
         public static void Multiply(float[][] destination, float[][] lhs, float[][] rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Parallel.For(0, destination.Length, row =>
                 {
@@ -221,7 +221,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float scalar, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> scalarV = new Vector<float>(scalar);
                 if ((destIndex | firstIndex) == 0)
@@ -277,7 +277,7 @@ namespace TMG.Utilities
         /// <param name="length"></param>
         internal static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, float scalar, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var vScalar = new Vector<float>(scalar);
                 if ((destIndex | firstIndex | secondIndex) == 0)
@@ -340,7 +340,7 @@ namespace TMG.Utilities
         public static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex,
             float[] third, int thirdIndex, float[] fourth, int fourthIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 int i = 0;
                 if ((destIndex | firstIndex | secondIndex | thirdIndex | fourthIndex) == 0)

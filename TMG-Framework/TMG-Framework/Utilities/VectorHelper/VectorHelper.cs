@@ -48,7 +48,7 @@ namespace TMG.Utilities
         {
             // shockingly to myself this is actually faster than doing a copy to an array
             // and manually computing the sum
-            return Vector.Dot(v, Vector<float>.One);
+            return System.Numerics.Vector.Dot(v, Vector<float>.One);
         }
 
 
@@ -62,7 +62,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sum(float[] array, int startIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var remainderSum = 0.0f;
                 var acc = Vector<float>.Zero;
@@ -112,7 +112,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float AbsDiffAverage(float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var remainderSum = 0.0f;
                 var acc = Vector<float>.Zero;
@@ -127,8 +127,8 @@ namespace TMG.Utilities
                         var s1 = new Vector<float>(second, i);
                         var f2 = new Vector<float>(first, i + Vector<float>.Count);
                         var s2 = new Vector<float>(second, i + Vector<float>.Count);
-                        acc += Vector.Abs(f1 - s1);
-                        acc2 += Vector.Abs(f2 - s2);
+                        acc += System.Numerics.Vector.Abs(f1 - s1);
+                        acc2 += System.Numerics.Vector.Abs(f2 - s2);
                     }
                     acc += acc2;
                 }
@@ -138,7 +138,7 @@ namespace TMG.Utilities
                     int s = secondIndex;
                     for (; i <= highestForVector; i += Vector<float>.Count)
                     {
-                        acc += Vector.Abs(new Vector<float>(first, i) - new Vector<float>(second, s));
+                        acc += System.Numerics.Vector.Abs(new Vector<float>(first, i) - new Vector<float>(second, s));
                         s += Vector<float>.Count;
                     }
                 }
@@ -172,7 +172,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float AbsDiffMax(float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var remainderMax = 0.0f;
                 var vectorMax = Vector<float>.Zero;
@@ -181,7 +181,7 @@ namespace TMG.Utilities
                     int highestForVector = length - Vector<float>.Count;
                     for (int i = 0; i <= highestForVector; i += Vector<float>.Count)
                     {
-                        vectorMax = Vector.Max(Vector.Abs(new Vector<float>(first, i) - new Vector<float>(second, i)), vectorMax);
+                        vectorMax = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(new Vector<float>(first, i) - new Vector<float>(second, i)), vectorMax);
                     }
                 }
                 else
@@ -190,7 +190,7 @@ namespace TMG.Utilities
                     int s = secondIndex;
                     for (int f = 0; f <= highestForVector; f += Vector<float>.Count)
                     {
-                        vectorMax = Vector.Max(Vector.Abs(new Vector<float>(first, f) - new Vector<float>(second, s)), vectorMax);
+                        vectorMax = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(new Vector<float>(first, f) - new Vector<float>(second, s)), vectorMax);
                         s += Vector<float>.Count;
                     }
                 }
@@ -230,7 +230,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SquareDiff(float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var remainderSum = 0.0f;
                 var acc = Vector<float>.Zero;
@@ -290,7 +290,7 @@ namespace TMG.Utilities
         /// <param name="value">The value to set it to</param>
         public static void Set(float[] dest, float value)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 int i = 0;
                 var vValue = new Vector<float>(value);
@@ -321,7 +321,7 @@ namespace TMG.Utilities
         /// <param name="length">The number of elements to assign</param>
         public static void Set(float[] dest, int offset, float value, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 int i = 0;
                 var vValue = new Vector<float>(value);
@@ -345,14 +345,14 @@ namespace TMG.Utilities
 
         public static void Abs(float[] dest, float[] source)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 // copy everything we can do inside of a vector
                 int i = 0;
                 for (; i <= dest.Length - Vector<float>.Count; i += Vector<float>.Count)
                 {
                     var dynamic = new Vector<float>(source, i);
-                    (Vector.Abs(dynamic)).CopyTo(dest, i);
+                    (System.Numerics.Vector.Abs(dynamic)).CopyTo(dest, i);
                 }
                 // copy the remainder
                 for (; i < dest.Length; i++)
@@ -392,7 +392,7 @@ namespace TMG.Utilities
         public static float MultiplyAndSum(float[] destination, int destIndex, float[] first, int firstIndex,
             float[] second, int secondIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var remainderSum = 0.0f;
                 var acc = Vector<float>.Zero;
@@ -457,7 +457,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float MultiplyAndSum(float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var remainderSum = 0.0f;
                 var acc = Vector<float>.Zero;
@@ -524,7 +524,7 @@ namespace TMG.Utilities
         public static float Multiply3AndSum(float[] first, int firstIndex, float[] second, int secondIndex,
             float[] third, int thirdIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var remainderSum = 0.0f;
                 var acc = Vector<float>.Zero;
@@ -596,7 +596,7 @@ namespace TMG.Utilities
         public static void Multiply2Scalar1AndColumnSum(float[] destination, int destIndex, float[] first, int firstIndex,
             float[] second, int secondIndex, float scalar, float[] columnSum, int columnIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> scalarV = new Vector<float>(scalar);
                 if ((destIndex | firstIndex | secondIndex | columnIndex) == 0)
@@ -660,7 +660,7 @@ namespace TMG.Utilities
         public static void Multiply3Scalar1AndColumnSum(float[] destination, int destIndex, float[] first, int firstIndex,
             float[] second, int secondIndex, float[] third, int thirdIndex, float scalar, float[] columnSum, int columnIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> scalarV = new Vector<float>(scalar);
                 if ((destIndex | firstIndex | secondIndex | thirdIndex | columnIndex) == 0)
@@ -716,7 +716,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Average(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> half = new Vector<float>(0.5f);
                 if ((destIndex | firstIndex | secondIndex) == 0)
@@ -769,8 +769,8 @@ namespace TMG.Utilities
         public static Vector<float> SelectIfFinite(Vector<float> baseValues, Vector<float> alternateValues)
         {
             //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
-            return Vector.ConditionalSelect(
-                Vector.BitwiseAnd(Vector.LessThanOrEqual(Vector.Abs(baseValues), MaxFloat), Vector.GreaterThanOrEqual(baseValues, baseValues)),
+            return System.Numerics.Vector.ConditionalSelect(
+                System.Numerics.Vector.BitwiseAnd(System.Numerics.Vector.LessThanOrEqual(System.Numerics.Vector.Abs(baseValues), MaxFloat), System.Numerics.Vector.GreaterThanOrEqual(baseValues, baseValues)),
                 baseValues, alternateValues
                 );
         }
@@ -787,9 +787,9 @@ namespace TMG.Utilities
         public static Vector<float> SelectIfFiniteAndLessThan(Vector<float> baseValues, Vector<float> alternateValues, Vector<float> minimumV)
         {
             //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
-            return Vector.ConditionalSelect(
-                Vector.BitwiseAnd(Vector.BitwiseAnd(Vector.LessThanOrEqual(Vector.Abs(baseValues), MaxFloat),
-                Vector.GreaterThanOrEqual(baseValues, baseValues)), Vector.GreaterThanOrEqual(baseValues, minimumV)),
+            return System.Numerics.Vector.ConditionalSelect(
+                System.Numerics.Vector.BitwiseAnd(System.Numerics.Vector.BitwiseAnd(System.Numerics.Vector.LessThanOrEqual(System.Numerics.Vector.Abs(baseValues), MaxFloat),
+                System.Numerics.Vector.GreaterThanOrEqual(baseValues, baseValues)), System.Numerics.Vector.GreaterThanOrEqual(baseValues, minimumV)),
                 baseValues, alternateValues
                 );
         }
@@ -803,7 +803,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReplaceIfNotFinite(float[] destination, int destIndex, float alternateValue, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var altV = new Vector<float>(alternateValue);
                 if (destIndex == 0)
@@ -851,7 +851,7 @@ namespace TMG.Utilities
 
         public static void ReplaceIfLessThanOrNotFinite(float[] destination, int destIndex, float alternateValue, float minimum, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var altV = new Vector<float>(alternateValue);
                 var minimumV = new Vector<float>(minimum);
@@ -901,14 +901,14 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool AnyGreaterThan(float[] data, int dataIndex, float rhs, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var rhsV = new Vector<float>(rhs);
                 if (dataIndex == 0)
                 {
                     for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                     {
-                        if (Vector.GreaterThanAny(new Vector<float>(data, i), rhsV))
+                        if (System.Numerics.Vector.GreaterThanAny(new Vector<float>(data, i), rhsV))
                         {
                             return true;
                         }
@@ -926,7 +926,7 @@ namespace TMG.Utilities
                 {
                     for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                     {
-                        if (Vector.GreaterThanAny(new Vector<float>(data, i + dataIndex), rhsV))
+                        if (System.Numerics.Vector.GreaterThanAny(new Vector<float>(data, i + dataIndex), rhsV))
                         {
                             return true;
                         }
@@ -957,7 +957,7 @@ namespace TMG.Utilities
 
         public static bool AreBoundedBy(float[] data, int dataIndex, float baseNumber, float maxVarriation, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var baseV = new Vector<float>(baseNumber);
                 var maxmumVariationV = new Vector<float>(maxVarriation);
@@ -965,7 +965,7 @@ namespace TMG.Utilities
                 {
                     for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                     {
-                        if (Vector.GreaterThanAny(Vector.Abs(new Vector<float>(data, i) - baseV), maxmumVariationV))
+                        if (System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(new Vector<float>(data, i) - baseV), maxmumVariationV))
                         {
                             return false;
                         }
@@ -983,7 +983,7 @@ namespace TMG.Utilities
                 {
                     for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                     {
-                        if (Vector.GreaterThanAny(Vector.Abs(new Vector<float>(data, i + dataIndex) - baseV), maxmumVariationV))
+                        if (System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(new Vector<float>(data, i + dataIndex) - baseV), maxmumVariationV))
                         {
                             return true;
                         }
@@ -1022,7 +1022,7 @@ namespace TMG.Utilities
         public static void Exp(float[] destination, int destIndex, float[] x, int xIndex, int length)
         {
             // This is still using scalar operations until we have an accurate replacement that runs faster when vectorized
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 if ((destIndex | xIndex) == 0)
                 {
@@ -1062,12 +1062,12 @@ namespace TMG.Utilities
         {
             var half = new Vector<float>(0.5f);
             var a = half * (x + y);
-            var g = Vector.SquareRoot(x * y);
+            var g = System.Numerics.Vector.SquareRoot(x * y);
             // 5 expansions seems to be sufficient for 32-bit floating point numbers
             for (int i = 0; i < 5; i++)
             {
                 var tempA = half * (a + g);
-                g = Vector.SquareRoot(a * g);
+                g = System.Numerics.Vector.SquareRoot(a * g);
                 a = tempA;
             }
             return a;
@@ -1100,7 +1100,7 @@ namespace TMG.Utilities
         /// <param name="length">The number of elements to convert.</param>
         public static void Log(float[] destination, int destIndex, float[] x, int xIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 if ((destIndex | xIndex) == 0)
                 {

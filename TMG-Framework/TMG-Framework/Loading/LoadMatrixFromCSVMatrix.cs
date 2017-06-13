@@ -25,17 +25,17 @@ using XTMF2;
 
 namespace TMG.Loading
 {
-    [Module(Name = "Load SparseMatrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
+    [Module(Name = "Load Matrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadSparseMatrixFromCSVMatrix : BaseFunction<ReadStream, SparseMatrix>
+    public sealed class LoadMatrixFromCSVMatrix : BaseFunction<ReadStream, Matrix>
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<SparseMap> SparseMap;
+        public IFunction<Map> SparseMap;
 
-        public override SparseMatrix Invoke(ReadStream stream)
+        public override Matrix Invoke(ReadStream stream)
         {
             var map = SparseMap.Invoke();
-            var ret = new SparseMatrix(map);
+            var ret = new Matrix(map);
             var flatData = ret.Data;
             var rowSize = map.Count;
             using (var reader = new CsvReader(stream, true))

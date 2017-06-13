@@ -24,12 +24,12 @@ using XTMF2;
 
 namespace TMG.Loading
 {
-    [Module(Name = "Load SparseMatrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
+    [Module(Name = "Load Matrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadSparseMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, SparseMatrix>
+    public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, Matrix>
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<SparseMap> SparseMap;
+        public IFunction<Map> Map;
 
         [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 1, Description = "The 0 indexed column containing the sparse map index for the origin.")]
         public IFunction<int> OriginColumn;
@@ -40,11 +40,11 @@ namespace TMG.Loading
         [Parameter(DefaultValue = "2", Name = "Data Column", Index = 3, Description = "The 0 indexed column containing the data to load index.")]
         public IFunction<int> DataColumn;
 
-        public override SparseMatrix Invoke(ReadStream stream)
+        public override Matrix Invoke(ReadStream stream)
         {
-            var map = SparseMap.Invoke();
+            var map = Map.Invoke();
             var rowSize = map.Count;
-            var ret = new SparseMatrix(map);
+            var ret = new Matrix(map);
             var data = ret.Data;
             var originColumn = OriginColumn.Invoke();
             var destinationColumn = DestinationColumn.Invoke();

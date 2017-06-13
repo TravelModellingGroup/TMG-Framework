@@ -27,7 +27,7 @@ namespace TMG.Utilities
     {
         public static void Add(float[] dest, float[] source, float scalar)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> constant = new Vector<float>(scalar);
                 // copy everything we can do inside of a vector
@@ -54,7 +54,7 @@ namespace TMG.Utilities
 
         public static void Add(float[] dest, int destIndex, float[] source, int sourceIndex, float scalar, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> constant = new Vector<float>(scalar);
                 // copy everything we can do inside of a vector
@@ -82,7 +82,7 @@ namespace TMG.Utilities
 
         public static void Add(float[] dest, float[] lhs, float[] rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 // copy everything we can do inside of a vector
                 int i = 0;
@@ -110,7 +110,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Add(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, float[] third, int thirdIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 if ((destIndex | firstIndex | secondIndex | thirdIndex) == 0)
                 {
@@ -164,7 +164,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Add(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 if ((destIndex | firstIndex | secondIndex) == 0)
                 {
@@ -205,7 +205,7 @@ namespace TMG.Utilities
 
         public static void Add(float[][] destination, float lhs, float[][] rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Parallel.For(0, destination.Length, row =>
                 {
@@ -241,7 +241,7 @@ namespace TMG.Utilities
 
         public static void Add(float[][] destination, float[][] lhs, float rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Parallel.For(0, destination.Length, row =>
                 {
@@ -277,7 +277,7 @@ namespace TMG.Utilities
 
         public static void Add(float[][] destination, float[][] lhs, float[][] rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Parallel.For(0, destination.Length, row =>
                 {

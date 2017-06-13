@@ -41,14 +41,14 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 if (rhs.IsVectorResult)
                 {
-                    var retVector = rhs.Accumulator ? rhs.VectorData : new SparseVector(rhs.VectorData);
+                    var retVector = rhs.Accumulator ? rhs.VectorData : new Vector(rhs.VectorData);
                     var flat = retVector.Data;
                     VectorHelper.Pow(flat, lhs.VectorData.Data, rhs.LiteralValue);
                     return new ComputationResult(retVector, true);
                 }
                 else
                 {
-                    var retMatrix = rhs.Accumulator ? rhs.OdData : new SparseMatrix(rhs.OdData);
+                    var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData);
                     VectorHelper.Pow(retMatrix.Data, lhs.LiteralValue, rhs.OdData.Data);
                     return new ComputationResult(retMatrix, true);
                 }
@@ -57,7 +57,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 if (lhs.IsVectorResult)
                 {
-                    var retVector = lhs.Accumulator ? lhs.VectorData : new SparseVector(lhs.VectorData);
+                    var retVector = lhs.Accumulator ? lhs.VectorData : new Vector(lhs.VectorData);
                     var flat = retVector.Data;
                     VectorHelper.Pow(flat, lhs.VectorData.Data, rhs.LiteralValue);
                     return new ComputationResult(retVector, true);
@@ -65,7 +65,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else
                 {
                     // matrix / float
-                    var retMatrix = lhs.Accumulator ? lhs.OdData : new SparseMatrix(lhs.OdData);
+                    var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData);
                     VectorHelper.Pow(retMatrix.Data, lhs.OdData.Data, rhs.LiteralValue);
                     return new ComputationResult(retMatrix, true);
                 }
@@ -76,13 +76,13 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     if (lhs.IsVectorResult && rhs.IsVectorResult)
                     {
-                        var retMatrix = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new SparseVector(lhs.VectorData));
+                        var retMatrix = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new Vector(lhs.VectorData));
                         VectorHelper.Subtract(retMatrix.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, retMatrix.Data.Length);
                         return new ComputationResult(retMatrix, true, lhs.Direction);
                     }
                     else if (lhs.IsVectorResult)
                     {
-                        var retMatrix = rhs.Accumulator ? rhs.OdData : new SparseMatrix(rhs.OdData);
+                        var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData);
                         var flatRet = retMatrix.Data;
                         var flatRhs = rhs.OdData.Data;
                         var flatLhs = lhs.VectorData.Data;
@@ -109,7 +109,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     }
                     else
                     {
-                        var retMatrix = lhs.Accumulator ? lhs.OdData : new SparseMatrix(lhs.OdData);
+                        var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData);
                         var flatRet = retMatrix.Data;
                         var flatLhs = lhs.OdData.Data;
                         var flatRhs = rhs.VectorData.Data;
@@ -137,7 +137,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 }
                 else
                 {
-                    var retMatrix = lhs.Accumulator ? lhs.OdData : (rhs.Accumulator ? rhs.OdData : new SparseMatrix(lhs.OdData));
+                    var retMatrix = lhs.Accumulator ? lhs.OdData : (rhs.Accumulator ? rhs.OdData : new Matrix(lhs.OdData));
                     VectorHelper.Pow(retMatrix.Data, lhs.OdData.Data, rhs.OdData.Data);
                     return new ComputationResult(retMatrix, true);
                 }

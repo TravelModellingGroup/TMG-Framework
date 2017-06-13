@@ -84,7 +84,7 @@ namespace TMG.Utilities
         /// </summary>
         public static void FlagOr(float[] destination, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 var one = Vector<float>.One;
                 if ((destIndex | lhsIndex | rhsIndex) == 0)
@@ -94,7 +94,7 @@ namespace TMG.Utilities
                     {
                         var f = new Vector<float>(lhs, i);
                         var s = new Vector<float>(rhs, i);
-                        Vector.ConditionalSelect(Vector.Equals(f, one), one, s).CopyTo(destination, i);
+                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(f, one), one, s).CopyTo(destination, i);
                     }
                     // copy the remainder
                     for (; i < length; i++)
@@ -106,7 +106,7 @@ namespace TMG.Utilities
                 {
                     for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                     {
-                        Vector.ConditionalSelect(Vector.Equals(new Vector<float>(lhs, i + lhsIndex), one), one, new Vector<float>(rhs, i + rhsIndex))
+                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(new Vector<float>(lhs, i + lhsIndex), one), one, new Vector<float>(rhs, i + rhsIndex))
                             .CopyTo(destination, i + destIndex);
                     }
                     // copy the remainder

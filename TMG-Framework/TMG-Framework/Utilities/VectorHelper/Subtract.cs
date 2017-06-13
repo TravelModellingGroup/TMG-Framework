@@ -27,7 +27,7 @@ namespace TMG.Utilities
     {
         public static void Subtract(float[] dest, float[] lhs, float rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> rhsV = new Vector<float>(rhs);
 
@@ -55,7 +55,7 @@ namespace TMG.Utilities
 
         public static void Subtract(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> rhsV = new Vector<float>(rhs);
 
@@ -83,7 +83,7 @@ namespace TMG.Utilities
 
         public static void Subtract(float[] dest, float lhs, float[] rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> lhsV = new Vector<float>(lhs);
 
@@ -111,7 +111,7 @@ namespace TMG.Utilities
 
         public static void Subtract(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> lhsV = new Vector<float>(lhs);
 
@@ -139,7 +139,7 @@ namespace TMG.Utilities
 
         public static void Subtract(float[][] destination, float lhs, float[][] rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Parallel.For(0, destination.Length, row =>
                 {
@@ -175,7 +175,7 @@ namespace TMG.Utilities
 
         public static void Subtract(float[][] destination, float[][] lhs, float rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Parallel.For(0, destination.Length, row =>
                 {
@@ -211,7 +211,7 @@ namespace TMG.Utilities
 
         public static void Subtract(float[][] destination, float[][] lhs, float[][] rhs)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Parallel.For(0, destination.Length, row =>
                 {
@@ -259,7 +259,7 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Subtract(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 if ((destIndex | firstIndex | secondIndex) == 0)
                 {

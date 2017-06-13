@@ -37,7 +37,7 @@ namespace TMG.Utilities
             }
             else
             {
-                if (Vector.IsHardwareAccelerated)
+                if (System.Numerics.Vector.IsHardwareAccelerated)
                 {
                     int i;
                     if (dest.Length != data.Length)
@@ -49,7 +49,7 @@ namespace TMG.Utilities
                     for (i = 0; i < data.Length - Vector<float>.Count; i += Vector<float>.Count)
                     {
                         var vData = new Vector<float>(data, i);
-                        Vector.ConditionalSelect(Vector.Equals(vData, zero), zero, vValue).CopyTo(dest, i);
+                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(vData, zero), zero, vValue).CopyTo(dest, i);
                     }
                     for (; i < data.Length; i++)
                     {
@@ -78,7 +78,7 @@ namespace TMG.Utilities
             }
             else
             {
-                if (Vector.IsHardwareAccelerated)
+                if (System.Numerics.Vector.IsHardwareAccelerated)
                 {
                     int i;
                     Vector<float> zero = Vector<float>.Zero;
@@ -86,7 +86,7 @@ namespace TMG.Utilities
                     for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
                     {
                         var vData = new Vector<float>(data, dataIndex + i);
-                        Vector.ConditionalSelect(Vector.Equals(vData, zero), zero, vValue).CopyTo(dest, destIndex + i);
+                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(vData, zero), zero, vValue).CopyTo(dest, destIndex + i);
                     }
                     for (; i < length; i++)
                     {
@@ -108,7 +108,7 @@ namespace TMG.Utilities
         /// </summary>
         public static void FlagAnd(float[] destination, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> zero = Vector<float>.Zero;
                 if ((destIndex | lhsIndex | rhsIndex) == 0)
@@ -118,7 +118,7 @@ namespace TMG.Utilities
                     {
                         var f = new Vector<float>(lhs, i);
                         var s = new Vector<float>(rhs, i);
-                        Vector.ConditionalSelect(Vector.Equals(f, zero), zero, s).CopyTo(destination, i);
+                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(f, zero), zero, s).CopyTo(destination, i);
                     }
                     // copy the remainder
                     for (; i < length; i++)
@@ -130,7 +130,7 @@ namespace TMG.Utilities
                 {
                     for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                     {
-                        Vector.ConditionalSelect(Vector.Equals(new Vector<float>(lhs, i + lhsIndex), zero), zero, new Vector<float>(rhs, i + rhsIndex))
+                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(new Vector<float>(lhs, i + lhsIndex), zero), zero, new Vector<float>(rhs, i + rhsIndex))
                             .CopyTo(destination, i + destIndex);
                     }
                     // copy the remainder

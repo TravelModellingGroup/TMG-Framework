@@ -24,9 +24,9 @@ using TMG.Frameworks.Data.Processing.AST;
 
 namespace TMG.Processing
 {
-    [Module(Name = "Compute Sparse Vector", Description = "Computes a sparse vector given the expression.",
+    [Module(Name = "Evaluate Vector", Description = "Evaluate a vector given the expression.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public class ComputeSparseVector : BaseFunction<SparseVector>
+    public class EvaluateVector : BaseFunction<Vector>
     {
         [Parameter(Name = "Expression", Index = 0, Description = "The expression to compute using the following variables.")]
         public IFunction<string> Expression;
@@ -34,7 +34,7 @@ namespace TMG.Processing
         [SubModule(Name = "Variables", Description = "The variables to use in our expression", Index = 1)]
         public IModule[] Variables;
 
-        public override SparseVector Invoke()
+        public override Vector Invoke()
         {
             string error = null;
             // compile and optimize the expression
@@ -63,8 +63,8 @@ namespace TMG.Processing
         {
             foreach (var module in Variables)
             {
-                if (!(module is IFunction<SparseMatrix> || module is IFunction<SparseVector> || module is IFunction<float>
-                    || module is IFunction<SparseMap>))
+                if (!(module is IFunction<Matrix> || module is IFunction<Vector> || module is IFunction<float>
+                    || module is IFunction<Map>))
                 {
                     error = $"Invalid variable module type {module.GetType().Name} from module {module.Name}!";
                     return false;

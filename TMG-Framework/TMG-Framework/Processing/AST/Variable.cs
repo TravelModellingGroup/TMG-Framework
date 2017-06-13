@@ -37,11 +37,11 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 return new ComputationResult("Unable to find a data source named '" + Name + "'!");
             }
-            if (source is IFunction<SparseMatrix> odSource)
+            if (source is IFunction<Matrix> odSource)
             {
                 return new ComputationResult(odSource.Invoke(), false);
             }
-            if (source is IFunction<SparseVector> vectorSource)
+            if (source is IFunction<Vector> vectorSource)
             {
                 return new ComputationResult(vectorSource.Invoke(), false);
             }
@@ -49,9 +49,9 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 return new ComputationResult(valueSource.Invoke());
             }
-            if(source is IFunction<SparseMap> map)
+            if(source is IFunction<Map> map)
             {
-                return new ComputationResult(new SparseVector(map.Invoke()), true, ComputationResult.VectorDirection.Unassigned);
+                return new ComputationResult(new Vector(map.Invoke()), true, ComputationResult.VectorDirection.Unassigned);
             }
             return new ComputationResult("The data source '" + Name + "' was not of a valid resource type!");
         }

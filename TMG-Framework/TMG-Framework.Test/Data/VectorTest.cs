@@ -24,13 +24,13 @@ using System.Collections.Generic;
 namespace TMG.Test.Data
 {
     [TestClass]
-    public class SparseVectorTest
+    public class VectorTest
     {
         [TestMethod]
         public void CreateVector()
         {
             var map = CreateMap();
-            var vector = new SparseVector(map);
+            var vector = new Vector(map);
             var flatData = vector.Data;
             for (int i = 0; i < flatData.Length; i++)
             {
@@ -44,9 +44,9 @@ namespace TMG.Test.Data
             Assert.AreEqual(0, vector[12]);
         }
 
-        private static SparseMap CreateMap()
+        private static Map CreateMap()
         {
-            return new SparseMap(new List<int>() { 2, 6, 4, 8, 10 });
+            return new Map(new List<int>() { 2, 6, 4, 8, 10 });
         }
     }
 }

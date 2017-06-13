@@ -25,18 +25,18 @@ using System.Collections.Generic;
 namespace TMG.Test.Data
 {
     [TestClass]
-    public class SparseMatrixTest
+    public class MatrixTest
     {
         [TestMethod]
         public void CreateMatrix()
         {
-            var matrix = new SparseMatrix(CreateMap());
+            var matrix = new Matrix(CreateMap());
         }
 
         [TestMethod]
         public void GetSparseRowIndex()
         {
-            var matrix = new SparseMatrix(CreateMap());
+            var matrix = new Matrix(CreateMap());
             var size = matrix.Map.Count;
             Assert.AreEqual(0, matrix.GetSparseRowIndex(2));
             Assert.AreEqual(size * (3 - 1), matrix.GetSparseRowIndex(6));
@@ -48,7 +48,7 @@ namespace TMG.Test.Data
         [TestMethod]
         public void GetFlatRowIndex()
         {
-            var matrix = new SparseMatrix(CreateMap());
+            var matrix = new Matrix(CreateMap());
             var size = matrix.Map.Count;
             Assert.AreEqual(0, matrix.GetFlatRowIndex(0));
             Assert.AreEqual(size * 1, matrix.GetFlatRowIndex(1));
@@ -57,9 +57,9 @@ namespace TMG.Test.Data
             Assert.AreEqual(-1, matrix.GetSparseRowIndex(7));
         }
 
-        private static SparseMap CreateMap()
+        private static Map CreateMap()
         {
-            return new SparseMap(new List<int>() { 2, 6, 4, 8, 10 });
+            return new Map(new List<int>() { 2, 6, 4, 8, 10 });
         }
     }
 }

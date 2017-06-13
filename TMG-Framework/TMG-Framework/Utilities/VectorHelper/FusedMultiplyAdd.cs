@@ -29,7 +29,7 @@ namespace TMG.Utilities
         /// </summary>
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float add, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 int i;
                 var vAdd = new Vector<float>(add);
@@ -58,7 +58,7 @@ namespace TMG.Utilities
         /// </summary>
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float add, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 int i;
                 var vAdd = new Vector<float>(add);
@@ -87,7 +87,7 @@ namespace TMG.Utilities
         /// </summary>
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float[] add, int addIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 int i;
                 var r = new Vector<float>(rhs);
@@ -116,7 +116,7 @@ namespace TMG.Utilities
         /// </summary>
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float[] add, int addIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 int i;
                 for (i = 0; i < dest.Length - Vector<float>.Count; i++)

@@ -22,28 +22,28 @@ using System.Text;
 
 namespace TMG
 {
-    public sealed class SparseMatrix
+    public sealed class Matrix
     {
-        public SparseMap Map { get; private set; }
+        public Map Map { get; private set; }
         public float[] Data { get; private set; }
 
         private int RowLength;
 
-        public SparseMatrix(SparseMap map)
+        public Matrix(Map map)
         {
             Map = map;
             RowLength = Map.Count;
             Data = new float[Map.Count * Map.Count];
         }
 
-        public SparseMatrix(SparseVector vector)
+        public Matrix(Vector vector)
         {
             Map = vector.Map;
             RowLength = Map.Count;
             Data = new float[Map.Count * Map.Count];
         }
 
-        public SparseMatrix(SparseMatrix matrix)
+        public Matrix(Matrix matrix)
         {
             Map = matrix.Map;
             RowLength = matrix.RowLength;

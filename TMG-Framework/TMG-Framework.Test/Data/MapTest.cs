@@ -28,10 +28,10 @@ namespace TMG.Test.Data
     public class SparseMapTest
     {
         [TestMethod]
-        public void CreateSparseMap()
+        public void CreateMap()
         {
             var set = new List<int>() { 2, 6, 4, 8, 10 };
-            SparseMap map = new SparseMap(set);
+            Map map = new Map(set);
             Assert.AreEqual(set.Count, map.Count);
             Assert.AreEqual(4, map.GetSparseIndex(1));
             Assert.AreEqual(6, map.GetSparseIndex(2));

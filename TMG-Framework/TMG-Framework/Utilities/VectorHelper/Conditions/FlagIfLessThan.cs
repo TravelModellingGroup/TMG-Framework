@@ -29,7 +29,7 @@ namespace TMG.Utilities
         /// </summary>
         public static void FlagIfLessThan(float[] dest, float value, float[] data)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 int i;
                 if (dest.Length != data.Length)
@@ -42,7 +42,7 @@ namespace TMG.Utilities
                 for (i = 0; i < data.Length - Vector<float>.Count; i += Vector<float>.Count)
                 {
                     var vData = new Vector<float>(data, i);
-                    Vector.ConditionalSelect(Vector.LessThan(vData, vValue), one, zero).CopyTo(dest, i);
+                    System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.LessThan(vData, vValue), one, zero).CopyTo(dest, i);
                 }
                 for (; i < data.Length; i++)
                 {
@@ -63,7 +63,7 @@ namespace TMG.Utilities
         /// </summary>
         public static void FlagIfLessThan(float[] destination, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
-            if (Vector.IsHardwareAccelerated)
+            if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 Vector<float> zero = Vector<float>.Zero;
                 Vector<float> one = Vector<float>.One;
@@ -74,7 +74,7 @@ namespace TMG.Utilities
                     {
                         var f = new Vector<float>(lhs, i);
                         var s = new Vector<float>(rhs, i);
-                        Vector.ConditionalSelect(Vector.LessThan(f, s), one, zero).CopyTo(destination, i);
+                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.LessThan(f, s), one, zero).CopyTo(destination, i);
                     }
                     // copy the remainder
                     for (; i < length; i++)
@@ -86,7 +86,7 @@ namespace TMG.Utilities
                 {
                     for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                     {
-                        Vector.ConditionalSelect(Vector.LessThanOrEqual(new Vector<float>(lhs, i + lhsIndex), new Vector<float>(rhs, i + rhsIndex)), one, zero)
+                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.LessThanOrEqual(new Vector<float>(lhs, i + lhsIndex), new Vector<float>(rhs, i + rhsIndex)), one, zero)
                             .CopyTo(destination, i + destIndex);
                     }
                     // copy the remainder

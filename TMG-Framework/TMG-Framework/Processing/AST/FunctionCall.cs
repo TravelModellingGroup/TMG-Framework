@@ -364,14 +364,14 @@ namespace TMG.Frameworks.Data.Processing.AST
             }
             else if (values[0].IsVectorResult)
             {
-                var saveTo = values[0].Accumulator ? values[0].VectorData : new SparseVector(values[0].VectorData);
+                var saveTo = values[0].Accumulator ? values[0].VectorData : new Vector(values[0].VectorData);
                 var flat = saveTo.Data;
                 VectorHelper.Log(flat, 0, flat, 0, flat.Length);
                 return new ComputationResult(saveTo, true);
             }
             else
             {
-                var saveTo = values[0].Accumulator ? values[0].OdData : new SparseMatrix(values[0].OdData);
+                var saveTo = values[0].Accumulator ? values[0].OdData : new Matrix(values[0].OdData);
                 var flat = saveTo.Data;
                 VectorHelper.Log(flat, 0, flat, 0, flat.Length);
                 return new ComputationResult(saveTo, true);
@@ -380,16 +380,16 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         private ComputationResult IdentityMatrix(ComputationResult computationResult)
         {
-            SparseMatrix ret;
+            Matrix ret;
             if (computationResult.IsVectorResult)
             {
                 var vector = computationResult.VectorData;
-                ret = new SparseMatrix(vector);
+                ret = new Matrix(vector);
             }
             else
             {
                 var matrix = computationResult.OdData;
-                ret = new SparseMatrix(matrix);
+                ret = new Matrix(matrix);
             }
             var step = ret.Map.Count + 1;
             var flatRet = ret.Data;
@@ -403,7 +403,7 @@ namespace TMG.Frameworks.Data.Processing.AST
         private ComputationResult Matrix(ComputationResult computationResult)
         {
             var vectorData = computationResult.VectorData;
-            var newMatrix = new SparseMatrix(vectorData);
+            var newMatrix = new Matrix(vectorData);
             var rowSize = newMatrix.Map.Count;
             var flatVector = vectorData.Data;
             var flatMatrix = newMatrix.Data;
@@ -433,11 +433,11 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             if (values[0].VectorData != null)
             {
-                return new ComputationResult(new SparseMatrix(values[0].VectorData), true);
+                return new ComputationResult(new Matrix(values[0].VectorData), true);
             }
             else
             {
-                return new ComputationResult(new SparseMatrix(values[0].OdData), true);
+                return new ComputationResult(new Matrix(values[0].OdData), true);
             }
         }
 
@@ -463,14 +463,14 @@ namespace TMG.Frameworks.Data.Processing.AST
             }
             else if (computationResult.IsVectorResult)
             {
-                var retVector = computationResult.Accumulator ? computationResult.VectorData : new SparseVector(computationResult.VectorData);
+                var retVector = computationResult.Accumulator ? computationResult.VectorData : new Vector(computationResult.VectorData);
                 var flat = retVector.Data;
                 VectorHelper.Abs(flat, computationResult.VectorData.Data);
                 return new ComputationResult(retVector, true);
             }
             else
             {
-                var retMatrix = computationResult.Accumulator ? computationResult.OdData : new SparseMatrix(computationResult.OdData);
+                var retMatrix = computationResult.Accumulator ? computationResult.OdData : new Matrix(computationResult.OdData);
                 var flat = retMatrix.Data;
                 VectorHelper.Abs(flat, computationResult.OdData.Data);
                 return new ComputationResult(retMatrix, true);
@@ -494,7 +494,7 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         private ComputationResult TransposeOd(ComputationResult computationResult)
         {
-            var ret = computationResult.Accumulator ? computationResult.OdData : new SparseMatrix(computationResult.OdData);
+            var ret = computationResult.Accumulator ? computationResult.OdData : new Matrix(computationResult.OdData);
             var flatRet = ret.Data;
             var flatOrigin = computationResult.OdData.Data;
             var rowLength = ret.Map.Count;
@@ -520,7 +520,7 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         private ComputationResult SumColumns(ComputationResult computationResult)
         {
-            var ret = new SparseVector(computationResult.OdData.Map);
+            var ret = new Vector(computationResult.OdData.Map);
             var flatRet = ret.Data;
             var flatData = computationResult.OdData.Data;
             var rowSize = ret.Map.Count;
@@ -533,7 +533,7 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         private ComputationResult SumRows(ComputationResult computationResult)
         {
-            var ret = new SparseVector(computationResult.OdData.Map);
+            var ret = new Vector(computationResult.OdData.Map);
             var flatRet = ret.Data;
             var flatData = computationResult.OdData.Data;
             var rowSize = ret.Map.Count;
@@ -547,7 +547,7 @@ namespace TMG.Frameworks.Data.Processing.AST
         private ComputationResult AvgColumns(ComputationResult computationResult)
         {
             var data = computationResult.OdData;
-            var ret = new SparseVector(data.Map);
+            var ret = new Vector(data.Map);
             var flatRet = ret.Data;
             var flatData = data.Data;
             var rowSize = ret.Map.Count;
@@ -562,7 +562,7 @@ namespace TMG.Frameworks.Data.Processing.AST
         private ComputationResult AvgRows(ComputationResult computationResult)
         {
             var data = computationResult.OdData;
-            var ret = new SparseVector(data.Map);
+            var ret = new Vector(data.Map);
             var flatRet = ret.Data;
             var flatData = data.Data;
             var rowSize = ret.Map.Count;
@@ -592,7 +592,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             if (computationResult.IsOdResult)
             {
                 var data = computationResult.OdData;
-                var ret = new SparseVector(data.Map);
+                var ret = new Vector(data.Map);
                 var flatRet = ret.Data;
                 var flatData = data.Data;
                 VectorHelper.Set(flatData, flatRet.Length);
@@ -606,7 +606,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             if (computationResult.IsOdResult)
             {
                 var data = computationResult.OdData;
-                var ret = new SparseVector(data.Map);
+                var ret = new Vector(data.Map);
                 var flatRet = ret.Data;
                 var flatData = data.Data;
                 VectorHelper.Set(flatData, flatRet.Length);

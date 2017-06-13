@@ -27,19 +27,19 @@ namespace TMG.Loading
 {
     [Module(Name = "Load SparseMatrix From MTX", Description = "Loads a matrix of data in the shape of the SparseMap from an EMME matrix file.",
     DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadSparseMatrixFromMTX : BaseFunction<ReadStream, SparseMatrix>
+    public sealed class LoadSparseMatrixFromMTX : BaseFunction<ReadStream, Matrix>
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<SparseMap> SparseMap;
+        public IFunction<Map> SparseMap;
 
         private const uint MagicNumber = 0xC4D4F1B2;
 
         private const int FloatType = 0x1;
 
-        public override SparseMatrix Invoke(ReadStream context)
+        public override Matrix Invoke(ReadStream context)
         {
             var map = SparseMap.Invoke();
-            var matrix = new SparseMatrix(map);
+            var matrix = new Matrix(map);
             using (var reader = new BinaryReader(context))
             {
                 var magic = reader.ReadUInt32();
@@ -92,7 +92,7 @@ namespace TMG.Loading
             return matrix;
         }
 
-        private void ValidateIndexes(BinaryReader reader, SparseMap map)
+        private void ValidateIndexes(BinaryReader reader, Map map)
         {
             var length = map.Count;
             for (int i = 0; i < length; i++)

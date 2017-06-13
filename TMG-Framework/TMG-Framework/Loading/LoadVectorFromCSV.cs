@@ -24,12 +24,12 @@ using XTMF2;
 
 namespace TMG.Loading
 {
-    [Module(Name = "Load SparseVector From CSV", Description = "Loads a map where each row has a different sparse index.",
+    [Module(Name = "Load Vector From CSV", Description = "Loads a map where each row has a different sparse index.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadSparseVectorFromCSV : BaseFunction<ReadStream, SparseVector>
+    public sealed class LoadVectorFromCSV : BaseFunction<ReadStream, Vector>
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<SparseMap> SparseMap;
+        public IFunction<Map> SparseMap;
 
         [Parameter(DefaultValue = "0", Name = "Map Column", Index = 1, Description = "The 0 indexed column containing the sparse map index.")]
         public IFunction<int> MapColumn;
@@ -37,10 +37,10 @@ namespace TMG.Loading
         [Parameter(DefaultValue = "1", Name = "Data Column", Index = 2, Description = "The 0 indexed column containing the data to load index.")]
         public IFunction<int> DataColumn;
 
-        public override SparseVector Invoke(ReadStream stream)
+        public override Vector Invoke(ReadStream stream)
         {
             var map = SparseMap.Invoke();
-            var ret = new SparseVector(map);
+            var ret = new Vector(map);
             var data = ret.Data;
             var mapColumn = MapColumn.Invoke();
             var dataColumn = DataColumn.Invoke();

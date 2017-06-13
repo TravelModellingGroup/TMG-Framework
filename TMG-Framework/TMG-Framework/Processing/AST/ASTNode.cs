@@ -60,9 +60,9 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public VectorDirection Direction { get; private set; }
 
-        public SparseMatrix OdData { get; }
+        public Matrix OdData { get; }
 
-        public SparseVector VectorData { get; }
+        public Vector VectorData { get; }
 
         public float LiteralValue { get; }
         
@@ -73,13 +73,13 @@ namespace TMG.Frameworks.Data.Processing.AST
             LiteralValue = value;
         }
 
-        public ComputationResult(SparseMatrix data, bool accumulator)
+        public ComputationResult(Matrix data, bool accumulator)
         {
             OdData = data;
             Accumulator = accumulator;
         }
 
-        public ComputationResult(SparseVector data, bool accumulator, VectorDirection direction = VectorDirection.Unassigned)
+        public ComputationResult(Vector data, bool accumulator, VectorDirection direction = VectorDirection.Unassigned)
         {
             VectorData = data;
             Accumulator = accumulator;

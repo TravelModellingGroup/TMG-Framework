@@ -20,18 +20,18 @@ using System;
 
 namespace TMG
 {
-    public sealed class SparseVector
+    public sealed class Vector
     {
-        public SparseMap Map { get; private set; }
+        public Map Map { get; private set; }
         public float[] Data { get; private set; }
 
-        public SparseVector(SparseMap map)
+        public Vector(Map map)
         {
             Map = map;
             Data = new float[Map.Count];
         }
 
-        public SparseVector(SparseVector vector)
+        public Vector(Vector vector)
         {
             Map = vector.Map;
             Data = new float[Map.Count];

@@ -25,15 +25,15 @@ using TMG.Utilities;
 
 namespace TMG.Saving
 {
-    [Module(Name = "Save SparseMatrix To MTX", Description = "Saves a sparse matrix to the given write stream.",
+    [Module(Name = "Save Matrix To MTX", Description = "Saves a matrix to the given write stream.",
     DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public class SaveSparseMatrixAsMTX : BaseAction<(SparseMatrix Matrix, WriteStream Stream)>
+    public class SaveMatrixAsMTX : BaseAction<(Matrix Matrix, WriteStream Stream)>
     {
         private const uint MagicNumber = 0xC4D4F1B2;
 
         private const int FloatType = 0x1;
 
-        public override void Invoke((SparseMatrix Matrix, WriteStream Stream) context)
+        public override void Invoke((Matrix Matrix, WriteStream Stream) context)
         {
             using (var writer = new BinaryWriter(context.Stream))
             {

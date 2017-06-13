@@ -24,11 +24,11 @@ using XTMF2;
 
 namespace TMG.Saving
 {
-    [Module(Name = "Save SparseVector To CSV", Description = "Saves a sparse vector to the given write stream.",
+    [Module(Name = "Save Vector To CSV", Description = "Saves a vector to the given write stream.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class SaveSparseVectorAsCSV : BaseAction<(SparseVector Data, WriteStream Stream)>
+    public sealed class SaveVectorAsCSV : BaseAction<(Vector Data, WriteStream Stream)>
     {
-        public override void Invoke((SparseVector Data, WriteStream Stream) context)
+        public override void Invoke((Vector Data, WriteStream Stream) context)
         {
             using (var writer = new StreamWriter(context.Stream))
             {

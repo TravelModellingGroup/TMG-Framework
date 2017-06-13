@@ -38,10 +38,10 @@ namespace XTMF.Testing.TMG.Data
         /// <param name="m21"></param>
         /// <param name="m22"></param>
         /// <returns></returns>
-        private IFunction<SparseMatrix> CreateData(string name, float m11, float m12, float m21, float m22)
+        private IFunction<Matrix> CreateData(string name, float m11, float m12, float m21, float m22)
         {
-            SparseMap map = new SparseMap(new List<int>() { 1, 2 });
-            var matrix = new SparseMatrix(map);
+            Map map = new Map(new List<int>() { 1, 2 });
+            var matrix = new Matrix(map);
             matrix.Data[0] = m11;
             matrix.Data[1] = m12;
             matrix.Data[2] = m21;
@@ -56,10 +56,10 @@ namespace XTMF.Testing.TMG.Data
         /// <param name="m1"></param>
         /// <param name="m2"></param>
         /// <returns></returns>
-        private IFunction<SparseVector> CreateData(string name, float m1, float m2)
+        private IFunction<Vector> CreateData(string name, float m1, float m2)
         {
-            SparseMap map = new SparseMap(new List<int>() { 1, 2 });
-            var vector = new SparseVector(map);
+            Map map = new Map(new List<int>() { 1, 2 });
+            var vector = new Vector(map);
             vector.Data[0] = m1;
             vector.Data[1] = m2;
             return new VectorSource(vector) { Name = name };
@@ -1044,32 +1044,32 @@ namespace XTMF.Testing.TMG.Data
             return ex;
         }
 
-        class VectorSource : BaseFunction<SparseVector>
+        class VectorSource : BaseFunction<Vector>
         {
-            readonly SparseVector Data;
+            readonly Vector Data;
 
-            public VectorSource(SparseVector vector)
+            public VectorSource(Vector vector)
             {
                 Data = vector;
             }
 
-            public override SparseVector Invoke()
+            public override Vector Invoke()
             {
                 return Data;
             }
         }
 
-        class MatrixSource : BaseFunction<SparseMatrix>
+        class MatrixSource : BaseFunction<Matrix>
         {
 
-            readonly SparseMatrix Data;
+            readonly Matrix Data;
 
-            public MatrixSource(SparseMatrix matrix)
+            public MatrixSource(Matrix matrix)
             {
                 Data = matrix;
             }
 
-            public override SparseMatrix Invoke()
+            public override Matrix Invoke()
             {
                 return Data;
             }

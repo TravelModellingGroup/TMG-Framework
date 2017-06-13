@@ -23,7 +23,7 @@ using System.Linq;
 
 namespace TMG
 {
-    public sealed class SparseMap
+    public sealed class Map
     {
         public int Count => Elements.Count;
 
@@ -36,7 +36,7 @@ namespace TMG
         /// Create a SparseMap from a list of elements
         /// </summary>
         /// <param name="elements">The sorted elements to use</param>
-        public SparseMap(List<int> elements)
+        public Map(List<int> elements)
         {
             Elements = elements?.ToList() ?? throw new ArgumentNullException(nameof(elements));
             Elements.Sort();
