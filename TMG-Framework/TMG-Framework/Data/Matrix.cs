@@ -52,7 +52,7 @@ namespace TMG
 
         public (int Row, int Column) GetSparseIndex(int flatIndex)
         {
-            return (flatIndex / RowLength, flatIndex % RowLength);
+            return (Map.GetSparseIndex(flatIndex / RowLength), Map.GetSparseIndex(flatIndex % RowLength));
         }
 
         /// <summary>
