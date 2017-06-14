@@ -20,6 +20,7 @@
 using XTMF2;
 using TMG.Utilities;
 using System;
+using System.Threading.Tasks;
 
 namespace TMG.Frameworks.Data.Processing.AST
 {
@@ -37,9 +38,13 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
-            var mulLhs = MulLhs.Evaluate(dataSources);
-            var mulRhs = MulRhs.Evaluate(dataSources);
-            var add = Add.Evaluate(dataSources);
+            ComputationResult mulLhs = null; 
+            ComputationResult mulRhs = null;  
+            ComputationResult add = null;
+            Parallel.Invoke(
+                () => mulLhs = MulLhs.Evaluate(dataSources),
+                () => mulRhs = MulRhs.Evaluate(dataSources),
+                () => add = Add.Evaluate(dataSources));
             if (mulLhs.Error)
             {
                 return mulLhs;

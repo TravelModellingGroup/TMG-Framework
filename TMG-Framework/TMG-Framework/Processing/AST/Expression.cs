@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using XTMF2;
 
 namespace TMG.Frameworks.Data.Processing.AST
@@ -521,8 +522,11 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
-            var lhs = Lhs.Evaluate(dataSources);
-            var rhs = Rhs.Evaluate(dataSources);
+            ComputationResult lhs = null; 
+            ComputationResult rhs = null;
+            Parallel.Invoke(
+                () => lhs = Lhs.Evaluate(dataSources),
+                () => rhs = Rhs.Evaluate(dataSources));
             if (lhs.Error)
             {
                 return lhs;
