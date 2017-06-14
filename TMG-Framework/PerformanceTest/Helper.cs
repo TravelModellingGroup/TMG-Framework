@@ -22,7 +22,7 @@ using System.Text;
 using XTMF2;
 using XTMF2.RuntimeModules;
 
-namespace TMG.Test.Utilities
+namespace PerformanceTest
 {
     internal static class Helper
     {

@@ -940,6 +940,9 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsInstanceOfType(ex, typeof(FusedMultiplyAdd));
             Assert.IsTrue(Compiler.Compile("A * B + 4.0 * A + B * 1.2", out ex, ref error), $"Unable to compile 'A * B + A'\r\n{error}");
             Assert.IsInstanceOfType(ex, typeof(FusedMultiplyAdd));
+            Assert.IsTrue(Compiler.Compile("A * B + (C * 2 + 3)", out ex, ref error), $"Unable to compile 'A * B + (C * 2 + 3)'\r\n{error}");
+            Assert.IsInstanceOfType(ex, typeof(FusedMultiplyAdd));
+            Assert.IsInstanceOfType(((FusedMultiplyAdd)ex).Add, typeof(FusedMultiplyAdd));
         }
 
         [TestMethod]

@@ -33,7 +33,7 @@ namespace TMG.Utilities
             {
                 int i;
                 var vAdd = new Vector<float>(add);
-                for (i = 0; i < length - Vector<float>.Count; i++)
+                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
                 {
                     var l = new Vector<float>(lhs, lhsIndex + i);
                     var r = new Vector<float>(rhs, rhsIndex + i);
@@ -63,7 +63,7 @@ namespace TMG.Utilities
                 int i;
                 var vAdd = new Vector<float>(add);
                 var r = new Vector<float>(rhs);
-                for (i = 0; i < length - Vector<float>.Count; i++)
+                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
                 {
                     var l = new Vector<float>(lhs, lhsIndex + i);
                     (l * r + vAdd).CopyTo(dest, destIndex + i);
@@ -91,7 +91,7 @@ namespace TMG.Utilities
             {
                 int i;
                 var r = new Vector<float>(rhs);
-                for (i = 0; i < length - Vector<float>.Count; i++)
+                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
                 {
                     var l = new Vector<float>(lhs, lhsIndex + i);
                     var vAdd = new Vector<float>(add, addIndex + i);
@@ -119,14 +119,14 @@ namespace TMG.Utilities
             if (System.Numerics.Vector.IsHardwareAccelerated)
             {
                 int i;
-                for (i = 0; i < dest.Length - Vector<float>.Count; i++)
+                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
                 {
                     var l = new Vector<float>(lhs, lhsIndex + i);
                     var r = new Vector<float>(rhs, rhsIndex + i);
                     var vAdd = new Vector<float>(add, addIndex + i);
                     (l * r + vAdd).CopyTo(dest, destIndex + i);
                 }
-                for (; i < dest.Length; i++)
+                for (; i < length; i++)
                 {
                     dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add[addIndex + i];
                 }

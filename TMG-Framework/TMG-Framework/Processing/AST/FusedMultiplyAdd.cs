@@ -38,8 +38,8 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
-            ComputationResult mulLhs = null; 
-            ComputationResult mulRhs = null;  
+            ComputationResult mulLhs = null;
+            ComputationResult mulRhs = null;
             ComputationResult add = null;
             Parallel.Invoke(
                 () => mulLhs = MulLhs.Evaluate(dataSources),
@@ -136,17 +136,17 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var rowSize = flatLhs.Length;
                         if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            for (int i = 0; i < rowSize; i++)
+                            Parallel.For(0, rowSize, (int i) =>
                             {
                                 VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatRhs, i * rowSize, flatLhs[i], add.LiteralValue, rowSize);
-                            }
+                            });
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            for (int i = 0; i < rowSize; i++)
+                            Parallel.For(0, rowSize, (int i) =>
                             {
                                 VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatRhs, i * rowSize, flatLhs, 0, add.LiteralValue, rowSize);
-                            }
+                            });
                         }
                         else
                         {
@@ -163,17 +163,17 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var rowSize = flatRhs.Length;
                         if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            for (int i = 0; i < rowSize; i++)
+                            Parallel.For(0, rowSize, (int i) =>
                             {
                                 VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs[i], add.LiteralValue, rowSize);
-                            }
+                            });
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            for (int i = 0; i < rowSize; i++)
+                            Parallel.For(0, rowSize, (int i) =>
                             {
                                 VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, add.LiteralValue, rowSize);
-                            }
+                            });
                         }
                         else
                         {
@@ -234,17 +234,17 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var rowSize = add.VectorData.Data.Length;
                     if (add.Direction == ComputationResult.VectorDirection.Vertical)
                     {
-                        for(int i = 0; i < rowSize; i++)
+                        Parallel.For(0, rowSize, (int i) =>
                         {
                             VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.OdData.Data, i * rowSize, add.VectorData[i], rowSize);
-                        }
+                        });
                     }
                     else
                     {
-                        for (int i = 0; i < rowSize; i++)
+                        Parallel.For(0, rowSize, (int i) =>
                         {
                             VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.OdData.Data, i * rowSize, add.VectorData.Data, 0, rowSize);
-                        }
+                        });
                     }
                     return new ComputationResult(retMatrix, true);
                 }
@@ -256,34 +256,34 @@ namespace TMG.Frameworks.Data.Processing.AST
                     {
                         if (add.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            for (int i = 0; i < rowSize; i++)
+                            Parallel.For(0, rowSize, (int i) =>
                             {
                                 VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data[i], add.VectorData.Data[i], rowSize);
-                            }
+                            });
                         }
                         else
                         {
-                            for (int i = 0; i < rowSize; i++)
+                            Parallel.For(0, rowSize, (int i) =>
                             {
                                 VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data[i], add.VectorData.Data, 0, rowSize);
-                            }
+                            });
                         }
                     }
                     else
                     {
                         if (add.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            for (int i = 0; i < rowSize; i++)
+                            Parallel.For(0, rowSize, (int i) =>
                             {
                                 VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data, 0, add.VectorData.Data[i], rowSize);
-                            }
+                            });
                         }
                         else
                         {
-                            for (int i = 0; i < rowSize; i++)
+                            Parallel.For(0, rowSize, (int i) =>
                             {
                                 VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data, 0, add.VectorData.Data, 0, rowSize);
-                            }
+                            });
                         }
                     }
                     return new ComputationResult(retMatrix, true);
@@ -295,17 +295,17 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var rowSize = add.VectorData.Data.Length;
                     if (add.Direction == ComputationResult.VectorDirection.Vertical)
                     {
-                        for (int i = 0; i < rowSize; i++)
+                        Parallel.For(0, rowSize, (int i) =>
                         {
                             VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.LiteralValue, add.VectorData.Data[i], rowSize);
-                        }
+                        });
                     }
                     else
                     {
-                        for (int i = 0; i < rowSize; i++)
+                        Parallel.For(0, rowSize, (int i) =>
                         {
                             VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.LiteralValue, add.VectorData.Data, 0, rowSize);
-                        }
+                        });
                     }
                     return new ComputationResult(retMatrix, true);
                 }
@@ -332,7 +332,8 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = add.Accumulator ? add.VectorData :
                         (lhs.Accumulator ? lhs.VectorData : new Vector(lhs.VectorData));
-                    VectorHelper.FusedMultiplyAdd(retVector.Data, 0, lhs.VectorData.Data, 0, rhs.LiteralValue, add.VectorData.Data, 0, add.VectorData.Data.Length);
+                    VectorHelper.FusedMultiplyAdd(retVector.Data, 0, lhs.VectorData.Data, 0, rhs.LiteralValue,
+                        add.VectorData.Data, 0, add.VectorData.Data.Length);
                     return new ComputationResult(retVector, true, add.Direction == lhs.Direction && add.Direction == rhs.Direction ? add.Direction : ComputationResult.VectorDirection.Unassigned);
                 }
             }
@@ -365,7 +366,12 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var retMatrix = add.Accumulator ? add.OdData :
                         (lhs.Accumulator ? lhs.OdData :
                         (rhs.Accumulator ? rhs.OdData : new Matrix(add.OdData)));
-                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.OdData.Data, 0, add.OdData.Data, 0, retMatrix.Data.Length);
+                    var rowSize = retMatrix.Map.Count;
+                    Parallel.For(0, rowSize, (int i) =>
+                    {
+                        VectorHelper.FusedMultiplyAdd(retMatrix.Data, rowSize * i, lhs.OdData.Data, rowSize * i, rhs.OdData.Data, rowSize * i,
+                                                add.OdData.Data, rowSize * i, rowSize);
+                    });
                     return new ComputationResult(retMatrix, true);
                 }
                 else if (rhs.IsVectorResult)
@@ -379,17 +385,17 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var rowSize = retMatrix.Map.Count;
                     if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                     {
-                        for (int i = 0; i < rowSize; i++)
+                        Parallel.For(0, rowSize, (int i) =>
                         {
                             VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs[i], flatAdd, i * rowSize, rowSize);
-                        }
+                        });
                     }
                     else
                     {
-                        for (int i = 0; i < rowSize; i++)
+                        Parallel.For(0, rowSize, (int i) =>
                         {
                             VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, flatAdd, i * rowSize, rowSize);
-                        }
+                        });
                     }
                     return new ComputationResult(retMatrix, true);
                 }
@@ -398,7 +404,12 @@ namespace TMG.Frameworks.Data.Processing.AST
                     //RHS is scalar
                     var retMatrix = add.Accumulator ? add.OdData :
                         (lhs.Accumulator ? lhs.OdData : new Matrix(add.OdData));
-                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.LiteralValue, add.OdData.Data, 0, retMatrix.Data.Length);
+                    var rowSize = retMatrix.Map.Count;
+                    Parallel.For(0, rowSize, (int i) =>
+                    {
+                        VectorHelper.FusedMultiplyAdd(retMatrix.Data, rowSize * i, lhs.OdData.Data, rowSize * i, rhs.LiteralValue,
+                            add.OdData.Data, rowSize * i, rowSize);
+                    });
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -426,17 +437,17 @@ namespace TMG.Frameworks.Data.Processing.AST
                 var flatTemp = tempVector.Data;
                 if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                 {
-                    for (int i = 0; i < rowSize; i++)
+                    Parallel.For(0, rowSize, (int i) =>
                     {
                         VectorHelper.Add(flatRet, i * rowSize, flatAdd, i * rowSize, flatTemp[i], rowSize);
-                    }
+                    });
                 }
                 else
                 {
-                    for (int i = 0; i < rowSize; i++)
+                    Parallel.For(0, rowSize, (int i) =>
                     {
                         VectorHelper.Add(flatRet, i * rowSize, flatAdd, i * rowSize, flatTemp, 0, rowSize);
-                    }
+                    });
                 }
                 return new ComputationResult(retMatrix, true);
             }

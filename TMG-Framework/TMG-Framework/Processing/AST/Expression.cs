@@ -581,7 +581,6 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 return false;
             }
-            ex = InnerExpression;
             return true;
         }
     }

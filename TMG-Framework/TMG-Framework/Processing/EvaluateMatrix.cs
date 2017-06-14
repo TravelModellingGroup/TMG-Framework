@@ -34,15 +34,24 @@ namespace TMG.Processing
         [SubModule(Name = "Variables", Description = "The variables to use in our expression", Index = 1)]
         public IModule[] Variables;
 
+        private string PreviousExpressionString = null;
+        private Expression PreviousExpression = null;
+
         public override Matrix Invoke()
         {
             string error = null;
             // compile and optimize the expression
-            if(!TMG.Frameworks.Data.Processing.AST.Compiler.Compile(Expression.Invoke(), out var expression, ref error))
+            var expressionString = Expression.Invoke();
+            if (PreviousExpression == null || expressionString != PreviousExpressionString)
             {
-                throw new XTMFRuntimeException(this, error);
+                PreviousExpressionString = expressionString;
+                if (!TMG.Frameworks.Data.Processing.AST.Compiler.Compile(expressionString, out var expression, ref error))
+                {
+                    throw new XTMFRuntimeException(this, error);
+                }
+                PreviousExpression = expression;
             }
-            var result = expression.Evaluate(Variables);
+            var result = PreviousExpression.Evaluate(Variables);
             if(result.Error)
             {
                 throw new XTMFRuntimeException(this, result.ErrorMessage);

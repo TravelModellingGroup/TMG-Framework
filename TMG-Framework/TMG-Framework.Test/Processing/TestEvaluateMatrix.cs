@@ -1,30 +1,37 @@
 ﻿/*
-    Copyright 2017 University of Toronto
+    Copyright 2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
-    This file is part of TMG-Framework for XTMF2.
+    This file is part of XTMF.
 
-    TMG-Framework for XTMF2 is free software: you can redistribute it and/or modify
+    XTMF is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    TMG-Framework for XTMF2 is distributed in the hope that it will be useful,
+    XTMF is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
+    along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using TMG;
-using TMG.Processing;
 
-namespace PerformanceTest
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Collections.Generic;
+using TMG;
+using TMG.Frameworks.Data.Processing.AST;
+using TMG.Processing;
+using TMG.Test.Utilities;
+
+namespace TMG.Test.Processing
 {
-    class Program
+    [TestClass]
+    public class TestEvaluateMatrix
     {
-        static void Main(string[] args)
+        [TestMethod]
+        public void LargeMatrixMathFMA()
         {
             var map = MapHelper.LoadMap(MapHelper.WriteCSV(4000));
             var a = new Matrix(map);
@@ -41,10 +48,11 @@ namespace PerformanceTest
                 }
             };
             string error = null;
-            eval.RuntimeValidation(ref error);
+            Assert.IsTrue(eval.RuntimeValidation(ref error), error);
             for (int i = 0; i < 200; i++)
             {
                 var res = eval.Invoke();
+                Assert.IsNotNull(res);
             }
         }
     }
