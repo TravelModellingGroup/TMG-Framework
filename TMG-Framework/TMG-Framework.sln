@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.6
+VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMG-Framework", "TMG-Framework\TMG-Framework.csproj", "{2F6A03F4-EF6B-4971-B451-363B5E4639A7}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XTMFInterfaces", "..\XTMF2\XTMF2\XTMFInterfaces\XTMFInterfaces.csproj", "{30EFA248-0A5E-41D7-B17E-395E58004E92}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMG-Framework.Test", "TMG-Framework.Test\TMG-Framework.Test.csproj", "{2B3376DA-0380-478C-A043-6373D1A521F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerformanceTest", "PerformanceTest\PerformanceTest.csproj", "{D382DD96-CE9A-4D92-83F0-0A2990A66A27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{2B3376DA-0380-478C-A043-6373D1A521F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B3376DA-0380-478C-A043-6373D1A521F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B3376DA-0380-478C-A043-6373D1A521F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D382DD96-CE9A-4D92-83F0-0A2990A66A27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D382DD96-CE9A-4D92-83F0-0A2990A66A27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D382DD96-CE9A-4D92-83F0-0A2990A66A27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D382DD96-CE9A-4D92-83F0-0A2990A66A27}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
