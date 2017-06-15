@@ -24,20 +24,19 @@ using TMG;
 using TMG.Frameworks.Data.Processing.AST;
 using TMG.Processing;
 using TMG.Test.Utilities;
-
 namespace TMG.Test.Processing
 {
     [TestClass]
-    public class TestEvaluateMatrix
+    public class TestEvaluateVector
     {
         [TestMethod]
-        public void LargeMatrixMathFMA()
+        public void LargeVectorMathFMA()
         {
             var map = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
-            var a = new Matrix(map);
-            var b = new Matrix(map);
-            var c = new Matrix(map);
-            var eval = new EvaluateMatrix()
+            var a = new Vector(map);
+            var b = new Vector(map);
+            var c = new Vector(map);
+            var eval = new EvaluateVector()
             {
                 Expression = Helper.CreateParameter("A * B + (C * 2 + 3)"),
                 Variables = new[]

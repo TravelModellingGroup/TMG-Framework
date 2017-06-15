@@ -28,18 +28,18 @@ using TMG.Test.Utilities;
 namespace TMG.Test.Processing
 {
     [TestClass]
-    public class TestEvaluateMatrix
+    public class TestEvaluateScalar
     {
         [TestMethod]
-        public void LargeMatrixMathFMA()
+        public void TestLargeScalar()
         {
             var map = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
             var a = new Matrix(map);
             var b = new Matrix(map);
             var c = new Matrix(map);
-            var eval = new EvaluateMatrix()
+            var eval = new EvaluateScalar()
             {
-                Expression = Helper.CreateParameter("A * B + (C * 2 + 3)"),
+                Expression = Helper.CreateParameter("Sum(A * B + (C * 2 + 3))"),
                 Variables = new[]
                 {
                     Helper.CreateParameter(a, "A"),
@@ -50,7 +50,6 @@ namespace TMG.Test.Processing
             string error = null;
             Assert.IsTrue(eval.RuntimeValidation(ref error), error);
             var res = eval.Invoke();
-            Assert.IsNotNull(res);
         }
     }
 }
