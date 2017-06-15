@@ -22,7 +22,7 @@ using System.Text;
 using System.IO;
 using XTMF2;
 
-namespace TMG.Copy
+namespace TMG.FileOperations
 {
     [Module(Name = "Copy File", Description = "Copies a file (or directory) between two places with the option to delete after being copied.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
