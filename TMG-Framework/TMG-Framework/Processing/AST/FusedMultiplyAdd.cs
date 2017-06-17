@@ -41,10 +41,15 @@ namespace TMG.Frameworks.Data.Processing.AST
             ComputationResult mulLhs = null;
             ComputationResult mulRhs = null;
             ComputationResult add = null;
-            Parallel.Invoke(
+            /*Parallel.Invoke(
                 () => mulLhs = MulLhs.Evaluate(dataSources),
                 () => mulRhs = MulRhs.Evaluate(dataSources),
                 () => add = Add.Evaluate(dataSources));
+                */
+            mulLhs = MulLhs.Evaluate(dataSources);
+            mulRhs = MulRhs.Evaluate(dataSources);
+            add = Add.Evaluate(dataSources);
+
             if (mulLhs.Error)
             {
                 return mulLhs;

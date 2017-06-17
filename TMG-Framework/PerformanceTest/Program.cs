@@ -17,6 +17,9 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using TMG;
 using TMG.Processing;
 
@@ -24,6 +27,22 @@ namespace PerformanceTest
 {
     class Program
     {
+        static void PerfTest(string runName, Action toRun, int times)
+        {
+            Console.WriteLine($"Evaluating {runName}");
+            List<long> runtime = new List<long>();
+            Stopwatch watch = new Stopwatch();
+            for (int i = 0; i < times; i++)
+            {
+                watch.Restart();
+                toRun();
+                watch.Stop();
+                runtime.Add(watch.ElapsedTicks);
+            }
+            Console.WriteLine($"Total Time: {runtime.Sum() / (float)TimeSpan.TicksPerMillisecond} ms");
+            Console.WriteLine($"Avg Time: {runtime.Average() / (float)TimeSpan.TicksPerMillisecond} ms");
+        }
+
         static void Main(string[] args)
         {
             var map = MapHelper.LoadMap(MapHelper.WriteCSV(4000));
@@ -42,10 +61,10 @@ namespace PerformanceTest
             };
             string error = null;
             eval.RuntimeValidation(ref error);
-            for (int i = 0; i < 200; i++)
-            {
-                var res = eval.Invoke();
-            }
+            PerfTest("Matrix Computation", () =>
+           {
+               var res = eval.Invoke();
+           }, 200);
         }
     }
 }

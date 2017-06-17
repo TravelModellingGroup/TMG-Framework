@@ -33,11 +33,6 @@ namespace TMG.Utilities
         /// </summary>
         private static Vector<float> MaxFloat;
 
-        static VectorHelper()
-        {
-            MaxFloat = new Vector<float>(float.MaxValue);
-        }
-
         /// <summary>
         /// Add up the elements in the vector
         /// </summary>
@@ -62,42 +57,29 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sum(float[] array, int startIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var remainderSum = 0.0f;
+            var acc = Vector<float>.Zero;
+            var acc2 = Vector<float>.Zero;
+            var acc3 = Vector<float>.Zero;
+            int endIndex = startIndex + length;
+            // copy everything we can do inside of a vector
+            int i = startIndex;
+            for (; i <= endIndex - (Vector<float>.Count * 3); i += (Vector<float>.Count * 3))
             {
-                var remainderSum = 0.0f;
-                var acc = Vector<float>.Zero;
-                var acc2 = Vector<float>.Zero;
-                var acc3 = Vector<float>.Zero;
-                int endIndex = startIndex + length;
-                // copy everything we can do inside of a vector
-                int i = startIndex;
-                for (; i <= endIndex - (Vector<float>.Count * 3); i += (Vector<float>.Count * 3))
-                {
-                    var f = new Vector<float>(array, i);
-                    var s = new Vector<float>(array, i + Vector<float>.Count);
-                    var t = new Vector<float>(array, i + Vector<float>.Count * 2);
-                    acc += f;
-                    acc2 += s;
-                    acc3 += t;
-                }
-                // copy the remainder
-                for (; i < endIndex; i++)
-                {
-                    remainderSum += array[i];
-                }
-                acc = acc + acc2 + acc3;
-                return remainderSum + Sum(ref acc);
+                var f = new Vector<float>(array, i);
+                var s = new Vector<float>(array, i + Vector<float>.Count);
+                var t = new Vector<float>(array, i + Vector<float>.Count * 2);
+                acc += f;
+                acc2 += s;
+                acc3 += t;
             }
-            else
+            // copy the remainder
+            for (; i < endIndex; i++)
             {
-                var sum = 0.0f;
-                int end = startIndex + length;
-                for (int i = startIndex; i < end; i++)
-                {
-                    sum += array[i];
-                }
-                return sum;
+                remainderSum += array[i];
             }
+            acc = acc + acc2 + acc3;
+            return remainderSum + Sum(ref acc);
         }
 
         /// <summary>
@@ -112,52 +94,40 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float AbsDiffAverage(float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var remainderSum = 0.0f;
+            var acc = Vector<float>.Zero;
+            var acc2 = Vector<float>.Zero;
+            int i = firstIndex;
+            if ((firstIndex | secondIndex) == 0)
             {
-                var remainderSum = 0.0f;
-                var acc = Vector<float>.Zero;
-                var acc2 = Vector<float>.Zero;
-                int i = firstIndex;
-                if ((firstIndex | secondIndex) == 0)
+                int highestForVector = length - (Vector<float>.Count * 2);
+                for (; i <= highestForVector; i += Vector<float>.Count * 2)
                 {
-                    int highestForVector = length - (Vector<float>.Count * 2);
-                    for (; i <= highestForVector; i += Vector<float>.Count * 2)
-                    {
-                        var f1 = new Vector<float>(first, i);
-                        var s1 = new Vector<float>(second, i);
-                        var f2 = new Vector<float>(first, i + Vector<float>.Count);
-                        var s2 = new Vector<float>(second, i + Vector<float>.Count);
-                        acc += System.Numerics.Vector.Abs(f1 - s1);
-                        acc2 += System.Numerics.Vector.Abs(f2 - s2);
-                    }
-                    acc += acc2;
+                    var f1 = new Vector<float>(first, i);
+                    var s1 = new Vector<float>(second, i);
+                    var f2 = new Vector<float>(first, i + Vector<float>.Count);
+                    var s2 = new Vector<float>(second, i + Vector<float>.Count);
+                    acc += System.Numerics.Vector.Abs(f1 - s1);
+                    acc2 += System.Numerics.Vector.Abs(f2 - s2);
                 }
-                else
-                {
-                    int highestForVector = length - Vector<float>.Count + firstIndex;
-                    int s = secondIndex;
-                    for (; i <= highestForVector; i += Vector<float>.Count)
-                    {
-                        acc += System.Numerics.Vector.Abs(new Vector<float>(first, i) - new Vector<float>(second, s));
-                        s += Vector<float>.Count;
-                    }
-                }
-                // copy the remainder
-                for (; i < length; i++)
-                {
-                    remainderSum += Math.Abs(first[i + firstIndex] - second[i + secondIndex]);
-                }
-                return (remainderSum + Sum(ref acc)) / length;
+                acc += acc2;
             }
             else
             {
-                float diff = 0.0f;
-                for (int i = 0; i < length; i++)
+                int highestForVector = length - Vector<float>.Count + firstIndex;
+                int s = secondIndex;
+                for (; i <= highestForVector; i += Vector<float>.Count)
                 {
-                    diff += Math.Abs(first[firstIndex + i] - second[secondIndex + i]);
+                    acc += System.Numerics.Vector.Abs(new Vector<float>(first, i) - new Vector<float>(second, s));
+                    s += Vector<float>.Count;
                 }
-                return diff / length;
             }
+            // copy the remainder
+            for (; i < length; i++)
+            {
+                remainderSum += Math.Abs(first[i + firstIndex] - second[i + secondIndex]);
+            }
+            return (remainderSum + Sum(ref acc)) / length;
         }
 
         /// <summary>
@@ -172,50 +142,38 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float AbsDiffMax(float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var remainderMax = 0.0f;
+            var vectorMax = Vector<float>.Zero;
+            if ((firstIndex | secondIndex) == 0)
             {
-                var remainderMax = 0.0f;
-                var vectorMax = Vector<float>.Zero;
-                if ((firstIndex | secondIndex) == 0)
+                int highestForVector = length - Vector<float>.Count;
+                for (int i = 0; i <= highestForVector; i += Vector<float>.Count)
                 {
-                    int highestForVector = length - Vector<float>.Count;
-                    for (int i = 0; i <= highestForVector; i += Vector<float>.Count)
-                    {
-                        vectorMax = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(new Vector<float>(first, i) - new Vector<float>(second, i)), vectorMax);
-                    }
+                    vectorMax = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(new Vector<float>(first, i) - new Vector<float>(second, i)), vectorMax);
                 }
-                else
-                {
-                    int highestForVector = length - Vector<float>.Count + firstIndex;
-                    int s = secondIndex;
-                    for (int f = 0; f <= highestForVector; f += Vector<float>.Count)
-                    {
-                        vectorMax = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(new Vector<float>(first, f) - new Vector<float>(second, s)), vectorMax);
-                        s += Vector<float>.Count;
-                    }
-                }
-                // copy the remainder
-                for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                {
-                    remainderMax = Math.Max(remainderMax, Math.Abs(first[i + firstIndex] - second[i + secondIndex]));
-                }
-                float[] temp = new float[Vector<float>.Count];
-                vectorMax.CopyTo(temp);
-                for (int i = 0; i < temp.Length; i++)
-                {
-                    remainderMax = Math.Max(temp[i], remainderMax);
-                }
-                return remainderMax;
             }
             else
             {
-                var max = 0.0f;
-                for (int i = 0; i < length; i++)
+                int highestForVector = length - Vector<float>.Count + firstIndex;
+                int s = secondIndex;
+                for (int f = 0; f <= highestForVector; f += Vector<float>.Count)
                 {
-                    max = Math.Max(max, Math.Abs(first[firstIndex + i] - second[secondIndex + i]));
+                    vectorMax = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(new Vector<float>(first, f) - new Vector<float>(second, s)), vectorMax);
+                    s += Vector<float>.Count;
                 }
-                return max;
             }
+            // copy the remainder
+            for (int i = length - (length % Vector<float>.Count); i < length; i++)
+            {
+                remainderMax = Math.Max(remainderMax, Math.Abs(first[i + firstIndex] - second[i + secondIndex]));
+            }
+            float[] temp = new float[Vector<float>.Count];
+            vectorMax.CopyTo(temp);
+            for (int i = 0; i < temp.Length; i++)
+            {
+                remainderMax = Math.Max(temp[i], remainderMax);
+            }
+            return remainderMax;
         }
 
         /// <summary>
@@ -230,53 +188,39 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SquareDiff(float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var remainderSum = 0.0f;
+            var acc = Vector<float>.Zero;
+            if ((firstIndex | secondIndex) == 0)
             {
-                var remainderSum = 0.0f;
-                var acc = Vector<float>.Zero;
-                if ((firstIndex | secondIndex) == 0)
+                // copy everything we can do inside of a vector
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    // copy everything we can do inside of a vector
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var diff = new Vector<float>(first, i) - new Vector<float>(second, i);
-                        acc += diff * diff;
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        var diff = first[i] - second[i];
-                        remainderSum += diff * diff;
-                    }
+                    var diff = new Vector<float>(first, i) - new Vector<float>(second, i);
+                    acc += diff * diff;
                 }
-                else
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var diff = new Vector<float>(first, i + firstIndex) - new Vector<float>(second, i + secondIndex);
-                        acc += diff * diff;
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        var diff = first[i + firstIndex] - second[i + secondIndex];
-                        remainderSum += diff * diff;
-                    }
+                    var diff = first[i] - second[i];
+                    remainderSum += diff * diff;
                 }
-                return remainderSum + Sum(ref acc);
             }
             else
             {
-                var diff2 = 0.0f;
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    // no abs needed since we are going to square
-                    var diff = first[firstIndex + i] - second[secondIndex + i];
-                    diff2 += diff * diff;
+                    var diff = new Vector<float>(first, i + firstIndex) - new Vector<float>(second, i + secondIndex);
+                    acc += diff * diff;
                 }
-                return diff2;
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
+                {
+                    var diff = first[i + firstIndex] - second[i + secondIndex];
+                    remainderSum += diff * diff;
+                }
             }
+            return remainderSum + Sum(ref acc);
         }
 
 
@@ -290,25 +234,15 @@ namespace TMG.Utilities
         /// <param name="value">The value to set it to</param>
         public static void Set(float[] dest, float value)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            int i = 0;
+            var vValue = new Vector<float>(value);
+            for (; i < dest.Length - Vector<float>.Count; i += Vector<float>.Count)
             {
-                int i = 0;
-                var vValue = new Vector<float>(value);
-                for (; i < dest.Length - Vector<float>.Count; i+= Vector<float>.Count)
-                {
-                    vValue.CopyTo(dest, i);
-                }
-                for (; i < dest.Length; i++)
-                {
-                    dest[i] = value;
-                }
+                vValue.CopyTo(dest, i);
             }
-            else
+            for (; i < dest.Length; i++)
             {
-                for (int i = 0; i < dest.Length; i++)
-                {
-                    dest[i] = value;
-                }
+                dest[i] = value;
             }
         }
 
@@ -321,51 +255,31 @@ namespace TMG.Utilities
         /// <param name="length">The number of elements to assign</param>
         public static void Set(float[] dest, int offset, float value, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            int i = 0;
+            var vValue = new Vector<float>(value);
+            for (; i < length - Vector<float>.Count; i += Vector<float>.Count)
             {
-                int i = 0;
-                var vValue = new Vector<float>(value);
-                for (; i < length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    vValue.CopyTo(dest, offset + i);
-                }
-                for (; i < length; i++)
-                {
-                    dest[offset + i] = value;
-                }
+                vValue.CopyTo(dest, offset + i);
             }
-            else
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    dest[offset + i] = value;
-                }
+                dest[offset + i] = value;
             }
         }
 
         public static void Abs(float[] dest, float[] source)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            // copy everything we can do inside of a vector
+            int i = 0;
+            for (; i <= dest.Length - Vector<float>.Count; i += Vector<float>.Count)
             {
-                // copy everything we can do inside of a vector
-                int i = 0;
-                for (; i <= dest.Length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var dynamic = new Vector<float>(source, i);
-                    (System.Numerics.Vector.Abs(dynamic)).CopyTo(dest, i);
-                }
-                // copy the remainder
-                for (; i < dest.Length; i++)
-                {
-                    dest[i] = Math.Abs(source[i]);
-                }
+                var dynamic = new Vector<float>(source, i);
+                (System.Numerics.Vector.Abs(dynamic)).CopyTo(dest, i);
             }
-            else
+            // copy the remainder
+            for (; i < dest.Length; i++)
             {
-                for (int i = 0; i < dest.Length; i++)
-                {
-                    dest[i] = Math.Abs(source[i]);
-                }
+                dest[i] = Math.Abs(source[i]);
             }
         }
 
@@ -392,57 +306,45 @@ namespace TMG.Utilities
         public static float MultiplyAndSum(float[] destination, int destIndex, float[] first, int firstIndex,
             float[] second, int secondIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var remainderSum = 0.0f;
+            var acc = Vector<float>.Zero;
+            if ((destIndex | firstIndex | secondIndex) == 0)
             {
-                var remainderSum = 0.0f;
-                var acc = Vector<float>.Zero;
-                if ((destIndex | firstIndex | secondIndex) == 0)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i);
-                        var s = new Vector<float>(second, i);
-                        var local = (f * s);
-                        acc += local;
-                        local.CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        remainderSum += destination[i] = first[i] * second[i];
-                    }
+                    var f = new Vector<float>(first, i);
+                    var s = new Vector<float>(second, i);
+                    var local = (f * s);
+                    acc += local;
+                    local.CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i + firstIndex);
-                        var s = new Vector<float>(second, i + secondIndex);
-                        var local = (f * s);
-                        acc += local;
-                        local.CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        remainderSum += destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex];
-                    }
+                    remainderSum += destination[i] = first[i] * second[i];
                 }
-                return remainderSum + Sum(ref acc);
             }
             else
             {
-                float remainderSum = 0.0f;
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var f = new Vector<float>(first, i + firstIndex);
+                    var s = new Vector<float>(second, i + secondIndex);
+                    var local = (f * s);
+                    acc += local;
+                    local.CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (; i < length; i++)
                 {
                     remainderSum += destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex];
                 }
-                return remainderSum;
             }
+            return remainderSum + Sum(ref acc);
         }
 
         /// <summary>
@@ -457,56 +359,44 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float MultiplyAndSum(float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var remainderSum = 0.0f;
+            var acc = Vector<float>.Zero;
+            var acc2 = Vector<float>.Zero;
+            if ((firstIndex | secondIndex) == 0)
             {
-                var remainderSum = 0.0f;
-                var acc = Vector<float>.Zero;
-                var acc2 = Vector<float>.Zero;
-                if ((firstIndex | secondIndex) == 0)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - (Vector<float>.Count * 2); i += (Vector<float>.Count * 2))
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - (Vector<float>.Count * 2); i += (Vector<float>.Count * 2))
-                    {
-                        var f = new Vector<float>(first, i);
-                        var s = new Vector<float>(second, i);
-                        var f2 = new Vector<float>(first, i + Vector<float>.Count);
-                        var s2 = new Vector<float>(second, i + Vector<float>.Count);
-                        acc += (f * s);
-                        acc2 += (f2 * s2);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        remainderSum += first[i] * second[i];
-                    }
-                    acc += acc2;
+                    var f = new Vector<float>(first, i);
+                    var s = new Vector<float>(second, i);
+                    var f2 = new Vector<float>(first, i + Vector<float>.Count);
+                    var s2 = new Vector<float>(second, i + Vector<float>.Count);
+                    acc += (f * s);
+                    acc2 += (f2 * s2);
                 }
-                else
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        acc += (new Vector<float>(first, i + firstIndex) * new Vector<float>(second, i + secondIndex));
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        remainderSum += first[i + firstIndex] * second[i + secondIndex];
-                    }
+                    remainderSum += first[i] * second[i];
                 }
-                return remainderSum + Sum(ref acc);
+                acc += acc2;
             }
             else
             {
-                var remainderSum = 0.0f;
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    acc += (new Vector<float>(first, i + firstIndex) * new Vector<float>(second, i + secondIndex));
+                }
+                // copy the remainder
+                for (; i < length; i++)
                 {
                     remainderSum += first[i + firstIndex] * second[i + secondIndex];
                 }
-                return remainderSum;
             }
+            return remainderSum + Sum(ref acc);
         }
 
         /// <summary>
@@ -524,58 +414,46 @@ namespace TMG.Utilities
         public static float Multiply3AndSum(float[] first, int firstIndex, float[] second, int secondIndex,
             float[] third, int thirdIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var remainderSum = 0.0f;
+            var acc = Vector<float>.Zero;
+            var acc2 = Vector<float>.Zero;
+            if ((firstIndex | secondIndex | thirdIndex) == 0)
             {
-                var remainderSum = 0.0f;
-                var acc = Vector<float>.Zero;
-                var acc2 = Vector<float>.Zero;
-                if ((firstIndex | secondIndex | thirdIndex) == 0)
+                int i = 0;
+                // copy everything we can do inside of a vector
+                for (; i <= length - (Vector<float>.Count * 2); i += (Vector<float>.Count * 2))
                 {
-                    int i = 0;
-                    // copy everything we can do inside of a vector
-                    for (; i <= length - (Vector<float>.Count * 2); i += (Vector<float>.Count * 2))
-                    {
-                        var f = new Vector<float>(first, i);
-                        var s = new Vector<float>(second, i);
-                        var t = new Vector<float>(third, i);
-                        var f2 = new Vector<float>(first, i + Vector<float>.Count);
-                        var s2 = new Vector<float>(second, i + Vector<float>.Count);
-                        var t2 = new Vector<float>(third, i + Vector<float>.Count);
-                        acc += (f * s * t);
-                        acc2 += (f2 * s2 * t2);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        remainderSum += first[i] * second[i] * third[i];
-                    }
-                    acc += acc2;
+                    var f = new Vector<float>(first, i);
+                    var s = new Vector<float>(second, i);
+                    var t = new Vector<float>(third, i);
+                    var f2 = new Vector<float>(first, i + Vector<float>.Count);
+                    var s2 = new Vector<float>(second, i + Vector<float>.Count);
+                    var t2 = new Vector<float>(third, i + Vector<float>.Count);
+                    acc += (f * s * t);
+                    acc2 += (f2 * s2 * t2);
                 }
-                else
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var local = (new Vector<float>(first, i + firstIndex) * new Vector<float>(second, i + secondIndex) * new Vector<float>(third, i + thirdIndex));
-                        acc += local;
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        remainderSum += first[i + firstIndex] * second[i + secondIndex] * third[i + thirdIndex];
-                    }
+                    remainderSum += first[i] * second[i] * third[i];
                 }
-                return remainderSum + Sum(ref acc);
+                acc += acc2;
             }
             else
             {
-                var remainderSum = 0.0f;
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var local = (new Vector<float>(first, i + firstIndex) * new Vector<float>(second, i + secondIndex) * new Vector<float>(third, i + thirdIndex));
+                    acc += local;
+                }
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
                     remainderSum += first[i + firstIndex] * second[i + secondIndex] * third[i + thirdIndex];
                 }
-                return remainderSum;
             }
+            return remainderSum + Sum(ref acc);
         }
 
         /// <summary>
@@ -596,44 +474,34 @@ namespace TMG.Utilities
         public static void Multiply2Scalar1AndColumnSum(float[] destination, int destIndex, float[] first, int firstIndex,
             float[] second, int secondIndex, float scalar, float[] columnSum, int columnIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            Vector<float> scalarV = new Vector<float>(scalar);
+            if ((destIndex | firstIndex | secondIndex | columnIndex) == 0)
             {
-                Vector<float> scalarV = new Vector<float>(scalar);
-                if ((destIndex | firstIndex | secondIndex | columnIndex) == 0)
+                // copy everything we can do inside of a vector
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    // copy everything we can do inside of a vector
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var local = new Vector<float>(first, i) * new Vector<float>(second, i) * scalarV;
-                        (new Vector<float>(columnSum, i) + local).CopyTo(columnSum, i);
-                        local.CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        columnSum[i] += (destination[i] = first[i] * second[i] * scalar);
-                    }
+                    var local = new Vector<float>(first, i) * new Vector<float>(second, i) * scalarV;
+                    (new Vector<float>(columnSum, i) + local).CopyTo(columnSum, i);
+                    local.CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var local = new Vector<float>(first, i + firstIndex) * new Vector<float>(second, i + secondIndex) * scalarV;
-                        (new Vector<float>(columnSum, i + columnIndex) + local).CopyTo(columnSum, i + columnIndex);
-                        local.CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        columnSum[i + columnIndex] += (destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex] * scalar);
-                    }
+                    columnSum[i] += (destination[i] = first[i] * second[i] * scalar);
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var local = new Vector<float>(first, i + firstIndex) * new Vector<float>(second, i + secondIndex) * scalarV;
+                    (new Vector<float>(columnSum, i + columnIndex) + local).CopyTo(columnSum, i + columnIndex);
+                    local.CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (; i < length; i++)
                 {
                     columnSum[i + columnIndex] += (destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex] * scalar);
                 }
@@ -660,43 +528,33 @@ namespace TMG.Utilities
         public static void Multiply3Scalar1AndColumnSum(float[] destination, int destIndex, float[] first, int firstIndex,
             float[] second, int secondIndex, float[] third, int thirdIndex, float scalar, float[] columnSum, int columnIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            Vector<float> scalarV = new Vector<float>(scalar);
+            if ((destIndex | firstIndex | secondIndex | thirdIndex | columnIndex) == 0)
             {
-                Vector<float> scalarV = new Vector<float>(scalar);
-                if ((destIndex | firstIndex | secondIndex | thirdIndex | columnIndex) == 0)
+                // copy everything we can do inside of a vector
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    // copy everything we can do inside of a vector
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var local = new Vector<float>(first, i) * new Vector<float>(second, i) * new Vector<float>(third, i) * scalarV;
-                        (new Vector<float>(columnSum, i) + local).CopyTo(columnSum, i);
-                        local.CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        columnSum[i] += (destination[i] = first[i] * second[i] * third[i] * scalar);
-                    }
+                    var local = new Vector<float>(first, i) * new Vector<float>(second, i) * new Vector<float>(third, i) * scalarV;
+                    (new Vector<float>(columnSum, i) + local).CopyTo(columnSum, i);
+                    local.CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var local = new Vector<float>(first, i + firstIndex) * new Vector<float>(second, i + secondIndex) * new Vector<float>(third, i + thirdIndex) * scalarV;
-                        (new Vector<float>(columnSum, i + columnIndex) + local).CopyTo(columnSum, i + columnIndex);
-                        local.CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        columnSum[i + columnIndex] += (destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex] * third[i + thirdIndex] * scalar);
-                    }
+                    columnSum[i] += (destination[i] = first[i] * second[i] * third[i] * scalar);
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var local = new Vector<float>(first, i + firstIndex) * new Vector<float>(second, i + secondIndex) * new Vector<float>(third, i + thirdIndex) * scalarV;
+                    (new Vector<float>(columnSum, i + columnIndex) + local).CopyTo(columnSum, i + columnIndex);
+                    local.CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
                     columnSum[i + columnIndex] += (destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex] * third[i + thirdIndex] * scalar);
                 }
@@ -716,42 +574,32 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Average(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            Vector<float> half = new Vector<float>(0.5f);
+            if ((destIndex | firstIndex | secondIndex) == 0)
             {
-                Vector<float> half = new Vector<float>(0.5f);
-                if ((destIndex | firstIndex | secondIndex) == 0)
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i);
-                        var s = new Vector<float>(second, i);
-                        ((f + s) * half).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = (first[i] + second[i]) * 0.5f;
-                    }
+                    var f = new Vector<float>(first, i);
+                    var s = new Vector<float>(second, i);
+                    ((f + s) * half).CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i + firstIndex);
-                        var s = new Vector<float>(second, i + secondIndex);
-                        ((f + s) * half).CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        destination[i + destIndex] = (first[i + firstIndex] + second[i + secondIndex]) * 0.5f;
-                    }
+                    destination[i] = (first[i] + second[i]) * 0.5f;
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var f = new Vector<float>(first, i + firstIndex);
+                    var s = new Vector<float>(second, i + secondIndex);
+                    ((f + s) * half).CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
                     destination[i + destIndex] = (first[i + firstIndex] + second[i + secondIndex]) * 0.5f;
                 }
@@ -803,43 +651,30 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReplaceIfNotFinite(float[] destination, int destIndex, float alternateValue, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var altV = new Vector<float>(alternateValue);
+            if (destIndex == 0)
             {
-                var altV = new Vector<float>(alternateValue);
-                if (destIndex == 0)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        (SelectIfFinite(new Vector<float>(destination, i), altV)).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        if (float.IsNaN(destination[i]) || float.IsInfinity(destination[i]))
-                        {
-                            destination[i] = alternateValue;
-                        }
-                    }
+                    (SelectIfFinite(new Vector<float>(destination, i), altV)).CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                    if (float.IsNaN(destination[i]) || float.IsInfinity(destination[i]))
                     {
-                        (SelectIfFinite(new Vector<float>(destination, i + destIndex), altV)).CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        if (float.IsNaN(destination[i + destIndex]) || float.IsInfinity(destination[i + destIndex]))
-                        {
-                            destination[i + destIndex] = alternateValue;
-                        }
+                        destination[i] = alternateValue;
                     }
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    (SelectIfFinite(new Vector<float>(destination, i + destIndex), altV)).CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
                     if (float.IsNaN(destination[i + destIndex]) || float.IsInfinity(destination[i + destIndex]))
                     {
@@ -851,44 +686,31 @@ namespace TMG.Utilities
 
         public static void ReplaceIfLessThanOrNotFinite(float[] destination, int destIndex, float alternateValue, float minimum, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var altV = new Vector<float>(alternateValue);
+            var minimumV = new Vector<float>(minimum);
+            if (destIndex == 0)
             {
-                var altV = new Vector<float>(alternateValue);
-                var minimumV = new Vector<float>(minimum);
-                if (destIndex == 0)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        (SelectIfFiniteAndLessThan(new Vector<float>(destination, i), altV, minimumV)).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        if (float.IsInfinity(destination[i]) || !(destination[i] >= minimum))
-                        {
-                            destination[i] = alternateValue;
-                        }
-                    }
+                    (SelectIfFiniteAndLessThan(new Vector<float>(destination, i), altV, minimumV)).CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                    if (float.IsInfinity(destination[i]) || !(destination[i] >= minimum))
                     {
-                        (SelectIfFiniteAndLessThan(new Vector<float>(destination, i + destIndex), altV, minimumV)).CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        if (float.IsInfinity(destination[i + destIndex]) || !(destination[i + destIndex] >= minimum))
-                        {
-                            destination[i + destIndex] = alternateValue;
-                        }
+                        destination[i] = alternateValue;
                     }
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    (SelectIfFiniteAndLessThan(new Vector<float>(destination, i + destIndex), altV, minimumV)).CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
                     if (float.IsInfinity(destination[i + destIndex]) || !(destination[i + destIndex] >= minimum))
                     {
@@ -901,49 +723,36 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool AnyGreaterThan(float[] data, int dataIndex, float rhs, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var rhsV = new Vector<float>(rhs);
+            if (dataIndex == 0)
             {
-                var rhsV = new Vector<float>(rhs);
-                if (dataIndex == 0)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                    if (System.Numerics.Vector.GreaterThanAny(new Vector<float>(data, i), rhsV))
                     {
-                        if (System.Numerics.Vector.GreaterThanAny(new Vector<float>(data, i), rhsV))
-                        {
-                            return true;
-                        }
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        if (data[i] > rhs)
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
-                else
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                    if (data[i] > rhs)
                     {
-                        if (System.Numerics.Vector.GreaterThanAny(new Vector<float>(data, i + dataIndex), rhsV))
-                        {
-                            return true;
-                        }
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        if (data[i + dataIndex] > rhs)
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    if (System.Numerics.Vector.GreaterThanAny(new Vector<float>(data, i + dataIndex), rhsV))
+                    {
+                        return true;
+                    }
+                }
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
                     if (data[i + dataIndex] > rhs)
                     {
@@ -951,56 +760,43 @@ namespace TMG.Utilities
                     }
                 }
             }
-            return false;
+            return true;
         }
 
 
         public static bool AreBoundedBy(float[] data, int dataIndex, float baseNumber, float maxVarriation, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var baseV = new Vector<float>(baseNumber);
+            var maxmumVariationV = new Vector<float>(maxVarriation);
+            if (dataIndex == 0)
             {
-                var baseV = new Vector<float>(baseNumber);
-                var maxmumVariationV = new Vector<float>(maxVarriation);
-                if (dataIndex == 0)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                    if (System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(new Vector<float>(data, i) - baseV), maxmumVariationV))
                     {
-                        if (System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(new Vector<float>(data, i) - baseV), maxmumVariationV))
-                        {
-                            return false;
-                        }
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        if (Math.Abs(data[i] - baseNumber) > maxVarriation)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                 }
-                else
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                    if (Math.Abs(data[i] - baseNumber) > maxVarriation)
                     {
-                        if (System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(new Vector<float>(data, i + dataIndex) - baseV), maxmumVariationV))
-                        {
-                            return true;
-                        }
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        if (Math.Abs(data[i + dataIndex] - baseNumber) > maxVarriation)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    if (System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(new Vector<float>(data, i + dataIndex) - baseV), maxmumVariationV))
+                    {
+                        return true;
+                    }
+                }
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
                     if (Math.Abs(data[i + dataIndex] - baseNumber) > maxVarriation)
                     {
@@ -1022,22 +818,12 @@ namespace TMG.Utilities
         public static void Exp(float[] destination, int destIndex, float[] x, int xIndex, int length)
         {
             // This is still using scalar operations until we have an accurate replacement that runs faster when vectorized
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            if ((destIndex | xIndex) == 0)
             {
-                if ((destIndex | xIndex) == 0)
+                int i = 0;
+                for (; i < length; i++)
                 {
-                    int i = 0;
-                    for (; i < length; i++)
-                    {
-                        destination[i] = (float)Math.Exp(x[i]);
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < length; i++)
-                    {
-                        destination[i + destIndex] = (float)Math.Exp(x[i + xIndex]);
-                    }
+                    destination[i] = (float)Math.Exp(x[i]);
                 }
             }
             else
@@ -1100,42 +886,31 @@ namespace TMG.Utilities
         /// <param name="length">The number of elements to convert.</param>
         public static void Log(float[] destination, int destIndex, float[] x, int xIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            if ((destIndex | xIndex) == 0)
             {
-                if ((destIndex | xIndex) == 0)
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        Log(new Vector<float>(x, i)).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = (float)Math.Log(x[i]);
-                    }
+                    Log(new Vector<float>(x, i)).CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        Log(new Vector<float>(x, i + xIndex)).CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        destination[i + destIndex] = (float)Math.Log(x[i + xIndex]);
-                    }
+                    destination[i] = (float)Math.Log(x[i]);
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    Log(new Vector<float>(x, i + xIndex)).CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (int i = length - (length % Vector<float>.Count); i < length; i++)
                 {
                     destination[i + destIndex] = (float)Math.Log(x[i + xIndex]);
                 }
             }
         }
-
     }
 }

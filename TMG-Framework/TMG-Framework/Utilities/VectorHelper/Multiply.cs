@@ -28,185 +28,126 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            if ((destIndex | firstIndex | secondIndex) == 0)
             {
-                if ((destIndex | firstIndex | secondIndex) == 0)
+                int i = 0;
+                // copy everything we can do inside of a vector
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    int i = 0;
-                    // copy everything we can do inside of a vector
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i);
-                        var s = new Vector<float>(second, i);
-                        (f * s).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = first[i] * second[i];
-                    }
+                    var f = new Vector<float>(first, i);
+                    var s = new Vector<float>(second, i);
+                    (f * s).CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i + firstIndex);
-                        var s = new Vector<float>(second, i + secondIndex);
-                        (f * s).CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex];
-                    }
+                    destination[i] = first[i] * second[i];
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    destination[destIndex + i] = first[firstIndex + i] * second[secondIndex + i];
+                    var f = new Vector<float>(first, i + firstIndex);
+                    var s = new Vector<float>(second, i + secondIndex);
+                    (f * s).CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (; i < length; i++)
+                {
+                    destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex];
                 }
             }
         }
 
         public static void Multiply(float[] dest, float[] source, float scalar)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
-            {
-                Vector<float> constant = new Vector<float>(scalar);
+            Vector<float> constant = new Vector<float>(scalar);
 
-                // copy everything we can do inside of a vector
-                int i = 0;
-                for (; i <= source.Length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var dynamic = new Vector<float>(source, i);
-                    (constant * dynamic).CopyTo(dest, i);
-                }
-                // copy the remainder
-                for (; i < source.Length; i++)
-                {
-                    dest[i] = source[i] * scalar;
-                }
-            }
-            else
+            // copy everything we can do inside of a vector
+            int i = 0;
+            for (; i <= source.Length - Vector<float>.Count; i += Vector<float>.Count)
             {
-                for (int i = 0; i < dest.Length; i++)
-                {
-                    dest[i] = source[i] * scalar;
-                }
+                var dynamic = new Vector<float>(source, i);
+                (constant * dynamic).CopyTo(dest, i);
+            }
+            // copy the remainder
+            for (; i < source.Length; i++)
+            {
+                dest[i] = source[i] * scalar;
             }
         }
 
         public static void Multiply(float[][] destination, float lhs, float[][] rhs)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            Parallel.For(0, destination.Length, row =>
             {
-                Parallel.For(0, destination.Length, row =>
+                Vector<float> n = new Vector<float>(lhs);
+                var dest = destination[row];
+                var length = dest.Length;
+                var denom = rhs[row];
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    Vector<float> n = new Vector<float>(lhs);
-                    var dest = destination[row];
-                    var length = dest.Length;
-                    var denom = rhs[row];
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var d = new Vector<float>(denom, i);
-                        (n * d).CopyTo(dest, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        dest[i] = lhs * denom[i];
-                    }
-                });
-            }
-            else
-            {
-                Parallel.For(0, destination.Length, i =>
+                    var d = new Vector<float>(denom, i);
+                    (n * d).CopyTo(dest, i);
+                }
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    for (int j = 0; j < destination[i].Length; j++)
-                    {
-                        destination[i][j] = lhs * rhs[i][j];
-                    }
-                });
-            }
+                    dest[i] = lhs * denom[i];
+                }
+            });
         }
 
         public static void Multiply(float[][] destination, float[][] lhs, float rhs)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            Parallel.For(0, destination.Length, row =>
             {
-                Parallel.For(0, destination.Length, row =>
+                Vector<float> d = new Vector<float>(rhs);
+                var dest = destination[row];
+                var length = dest.Length;
+                var num = lhs[row];
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    Vector<float> d = new Vector<float>(rhs);
-                    var dest = destination[row];
-                    var length = dest.Length;
-                    var num = lhs[row];
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var n = new Vector<float>(num, i);
-                        (n * d).CopyTo(dest, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        dest[i] = num[i] * rhs;
-                    }
-                });
-            }
-            else
-            {
-                Parallel.For(0, destination.Length, i =>
+                    var n = new Vector<float>(num, i);
+                    (n * d).CopyTo(dest, i);
+                }
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    for (int j = 0; j < destination[i].Length; j++)
-                    {
-                        destination[i][j] = lhs[i][j] * rhs;
-                    }
-                });
-            }
+                    dest[i] = num[i] * rhs;
+                }
+            });
         }
 
         public static void Multiply(float[][] destination, float[][] lhs, float[][] rhs)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            Parallel.For(0, destination.Length, row =>
             {
-                Parallel.For(0, destination.Length, row =>
+                var dest = destination[row];
+                var length = dest.Length;
+                var num = lhs[row];
+                var denom = rhs[row];
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    var dest = destination[row];
-                    var length = dest.Length;
-                    var num = lhs[row];
-                    var denom = rhs[row];
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var n = new Vector<float>(num, i);
-                        var d = new Vector<float>(denom, i);
-                        (n * d).CopyTo(dest, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        dest[i] = num[i] * denom[i];
-                    }
-                });
-            }
-            else
-            {
-                Parallel.For(0, destination.Length, i =>
+                    var n = new Vector<float>(num, i);
+                    var d = new Vector<float>(denom, i);
+                    (n * d).CopyTo(dest, i);
+                }
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    for (int j = 0; j < destination[i].Length; j++)
-                    {
-                        destination[i][j] = lhs[i][j] * rhs[i][j];
-                    }
-                });
-            }
+                    dest[i] = num[i] * denom[i];
+                }
+            });
         }
 
         /// <summary>
@@ -221,45 +162,35 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float scalar, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            Vector<float> scalarV = new Vector<float>(scalar);
+            if ((destIndex | firstIndex) == 0)
             {
-                Vector<float> scalarV = new Vector<float>(scalar);
-                if ((destIndex | firstIndex) == 0)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        (new Vector<float>(first, i) * scalarV)
-                            .CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = first[i] * scalar;
-                    }
+                    (new Vector<float>(first, i) * scalarV)
+                        .CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        (new Vector<float>(first, i + firstIndex) * scalarV)
-                            .CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i + destIndex] = first[i + firstIndex] * scalar;
-                    }
+                    destination[i] = first[i] * scalar;
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    destination[destIndex + i] = first[firstIndex + i] * scalar;
+                    (new Vector<float>(first, i + firstIndex) * scalarV)
+                        .CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (; i < length; i++)
+                {
+                    destination[i + destIndex] = first[i + firstIndex] * scalar;
                 }
             }
         }
@@ -277,47 +208,37 @@ namespace TMG.Utilities
         /// <param name="length"></param>
         internal static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, float scalar, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var vScalar = new Vector<float>(scalar);
+            if ((destIndex | firstIndex | secondIndex) == 0)
             {
-                var vScalar = new Vector<float>(scalar);
-                if ((destIndex | firstIndex | secondIndex) == 0)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i);
-                        var s = new Vector<float>(second, i);
-                        (f * s * vScalar).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = first[i] * second[i] * scalar;
-                    }
+                    var f = new Vector<float>(first, i);
+                    var s = new Vector<float>(second, i);
+                    (f * s * vScalar).CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i + firstIndex);
-                        var s = new Vector<float>(second, i + secondIndex);
-                        (f * s * vScalar).CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex] * scalar;
-                    }
+                    destination[i] = first[i] * second[i] * scalar;
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                int i = 0;
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    destination[destIndex + i] = first[firstIndex + i] * second[secondIndex + i] * scalar;
+                    var f = new Vector<float>(first, i + firstIndex);
+                    var s = new Vector<float>(second, i + secondIndex);
+                    (f * s * vScalar).CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (; i < length; i++)
+                {
+                    destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex] * scalar;
                 }
             }
         }
@@ -340,47 +261,37 @@ namespace TMG.Utilities
         public static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex,
             float[] third, int thirdIndex, float[] fourth, int fourthIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            int i = 0;
+            if ((destIndex | firstIndex | secondIndex | thirdIndex | fourthIndex) == 0)
             {
-                int i = 0;
-                if ((destIndex | firstIndex | secondIndex | thirdIndex | fourthIndex) == 0)
+                // copy everything we can do inside of a vector
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
                 {
-                    // copy everything we can do inside of a vector
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i);
-                        var s = new Vector<float>(second, i);
-                        var t = new Vector<float>(third, i);
-                        var f4 = new Vector<float>(fourth, i);
-                        (f * s * t * f4).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = first[i] * second[i] * third[i] * fourth[i];
-                    }
+                    var f = new Vector<float>(first, i);
+                    var s = new Vector<float>(second, i);
+                    var t = new Vector<float>(third, i);
+                    var f4 = new Vector<float>(fourth, i);
+                    (f * s * t * f4).CopyTo(destination, i);
                 }
-                else
+                // copy the remainder
+                for (; i < length; i++)
                 {
-                    // copy everything we can do inside of a vector
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(first, i + firstIndex);
-                        var s = new Vector<float>(second, i + secondIndex);
-                        var t = new Vector<float>(third, i + thirdIndex);
-                        var f4 = new Vector<float>(fourth, i + fourthIndex);
-                        (f * s * t * f4).CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex] * third[i + thirdIndex] * fourth[i + fourthIndex];
-                    }
+                    destination[i] = first[i] * second[i] * third[i] * fourth[i];
                 }
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                // copy everything we can do inside of a vector
+                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                {
+                    var f = new Vector<float>(first, i + firstIndex);
+                    var s = new Vector<float>(second, i + secondIndex);
+                    var t = new Vector<float>(third, i + thirdIndex);
+                    var f4 = new Vector<float>(fourth, i + fourthIndex);
+                    (f * s * t * f4).CopyTo(destination, i + destIndex);
+                }
+                // copy the remainder
+                for (; i < length; i++)
                 {
                     destination[i + destIndex] = first[i + firstIndex] * second[i + secondIndex] * third[i + thirdIndex] * fourth[i + fourthIndex];
                 }

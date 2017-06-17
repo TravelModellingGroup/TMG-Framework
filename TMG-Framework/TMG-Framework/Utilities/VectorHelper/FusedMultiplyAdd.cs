@@ -24,32 +24,27 @@ namespace TMG.Utilities
 {
     public static partial class VectorHelper
     {
+        // Are we hardware accelerated
+        static VectorHelper()
+        {
+            MaxFloat = new Vector<float>(float.MaxValue);
+        }
         /// <summary>
         /// Dest[i] = hls[i] * rhs[i] + add
         /// </summary>
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float add, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            int i;
+            var vAdd = new Vector<float>(add);
+            for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
             {
-                int i;
-                var vAdd = new Vector<float>(add);
-                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var l = new Vector<float>(lhs, lhsIndex + i);
-                    var r = new Vector<float>(rhs, rhsIndex + i);
-                    (l * r + vAdd).CopyTo(dest, destIndex + i);
-                }
-                for (; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add;
-                }
+                var l = new Vector<float>(lhs, lhsIndex + i);
+                var r = new Vector<float>(rhs, rhsIndex + i);
+                (l * r + vAdd).CopyTo(dest, destIndex + i);
             }
-            else
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add;
-                }
+                dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add;
             }
         }
 
@@ -58,27 +53,17 @@ namespace TMG.Utilities
         /// </summary>
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float add, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            int i;
+            var vAdd = new Vector<float>(add);
+            var r = new Vector<float>(rhs);
+            for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
             {
-                int i;
-                var vAdd = new Vector<float>(add);
-                var r = new Vector<float>(rhs);
-                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var l = new Vector<float>(lhs, lhsIndex + i);
-                    (l * r + vAdd).CopyTo(dest, destIndex + i);
-                }
-                for (; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add;
-                }
+                var l = new Vector<float>(lhs, lhsIndex + i);
+                (l * r + vAdd).CopyTo(dest, destIndex + i);
             }
-            else
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add;
-                }
+                dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add;
             }
         }
 
@@ -87,27 +72,17 @@ namespace TMG.Utilities
         /// </summary>
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float[] add, int addIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            int i;
+            var r = new Vector<float>(rhs);
+            for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
             {
-                int i;
-                var r = new Vector<float>(rhs);
-                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var l = new Vector<float>(lhs, lhsIndex + i);
-                    var vAdd = new Vector<float>(add, addIndex + i);
-                    (l * r + vAdd).CopyTo(dest, destIndex + i);
-                }
-                for (; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add[addIndex + i];
-                }
+                var l = new Vector<float>(lhs, lhsIndex + i);
+                var vAdd = new Vector<float>(add, addIndex + i);
+                (l * r + vAdd).CopyTo(dest, destIndex + i);
             }
-            else
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add[addIndex + i];
-                }
+                dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add[addIndex + i];
             }
         }
 
@@ -116,27 +91,17 @@ namespace TMG.Utilities
         /// </summary>
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float[] add, int addIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            int i;
+            for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
             {
-                int i;
-                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var l = new Vector<float>(lhs, lhsIndex + i);
-                    var r = new Vector<float>(rhs, rhsIndex + i);
-                    var vAdd = new Vector<float>(add, addIndex + i);
-                    (l * r + vAdd).CopyTo(dest, destIndex + i);
-                }
-                for (; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add[addIndex + i];
-                }
+                var l = new Vector<float>(lhs, lhsIndex + i);
+                var r = new Vector<float>(rhs, rhsIndex + i);
+                var vAdd = new Vector<float>(add, addIndex + i);
+                (l * r + vAdd).CopyTo(dest, destIndex + i);
             }
-            else
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add[addIndex + i];
-                }
+                dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add[addIndex + i];
             }
         }
     }
