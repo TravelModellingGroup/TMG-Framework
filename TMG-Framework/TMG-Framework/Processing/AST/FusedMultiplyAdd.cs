@@ -45,7 +45,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 () => mulLhs = MulLhs.Evaluate(dataSources),
                 () => mulRhs = MulRhs.Evaluate(dataSources),
                 () => add = Add.Evaluate(dataSources));
-                
+
             // mulLhs = MulLhs.Evaluate(dataSources);
             // mulRhs = MulRhs.Evaluate(dataSources);
             // add = Add.Evaluate(dataSources);
@@ -396,7 +396,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var rowSize = retMatrix.Map.Count;
                     Parallel.For(0, rowSize, (int i) =>
                     {
-                        VectorHelper.FusedMultiplyAdd(flatRet, rowSize * i, flatLhs, rowSize * i, flatRhs, rowSize * i,
+                        VectorHelper.FusedMultiplyAdd(flatRet, flatLhs, flatRhs,
                                                 flatAdd, rowSize * i, rowSize);
                     });
                     return new ComputationResult(retMatrix, true);

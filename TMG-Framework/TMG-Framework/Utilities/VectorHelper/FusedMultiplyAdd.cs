@@ -17,7 +17,9 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace TMG.Utilities
@@ -32,6 +34,7 @@ namespace TMG.Utilities
         /// <summary>
         /// Dest[i] = hls[i] * rhs[i] + add
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float add, int length)
         {
             int i;
@@ -51,6 +54,7 @@ namespace TMG.Utilities
         /// <summary>
         /// Dest[i] = hls[i] * rhs + add
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float add, int length)
         {
             int i;
@@ -70,6 +74,7 @@ namespace TMG.Utilities
         /// <summary>
         /// Dest[i] = hls[i] * rhs + add[i]
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float[] add, int addIndex, int length)
         {
             int i;
@@ -89,10 +94,13 @@ namespace TMG.Utilities
         /// <summary>
         /// Dest[i] = hls[i] * rhs[i] + add[i]
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float[] add, int addIndex, int length)
         {
+            
             int i;
-            for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
+            var vLength = length - Vector<float>.Count;
+            for (i = 0; i < vLength; i += Vector<float>.Count)
             {
                 var l = new Vector<float>(lhs, lhsIndex + i);
                 var r = new Vector<float>(rhs, rhsIndex + i);
@@ -102,6 +110,33 @@ namespace TMG.Utilities
             for (; i < length; i++)
             {
                 dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add[addIndex + i];
+            }
+        }
+
+        /// <summary>
+        /// Dest[i] = hls[i] * rhs[i] + add[i]
+        /// </summary>
+        public static void FusedMultiplyAdd(float[] dest, float[] lhs, float[] rhs, float[] add, int offset, int length)
+        {
+            if(dest == null || lhs == null || rhs == null || add == null)
+            {
+                throw new ArgumentNullException();
+            }
+            if(length - Vector<float>.Count >= rhs.Length)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+            int i;
+            for (i = 0; i < dest.Length - Vector<float>.Count && i < length - Vector<float>.Count; i += Vector<float>.Count)
+            {
+                var l = new Vector<float>(lhs, offset + i);
+                var r = new Vector<float>(rhs, offset + i);
+                var vAdd = new Vector<float>(add, offset + i);
+                (l * r + vAdd).CopyTo(dest, offset + i);
+            }
+            for (; i < length; i++)
+            {
+                dest[offset + i] = lhs[offset + i] * rhs[offset + i] + add[offset + i];
             }
         }
     }
