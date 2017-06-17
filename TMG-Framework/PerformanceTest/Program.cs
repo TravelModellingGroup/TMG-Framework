@@ -51,7 +51,7 @@ namespace PerformanceTest
             var c = new Matrix(map);
             var eval = new EvaluateMatrix()
             {
-                Expression = Helper.CreateParameter("A * B + (C * 2 + 3)"),
+                Expression = Helper.CreateParameter("(A * 2 + B) * (B * 2 + C) + (C * 2 + 3)"),
                 Variables = new[]
                 {
                     Helper.CreateParameter(a, "A"),
