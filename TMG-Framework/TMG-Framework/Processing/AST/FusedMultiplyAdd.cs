@@ -62,6 +62,14 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 return add;
             }
+            if(!ValidateSizes(mulLhs, mulRhs, out var error))
+            {
+                return error;
+            }
+            if (!ValidateSizes(mulRhs, add, out var error2))
+            {
+                return error2;
+            }
             return Evaluate(mulLhs, mulRhs, add);
         }
 

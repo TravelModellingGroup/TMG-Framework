@@ -29,6 +29,7 @@ namespace XTMF.Testing.TMG.Data
     [TestClass]
     public class TestCompiler
     {
+        Categories categories = new Categories(new List<int>() { 1, 2 });
         /// <summary>
         /// Create a new simple matrix for testing.
         /// </summary>
@@ -40,7 +41,6 @@ namespace XTMF.Testing.TMG.Data
         /// <returns></returns>
         private IFunction<Matrix> CreateData(string name, float m11, float m12, float m21, float m22)
         {
-            var categories = new Categories(new List<int>() { 1, 2 });
             var matrix = new Matrix(categories, categories);
             matrix.Data[0] = m11;
             matrix.Data[1] = m12;
@@ -58,8 +58,7 @@ namespace XTMF.Testing.TMG.Data
         /// <returns></returns>
         private IFunction<Vector> CreateData(string name, float m1, float m2)
         {
-            var map = new Categories(new List<int>() { 1, 2 });
-            var vector = new Vector(map);
+            var vector = new Vector(categories);
             vector.Data[0] = m1;
             vector.Data[1] = m2;
             return new VectorSource(vector) { Name = name };

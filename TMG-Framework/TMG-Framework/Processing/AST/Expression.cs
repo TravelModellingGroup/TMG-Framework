@@ -17,6 +17,7 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,6 +31,55 @@ namespace TMG.Frameworks.Data.Processing.AST
         public Expression(int start) : base(start)
         {
 
+        }
+
+        private static bool FailWithError(out ComputationResult result, string message)
+        {
+            result = new ComputationResult(message);
+            return false;
+        }
+
+        protected bool ValidateSizes(ComputationResult lhs, ComputationResult rhs, out ComputationResult errorResult)
+        {
+            errorResult = null;
+            if (lhs.IsValue)
+            {
+                var temp = rhs;
+                rhs = lhs;
+                lhs = temp;
+            }
+            if (lhs.IsOdResult)
+            {
+                if (rhs.IsOdResult)
+                {
+                    if (!(lhs.OdData.ColumnCategories == rhs.OdData.ColumnCategories
+                        && lhs.OdData.RowCategories == rhs.OdData.RowCategories))
+                    {
+                        return FailWithError(out errorResult, "Operation failed because data was not of compatible categories.");
+                    }
+                }
+                else if (rhs.IsVectorResult)
+                {
+                    switch (rhs.Direction)
+                    {
+                        case ComputationResult.VectorDirection.Horizontal:
+                            if (!(lhs.OdData.ColumnCategories == rhs.VectorData.Categories))
+                            {
+                                return FailWithError(out errorResult, "Operation failed because data was not of compatible categories.");
+                            }
+                            break;
+                        case ComputationResult.VectorDirection.Vertical:
+                            if (!(lhs.OdData.RowCategories == rhs.VectorData.Categories))
+                            {
+                                return FailWithError(out errorResult, "Operation failed because data was not of compatible categories.");
+                            }
+                            break;
+                        case ComputationResult.VectorDirection.Unassigned:
+                            return FailWithError(out errorResult, "Operation failed because a non-oriented vector can not be applied to a ");
+                    }
+                }
+            }
+            return true;
         }
 
         private static int FindEndOfBracket(char[] buffer, int start, int length, ref string error)
@@ -534,6 +584,10 @@ namespace TMG.Frameworks.Data.Processing.AST
             else if (rhs.Error)
             {
                 return rhs;
+            }
+            if(!ValidateSizes(lhs, rhs, out var errorResult))
+            {
+                return errorResult;
             }
             return Evaluate(lhs, rhs);
         }
