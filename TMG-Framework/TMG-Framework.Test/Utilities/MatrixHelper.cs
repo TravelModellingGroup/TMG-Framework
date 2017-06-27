@@ -27,13 +27,13 @@ namespace TMG.Test.Utilities
 {
     class MatrixHelper
     {
-        internal static string WriteMatrixToCSVMatrix(Map map, float[][] data)
+        internal static string WriteMatrixToCSVMatrix(Categories categories, float[][] data)
         {
-            Assert.AreEqual(map.Count, data.Length);
+            Assert.AreEqual(categories.Count, data.Length);
             var fileName = Path.GetTempFileName();
             try
             {
-                var matrix = new Matrix(map);
+                var matrix = new Matrix(categories, categories);
                 for (int i = 0; i < data.Length; i++)
                 {
                     Array.Copy(data[i], 0, matrix.Data, i * data.Length, data[i].Length);
@@ -59,13 +59,13 @@ namespace TMG.Test.Utilities
             }
         }
 
-        internal static string WriteMatrixToCSVThirdNormalized(Map map, float[][] data)
+        internal static string WriteMatrixToCSVThirdNormalized(Categories categories, float[][] data)
         {
-            Assert.AreEqual(map.Count, data.Length);
+            Assert.AreEqual(categories.Count, data.Length);
             var fileName = Path.GetTempFileName();
             try
             {
-                var matrix = new Matrix(map);
+                var matrix = new Matrix(categories, categories);
                 for (int i = 0; i < data.Length; i++)
                 {
                     Array.Copy(data[i], 0, matrix.Data, i * data.Length, data[i].Length);
@@ -92,13 +92,13 @@ namespace TMG.Test.Utilities
             }
         }
 
-        internal static string WriteMatrixToMTX(Map map, float[][] data)
+        internal static string WriteMatrixToMTX(Categories categories, float[][] data)
         {
-            Assert.AreEqual(map.Count, data.Length);
+            Assert.AreEqual(categories.Count, data.Length);
             var fileName = Path.GetTempFileName();
             try
             {
-                var matrix = new Matrix(map);
+                var matrix = new Matrix(categories, categories);
                 for (int i = 0; i < data.Length; i++)
                 {
                     Array.Copy(data[i], 0, matrix.Data, i * data.Length, data[i].Length);

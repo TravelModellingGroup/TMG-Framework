@@ -29,15 +29,15 @@ namespace TMG.Loading
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
     public sealed class LoadMatrixFromCSVMatrix : BaseFunction<ReadStream, Matrix>
     {
-        [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Map> Map;
+        [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+        public IFunction<Categories> Categories;
 
         public override Matrix Invoke(ReadStream stream)
         {
-            var map = Map.Invoke();
-            var ret = new Matrix(map);
+            var categories = Categories.Invoke();
+            var ret = new Matrix(categories, categories);
             var flatData = ret.Data;
-            var rowSize = map.Count;
+            var rowSize = categories.Count;
             using (var reader = new CsvReader(stream, true))
             {
                 int columns = reader.LoadLine();
@@ -46,7 +46,7 @@ namespace TMG.Loading
                 for (int i = 1; i < columns; i++)
                 {
                     reader.Get(out int sparseIndex, i);
-                    if((destinationFlatIndex[i - 1] = map.GetFlatIndex(sparseIndex)) < 0)
+                    if((destinationFlatIndex[i - 1] = categories.GetFlatIndex(sparseIndex)) < 0)
                     {
                         throw new XTMFRuntimeException(this, $"Invalid sparse column index {sparseIndex}!");
                     }
@@ -56,7 +56,7 @@ namespace TMG.Loading
                     if(columns >= destinationFlatIndex.Length + 1)
                     {
                         reader.Get(out int sparseIndex, 0);
-                        var originOffset = map.GetFlatIndex(sparseIndex) * rowSize;
+                        var originOffset = categories.GetFlatIndex(sparseIndex) * rowSize;
                         if(originOffset < 0)
                         {
                             throw new XTMFRuntimeException(this, $"Invalid sparse row index {sparseIndex}!");

@@ -128,7 +128,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         var flatRet = retMatrix.Data;
                         var flatLhs = lhs.OdData.Data;
                         var flatRhs = rhs.VectorData.Data;
-                        var rowSize = retMatrix.Map.Count;
+                        var rowSize = retMatrix.RowCategories.Count;
                         if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
                             for (int i = 0; i < flatRhs.Length; i++)

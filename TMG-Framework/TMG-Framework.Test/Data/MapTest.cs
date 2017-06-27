@@ -31,7 +31,7 @@ namespace TMG.Test.Data
         public void CreateMap()
         {
             var set = new List<int>() { 2, 6, 4, 8, 10 };
-            Map map = new Map(set);
+            var map = new Categories(set);
             Assert.AreEqual(set.Count, map.Count);
             Assert.AreEqual(4, map.GetSparseIndex(1));
             Assert.AreEqual(6, map.GetSparseIndex(2));

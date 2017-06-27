@@ -47,12 +47,12 @@ namespace TMG.Test.Loading
             var matrixFileName = MatrixHelper.WriteMatrixToCSVMatrix(map, data);
             var matrixLoader = new LoadMatrixFromCSVMatrix()
             {
-                Map = Helper.CreateParameter(map)
+                Categories = Helper.CreateParameter(map)
             };
             using (var stream = (new OpenReadStreamFromFile()).Invoke(matrixFileName))
             {
                 var vector = matrixLoader.Invoke(stream);
-                Assert.AreSame(map, vector.Map);
+                Assert.AreSame(map, vector.RowCategories);
                 var vData = vector.Data;
                 for (int i = 0; i < map.Count; i++)
                 {
@@ -83,7 +83,7 @@ namespace TMG.Test.Loading
             var matrixFileName = MatrixHelper.WriteMatrixToCSVThirdNormalized(map, data);
             var matrixLoader = new LoadMatrixFromCSVThirdNormalized()
             {
-                Map = Helper.CreateParameter(map),
+                Categories = Helper.CreateParameter(map),
                 OriginColumn = Helper.CreateParameter(0),
                 DestinationColumn = Helper.CreateParameter(0),
                 DataColumn = Helper.CreateParameter(0)
@@ -91,7 +91,7 @@ namespace TMG.Test.Loading
             using (var stream = (new OpenReadStreamFromFile()).Invoke(matrixFileName))
             {
                 var vector = matrixLoader.Invoke(stream);
-                Assert.AreSame(map, vector.Map);
+                Assert.AreSame(map, vector.RowCategories);
                 var vData = vector.Data;
                 for (int i = 0; i < map.Count; i++)
                 {
@@ -122,12 +122,12 @@ namespace TMG.Test.Loading
             var matrixFileName = MatrixHelper.WriteMatrixToMTX(map, data);
             var matrixLoader = new LoadMatrixFromMTX()
             {
-                Map = Helper.CreateParameter(map),
+                Categories = Helper.CreateParameter(map),
             };
             using (var stream = (new OpenReadStreamFromFile()).Invoke(matrixFileName))
             {
                 var vector = matrixLoader.Invoke(stream);
-                Assert.AreSame(map, vector.Map);
+                Assert.AreSame(map, vector.RowCategories);
                 var vData = vector.Data;
                 for (int i = 0; i < map.Count; i++)
                 {

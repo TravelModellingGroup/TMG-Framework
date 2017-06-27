@@ -40,8 +40,8 @@ namespace XTMF.Testing.TMG.Data
         /// <returns></returns>
         private IFunction<Matrix> CreateData(string name, float m11, float m12, float m21, float m22)
         {
-            Map map = new Map(new List<int>() { 1, 2 });
-            var matrix = new Matrix(map);
+            var categories = new Categories(new List<int>() { 1, 2 });
+            var matrix = new Matrix(categories, categories);
             matrix.Data[0] = m11;
             matrix.Data[1] = m12;
             matrix.Data[2] = m21;
@@ -58,7 +58,7 @@ namespace XTMF.Testing.TMG.Data
         /// <returns></returns>
         private IFunction<Vector> CreateData(string name, float m1, float m2)
         {
-            Map map = new Map(new List<int>() { 1, 2 });
+            var map = new Categories(new List<int>() { 1, 2 });
             var vector = new Vector(map);
             vector.Data[0] = m1;
             vector.Data[1] = m2;

@@ -32,16 +32,16 @@ namespace TMG.Test.Processing
         [TestMethod]
         public void Gravity2D()
         {
-            var map = MapHelper.LoadMap(MapHelper.WriteCSV(2));
-            var friction = new Matrix(map);
+            var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2));
+            var friction = new Matrix(categories, categories);
             friction.Data[0] = 0.25f;
             friction.Data[1] = 0.75f;
             friction.Data[2] = 2f;
             friction.Data[3] = 2f;
-            var production = new Vector(map);
+            var production = new Vector(categories);
             production.Data[0] = 2;
             production.Data[1] = 2;
-            var attraction = new Vector(map);
+            var attraction = new Vector(categories);
             attraction.Data[0] = 1.5f;
             attraction.Data[1] = 2.5f;
             var gm = new Evaluate2DGravityModel()
@@ -54,7 +54,7 @@ namespace TMG.Test.Processing
             };
             var ret = gm.Invoke();
             var result = ret.Data;
-            Assert.AreSame(map, ret.Map);
+            Assert.AreSame(categories, ret.RowCategories);
             Assert.AreEqual(0.5f, result[0], 0.0001f);
             Assert.AreEqual(1.5f, result[1], 0.0001f);
             Assert.AreEqual(1f, result[2], 0.0001f);

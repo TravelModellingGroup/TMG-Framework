@@ -22,26 +22,26 @@ namespace TMG
 {
     public sealed class Vector
     {
-        public Map Map { get; private set; }
+        public Categories Categories { get; private set; }
         public float[] Data { get; private set; }
 
-        public Vector(Map map)
+        public Vector(Categories categories)
         {
-            Map = map;
-            Data = new float[Map.Count];
+            Categories = categories;
+            Data = new float[Categories.Count];
         }
 
         public Vector(Vector vector)
         {
-            Map = vector.Map;
-            Data = new float[Map.Count];
+            Categories = vector.Categories;
+            Data = new float[Categories.Count];
         }
 
         public float this[int sparseIndex]
         {
             get
             {
-                var index = Map.GetFlatIndex(sparseIndex);
+                var index = Categories.GetFlatIndex(sparseIndex);
                 if(index >= 0)
                 {
                     return Data[index];
@@ -51,7 +51,7 @@ namespace TMG
 
             set
             {
-                var index = Map.GetFlatIndex(sparseIndex);
+                var index = Categories.GetFlatIndex(sparseIndex);
                 if (index >= 0)
                 {
                     Data[index] = value;

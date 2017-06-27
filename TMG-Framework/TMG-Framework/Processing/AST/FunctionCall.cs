@@ -391,7 +391,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 var matrix = computationResult.OdData;
                 ret = new Matrix(matrix);
             }
-            var step = ret.Map.Count + 1;
+            var step = ret.RowCategories.Count + 1;
             var flatRet = ret.Data;
             for (int i = 0; i < flatRet.Length; i += step)
             {
@@ -404,7 +404,7 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             var vectorData = computationResult.VectorData;
             var newMatrix = new Matrix(vectorData);
-            var rowSize = newMatrix.Map.Count;
+            var rowSize = newMatrix.RowCategories.Count;
             var flatVector = vectorData.Data;
             var flatMatrix = newMatrix.Data;
             switch (computationResult.Direction)
@@ -497,7 +497,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             var ret = computationResult.Accumulator ? computationResult.OdData : new Matrix(computationResult.OdData);
             var flatRet = ret.Data;
             var flatOrigin = computationResult.OdData.Data;
-            var rowLength = ret.Map.Count;
+            var rowLength = ret.RowCategories.Count;
             for (int i = 0; i < rowLength; i++)
             {
                 for (int j = i + 1; j < rowLength; j++)
@@ -520,10 +520,10 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         private ComputationResult SumColumns(ComputationResult computationResult)
         {
-            var ret = new Vector(computationResult.OdData.Map);
+            var ret = new Vector(computationResult.OdData.RowCategories);
             var flatRet = ret.Data;
             var flatData = computationResult.OdData.Data;
-            var rowSize = ret.Map.Count;
+            var rowSize = ret.Categories.Count;
             for (int i = 0; i < flatRet.Length; i++)
             {
                 VectorHelper.Add(flatRet, 0, flatRet, 0, flatData, i * rowSize, rowSize);
@@ -533,10 +533,10 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         private ComputationResult SumRows(ComputationResult computationResult)
         {
-            var ret = new Vector(computationResult.OdData.Map);
+            var ret = new Vector(computationResult.OdData.RowCategories);
             var flatRet = ret.Data;
             var flatData = computationResult.OdData.Data;
-            var rowSize = ret.Map.Count;
+            var rowSize = ret.Categories.Count;
             for (int i = 0; i < flatRet.Length; i++)
             {
                 flatRet[i] = VectorHelper.Sum(flatData, i * rowSize, rowSize);
@@ -547,10 +547,10 @@ namespace TMG.Frameworks.Data.Processing.AST
         private ComputationResult AvgColumns(ComputationResult computationResult)
         {
             var data = computationResult.OdData;
-            var ret = new Vector(data.Map);
+            var ret = new Vector(data.RowCategories);
             var flatRet = ret.Data;
             var flatData = data.Data;
-            var rowSize = ret.Map.Count;
+            var rowSize = ret.Categories.Count;
             for (int i = 0; i < flatRet.Length; i++)
             {
                 VectorHelper.Add(flatRet, 0, flatRet, 0, flatData, i * rowSize, rowSize);
@@ -562,10 +562,10 @@ namespace TMG.Frameworks.Data.Processing.AST
         private ComputationResult AvgRows(ComputationResult computationResult)
         {
             var data = computationResult.OdData;
-            var ret = new Vector(data.Map);
+            var ret = new Vector(data.RowCategories);
             var flatRet = ret.Data;
             var flatData = data.Data;
-            var rowSize = ret.Map.Count;
+            var rowSize = ret.Categories.Count;
             for (int i = 0; i < flatRet.Length; i++)
             {
                 flatRet[i] = VectorHelper.Sum(flatData, i * rowSize, rowSize);
@@ -592,7 +592,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             if (computationResult.IsOdResult)
             {
                 var data = computationResult.OdData;
-                var ret = new Vector(data.Map);
+                var ret = new Vector(data.RowCategories);
                 var flatRet = ret.Data;
                 var flatData = data.Data;
                 VectorHelper.Set(flatData, flatRet.Length);
@@ -606,7 +606,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             if (computationResult.IsOdResult)
             {
                 var data = computationResult.OdData;
-                var ret = new Vector(data.Map);
+                var ret = new Vector(data.RowCategories);
                 var flatRet = ret.Data;
                 var flatData = data.Data;
                 VectorHelper.Set(flatData, flatRet.Length);

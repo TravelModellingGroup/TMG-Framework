@@ -91,14 +91,14 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 if (rhs.IsVectorResult)
                 {
-                    var retVector = rhs.Accumulator ? rhs.VectorData : new Vector(rhs.VectorData.Map);
+                    var retVector = rhs.Accumulator ? rhs.VectorData : new Vector(rhs.VectorData.Categories);
                     var flat = retVector.Data;
                     VectorHelper.Add(flat, rhs.VectorData.Data, lhs.LiteralValue);
                     return new ComputationResult(retVector, true);
                 }
                 else
                 {
-                    var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData.Map);
+                    var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData.RowCategories, rhs.OdData.ColumnCategories);
                     VectorHelper.Add(retMatrix.Data, rhs.OdData.Data, lhs.LiteralValue);
                     return new ComputationResult(retMatrix, true);
                 }
@@ -107,7 +107,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 if (lhs.IsVectorResult)
                 {
-                    var retVector = lhs.Accumulator ? lhs.VectorData : new Vector(lhs.VectorData.Map);
+                    var retVector = lhs.Accumulator ? lhs.VectorData : new Vector(lhs.VectorData.Categories);
                     var flat = retVector.Data;
                     VectorHelper.Add(flat, lhs.VectorData.Data, rhs.LiteralValue);
                     return new ComputationResult(retVector, true);
@@ -115,7 +115,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else
                 {
                     // matrix / float
-                    var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData.Map);
+                    var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData.RowCategories, lhs.OdData.ColumnCategories);
                     VectorHelper.Add(retMatrix.Data, lhs.OdData.Data, rhs.LiteralValue);
                     return new ComputationResult(retMatrix, true);
                 }
@@ -132,7 +132,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     }
                     else if (lhs.IsVectorResult)
                     {
-                        var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData.Map);
+                        var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData.RowCategories, rhs.OdData.ColumnCategories);
                         var flatRet = retMatrix.Data;
                         var flatRhs = rhs.OdData.Data;
                         var flatLhs = lhs.VectorData.Data;
@@ -159,7 +159,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     }
                     else
                     {
-                        var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData.Map);
+                        var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData.RowCategories, lhs.OdData.ColumnCategories);
                         var flatRet = retMatrix.Data;
                         var flatLhs = lhs.OdData.Data;
                         var flatRhs = rhs.VectorData.Data;

@@ -34,7 +34,7 @@ namespace TMG.Saving
             {
                 var data = context.Data;
                 var flatData = data.Data;
-                var map = data.Map;
+                var map = data.Categories;
                 WriteHeaders(writer);
                 var length = map.Count;
                 for (int i = 0; i < length; i++)

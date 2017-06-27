@@ -24,35 +24,38 @@ namespace TMG
 {
     public sealed class Matrix
     {
-        public Map Map { get; private set; }
+        public Categories RowCategories { get; private set; }
+        public Categories ColumnCategories { get; private set; }
         public float[] Data { get; private set; }
 
-        private int RowLength;
+        private int RowSpan;
 
-        public Matrix(Map map)
+        public Matrix(Categories rowCategories, Categories columnCategories)
         {
-            Map = map;
-            RowLength = Map.Count;
-            Data = new float[Map.Count * Map.Count];
+            RowCategories = rowCategories;
+            ColumnCategories = columnCategories;
+            RowSpan = ColumnCategories.Count;
+            Data = new float[RowCategories.Count * ColumnCategories.Count];
         }
 
         public Matrix(Vector vector)
         {
-            Map = vector.Map;
-            RowLength = Map.Count;
-            Data = new float[Map.Count * Map.Count];
+            ColumnCategories = RowCategories = vector.Categories;
+            RowSpan = ColumnCategories.Count;
+            Data = new float[RowCategories.Count * ColumnCategories.Count];
         }
 
         public Matrix(Matrix matrix)
         {
-            Map = matrix.Map;
-            RowLength = matrix.RowLength;
-            Data = new float[Map.Count * Map.Count];
+            RowCategories = matrix.RowCategories;
+            ColumnCategories = matrix.ColumnCategories;
+            RowSpan = matrix.RowSpan;
+            Data = new float[RowCategories.Count * ColumnCategories.Count];
         }
 
         public (int Row, int Column) GetSparseIndex(int flatIndex)
         {
-            return (Map.GetSparseIndex(flatIndex / RowLength), Map.GetSparseIndex(flatIndex % RowLength));
+            return (RowCategories.GetSparseIndex(flatIndex / RowSpan), RowCategories.GetSparseIndex(flatIndex % RowSpan));
         }
 
         /// <summary>
@@ -63,7 +66,7 @@ namespace TMG
         /// <returns>The index in data for this data.</returns>
         public int GetFlatIndex(int flatRow, int floatColumn)
         {
-            return RowLength * flatRow + floatColumn;
+            return RowSpan * flatRow + floatColumn;
         }
 
         /// <summary>
@@ -73,7 +76,7 @@ namespace TMG
         /// <returns></returns>
         public int GetFlatRowIndex(int flatRow)
         {
-            return RowLength * flatRow;
+            return RowSpan * flatRow;
         }
 
         /// <summary>
@@ -83,12 +86,12 @@ namespace TMG
         /// <returns>The index in data for the start of this row</returns>
         public int GetSparseRowIndex(int sparseRow)
         {
-            var index = Map.GetFlatIndex(sparseRow);
+            var index = RowCategories.GetFlatIndex(sparseRow);
             if(index < 0)
             {
                 return -1;
             }
-            return index * RowLength;
+            return index * RowSpan;
         }
     }
 }

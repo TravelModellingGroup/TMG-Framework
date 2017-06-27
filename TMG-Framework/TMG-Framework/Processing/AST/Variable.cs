@@ -49,7 +49,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 return new ComputationResult(valueSource.Invoke());
             }
-            if(source is IFunction<Map> map)
+            if(source is IFunction<Categories> map)
             {
                 return new ComputationResult(new Vector(map.Invoke()), true, ComputationResult.VectorDirection.Unassigned);
             }

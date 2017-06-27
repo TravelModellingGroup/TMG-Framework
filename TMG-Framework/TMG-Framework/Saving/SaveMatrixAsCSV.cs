@@ -61,7 +61,7 @@ namespace TMG.Saving
             using (StreamWriter writer = new StreamWriter(context.Stream))
             {
                 var matrix = context.Matrix;
-                var map = matrix.Map;
+                var map = matrix.RowCategories;
                 var length = map.Count;
                 writer.Write('"');
                 writer.Write(FirstIndexHeader.Invoke().Replace('"', '\''));
@@ -101,7 +101,7 @@ namespace TMG.Saving
             using (StreamWriter writer = new StreamWriter(context.Stream))
             {
                 var matrix = context.Matrix;
-                var map = matrix.Map;
+                var map = matrix.RowCategories;
                 var length = map.Count;
                 var data = matrix.Data;
                 WriteWithQuotes(writer, FirstIndexHeader.Invoke());

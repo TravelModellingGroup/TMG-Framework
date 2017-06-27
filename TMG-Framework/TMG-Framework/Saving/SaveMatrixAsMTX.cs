@@ -38,7 +38,7 @@ namespace TMG.Saving
             using (var writer = new BinaryWriter(context.Stream))
             {
                 var matrix = context.Matrix;
-                var map = matrix.Map;
+                var map = matrix.RowCategories;
                 var length = map.Count;
                 writer.Write(MagicNumber);
                 writer.Write((int)1);

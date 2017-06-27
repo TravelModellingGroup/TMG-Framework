@@ -27,16 +27,16 @@ namespace TMG.Test.Utilities
 {
     internal static class VectorHelper
     {
-        internal static string WriteVectorCSV(Map map, float[] data)
+        internal static string WriteVectorCSV(Categories categories, float[] data)
         {
-            if(data.Length != map.Count)
+            if(data.Length != categories.Count)
             {
                 Assert.Fail("data length needs to be the same size as the map!");
             }
             var fileName = Path.GetTempFileName();
             try
             {
-                var vector = new Vector(map);
+                var vector = new Vector(categories);
                 Array.Copy(data, vector.Data, vector.Data.Length);
                 var save = new SaveVectorAsCSV()
                 {

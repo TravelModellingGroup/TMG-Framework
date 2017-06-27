@@ -105,7 +105,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var flatLhs = lhs.LiteralValue;
                     var flatRhs = rhs.OdData.Data;
                     var flatAdd = add.LiteralValue;
-                    var rowSize = retMatrix.Map.Count;
+                    var rowSize = retMatrix.RowCategories.Count;
                     Parallel.For(0, rowSize, (int i) =>
                     {
                         VectorHelper.FusedMultiplyAdd(flatRet, rowSize * i, flatRhs, rowSize * i,
@@ -203,7 +203,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var flatLhs = lhs.OdData.Data;
                     var flatRhs = rhs.OdData.Data;
                     var flatAdd = add.LiteralValue;
-                    var rowSize = retMatrix.Map.Count;
+                    var rowSize = retMatrix.RowCategories.Count;
                     Parallel.For(0, rowSize, (int i) =>
                     {
                         VectorHelper.FusedMultiplyAdd(flatRet, rowSize * i, flatLhs, rowSize * i,
@@ -393,7 +393,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var flatLhs = lhs.OdData.Data;
                     var flatRhs = rhs.OdData.Data;
                     var flatAdd = add.OdData.Data;
-                    var rowSize = retMatrix.Map.Count;
+                    var rowSize = retMatrix.RowCategories.Count;
                     Parallel.For(0, rowSize, (int i) =>
                     {
                         VectorHelper.FusedMultiplyAdd(flatRet, flatLhs, flatRhs,
@@ -409,7 +409,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var flatLhs = lhs.OdData.Data;
                     var flatRhs = rhs.VectorData.Data;
                     var flatAdd = add.OdData.Data;
-                    var rowSize = retMatrix.Map.Count;
+                    var rowSize = retMatrix.RowCategories.Count;
                     if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                     {
                         Parallel.For(0, rowSize, (int i) =>
@@ -431,7 +431,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     //RHS is scalar
                     var retMatrix = add.Accumulator ? add.OdData :
                         (lhs.Accumulator ? lhs.OdData : new Matrix(add.OdData));
-                    var rowSize = retMatrix.Map.Count;
+                    var rowSize = retMatrix.RowCategories.Count;
                     Parallel.For(0, rowSize, (int i) =>
                     {
                         VectorHelper.FusedMultiplyAdd(retMatrix.Data, rowSize * i, lhs.OdData.Data, rowSize * i, rhs.LiteralValue,

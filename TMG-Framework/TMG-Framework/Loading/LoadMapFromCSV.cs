@@ -26,9 +26,9 @@ namespace TMG.Loading
 {
     [Module(Name = "Load Map From CSV", Description = "Loads a map where each row has a different sparse index.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadMapFromCSV : BaseFunction<ReadStream, Map>
+    public sealed class LoadMapFromCSV : BaseFunction<ReadStream, Categories>
     {
-        public override Map Invoke(ReadStream stream)
+        public override Categories Invoke(ReadStream stream)
         {
             var record = new List<int>();
             using(var reader = new CsvReader(stream, false))
@@ -43,7 +43,7 @@ namespace TMG.Loading
                     }
                 }
             }
-            return new Map(record);
+            return new Categories(record);
         }
     }
 }

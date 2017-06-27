@@ -95,11 +95,11 @@ namespace TMG.Processing
             var ret = new Matrix(friction);
             var maxIterations = MaxIterations.Invoke();
             var maxError = MaxError.Invoke();
-            if (production.Map != attraction.Map)
+            if (production.Categories != attraction.Categories)
             {
                 throw new XTMFRuntimeException(this, "The production and attraction are not of the same type.");
             }
-            if (production.Map != friction.Map)
+            if (production.Categories != friction.RowCategories)
             {
                 throw new XTMFRuntimeException(this, "The production and friction are not of the same type.");
             }

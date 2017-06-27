@@ -33,10 +33,10 @@ namespace TMG.Test.Processing
         [TestMethod]
         public void TestLargeScalar()
         {
-            var map = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
-            var a = new Matrix(map);
-            var b = new Matrix(map);
-            var c = new Matrix(map);
+            var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
+            var a = new Matrix(categories, categories);
+            var b = new Matrix(categories, categories);
+            var c = new Matrix(categories, categories);
             var eval = new EvaluateScalar()
             {
                 Expression = Helper.CreateParameter("Sum(A * B + (C * 2 + 3))"),

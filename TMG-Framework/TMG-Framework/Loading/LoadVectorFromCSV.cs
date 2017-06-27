@@ -28,8 +28,8 @@ namespace TMG.Loading
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
     public sealed class LoadVectorFromCSV : BaseFunction<ReadStream, Vector>
     {
-        [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Map> SparseMap;
+        [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+        public IFunction<Categories> Categories;
 
         [Parameter(DefaultValue = "0", Name = "Map Column", Index = 1, Description = "The 0 indexed column containing the sparse map index.")]
         public IFunction<int> MapColumn;
@@ -39,7 +39,7 @@ namespace TMG.Loading
 
         public override Vector Invoke(ReadStream stream)
         {
-            var map = SparseMap.Invoke();
+            var map = Categories.Invoke();
             var ret = new Vector(map);
             var data = ret.Data;
             var mapColumn = MapColumn.Invoke();

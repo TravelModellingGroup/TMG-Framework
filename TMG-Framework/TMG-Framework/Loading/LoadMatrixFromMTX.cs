@@ -30,7 +30,7 @@ namespace TMG.Loading
     public sealed class LoadMatrixFromMTX : BaseFunction<ReadStream, Matrix>
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Map> Map;
+        public IFunction<Categories> Categories;
 
         private const uint MagicNumber = 0xC4D4F1B2;
 
@@ -38,8 +38,8 @@ namespace TMG.Loading
 
         public override Matrix Invoke(ReadStream context)
         {
-            var map = Map.Invoke();
-            var matrix = new Matrix(map);
+            var categories = Categories.Invoke();
+            var matrix = new Matrix(categories, categories);
             using (var reader = new BinaryReader(context))
             {
                 var magic = reader.ReadUInt32();
@@ -61,17 +61,17 @@ namespace TMG.Loading
                 }
                 int firstSize = reader.ReadInt32();
                 int secondSize = reader.ReadInt32();
-                if(map.Count != firstSize)
+                if(categories.Count != firstSize)
                 {
                     throw new XTMFRuntimeException(this, $"The matrix had the wrong number of elements in the first dimension!");
                 }
-                if (map.Count != secondSize)
+                if (categories.Count != secondSize)
                 {
                     throw new XTMFRuntimeException(this, $"The matrix had the wrong number of elements in the second dimension!");
                 }
-                ValidateIndexes(reader, map);
-                ValidateIndexes(reader, map);
-                var dataSize = map.Count * map.Count * sizeof(float);
+                ValidateIndexes(reader, categories);
+                ValidateIndexes(reader, categories);
+                var dataSize = categories.Count * categories.Count * sizeof(float);
                 ConversionBuffer buffer = new ConversionBuffer()
                 {
                     FloatData = matrix.Data
@@ -92,15 +92,15 @@ namespace TMG.Loading
             return matrix;
         }
 
-        private void ValidateIndexes(BinaryReader reader, Map map)
+        private void ValidateIndexes(BinaryReader reader, Categories categories)
         {
-            var length = map.Count;
+            var length = categories.Count;
             for (int i = 0; i < length; i++)
             {
                 var index = reader.ReadInt32();
-                if(index != map.GetSparseIndex(i))
+                if(index != categories.GetSparseIndex(i))
                 {
-                    throw new XTMFRuntimeException(this, $"The matrix file has an index of {index} where we were expecting an index of {map.GetSparseIndex(i)}!");
+                    throw new XTMFRuntimeException(this, $"The matrix file has an index of {index} where we were expecting an index of {categories.GetSparseIndex(i)}!");
                 }
             }
         }

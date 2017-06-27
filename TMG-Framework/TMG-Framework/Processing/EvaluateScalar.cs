@@ -64,7 +64,7 @@ namespace TMG.Processing
             foreach (var module in Variables)
             {
                 if (!(module is IFunction<Matrix> || module is IFunction<Vector> || module is IFunction<float>
-                    || module is IFunction<Map>))
+                    || module is IFunction<Categories>))
                 {
                     error = $"Invalid variable module type {module.GetType().Name} from module {module.Name}!";
                     return false;

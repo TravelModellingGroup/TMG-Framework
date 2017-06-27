@@ -43,14 +43,14 @@ namespace TMG.Test.Loading
             var vectorFileName = VectorHelper.WriteVectorCSV(map, data);
             LoadVectorFromCSV vecLoader = new LoadVectorFromCSV()
             {
-                SparseMap = Helper.CreateParameter(map),
+                Categories = Helper.CreateParameter(map),
                 MapColumn = Helper.CreateParameter(0),
                 DataColumn = Helper.CreateParameter(1)
             };
             using (var stream = (new OpenReadStreamFromFile()).Invoke(vectorFileName))
             {
                 var vector = vecLoader.Invoke(stream);
-                Assert.AreSame(map, vector.Map);
+                Assert.AreSame(map, vector.Categories);
                 var vData = vector.Data;
                 for (int i = 0; i < vData.Length; i++)
                 {

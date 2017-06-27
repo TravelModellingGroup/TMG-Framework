@@ -44,9 +44,9 @@ namespace TMG.Test.Data
             Assert.AreEqual(0, vector[12]);
         }
 
-        private static Map CreateMap()
+        private static Categories CreateMap()
         {
-            return new Map(new List<int>() { 2, 6, 4, 8, 10 });
+            return new Categories(new List<int>() { 2, 6, 4, 8, 10 });
         }
     }
 }

@@ -30,14 +30,16 @@ namespace TMG.Test.Data
         [TestMethod]
         public void CreateMatrix()
         {
-            var matrix = new Matrix(CreateMap());
+            var categories = CreateMap();
+            var matrix = new Matrix(categories, categories);
         }
 
         [TestMethod]
         public void GetSparseRowIndex()
         {
-            var matrix = new Matrix(CreateMap());
-            var size = matrix.Map.Count;
+            var categories = CreateMap();
+            var matrix = new Matrix(categories, categories);
+            var size = matrix.RowCategories.Count;
             Assert.AreEqual(0, matrix.GetSparseRowIndex(2));
             Assert.AreEqual(size * (3 - 1), matrix.GetSparseRowIndex(6));
             Assert.AreEqual(size * (2 - 1), matrix.GetSparseRowIndex(4));
@@ -48,8 +50,9 @@ namespace TMG.Test.Data
         [TestMethod]
         public void GetFlatRowIndex()
         {
-            var matrix = new Matrix(CreateMap());
-            var size = matrix.Map.Count;
+            var categories = CreateMap();
+            var matrix = new Matrix(categories, categories);
+            var size = matrix.RowCategories.Count;
             Assert.AreEqual(0, matrix.GetFlatRowIndex(0));
             Assert.AreEqual(size * 1, matrix.GetFlatRowIndex(1));
             Assert.AreEqual(size * 2, matrix.GetFlatRowIndex(2));
@@ -57,9 +60,9 @@ namespace TMG.Test.Data
             Assert.AreEqual(-1, matrix.GetSparseRowIndex(7));
         }
 
-        private static Map CreateMap()
+        private static Categories CreateMap()
         {
-            return new Map(new List<int>() { 2, 6, 4, 8, 10 });
+            return new Categories(new List<int>() { 2, 6, 4, 8, 10 });
         }
     }
 }

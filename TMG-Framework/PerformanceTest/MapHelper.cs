@@ -70,7 +70,7 @@ namespace PerformanceTest
             return tempName;
         }
 
-        internal static Map LoadMap(string fileName)
+        internal static Categories LoadMap(string fileName)
         {
             try
             {

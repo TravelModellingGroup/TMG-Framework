@@ -72,7 +72,7 @@ namespace TMG.Test.Utilities
             return tempName;
         }
 
-        internal static Map LoadMap(string fileName)
+        internal static Categories LoadMap(string fileName)
         {
             try
             {

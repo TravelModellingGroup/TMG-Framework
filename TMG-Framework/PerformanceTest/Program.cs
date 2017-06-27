@@ -45,10 +45,10 @@ namespace PerformanceTest
 
         static void Main(string[] args)
         {
-            var map = MapHelper.LoadMap(MapHelper.WriteCSV(4000));
-            var a = new Matrix(map);
-            var b = new Matrix(map);
-            var c = new Matrix(map);
+            var categories = MapHelper.LoadMap(MapHelper.WriteCSV(4000));
+            var a = new Matrix(categories,categories);
+            var b = new Matrix(categories,categories);
+            var c = new Matrix(categories,categories);
             var eval = new EvaluateMatrix()
             {
                 Expression = Helper.CreateParameter("A * B + (C * 2 + 3)"),

@@ -28,8 +28,8 @@ namespace TMG.Loading
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
     public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, Matrix>
     {
-        [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Map> Map;
+        [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+        public IFunction<Categories> Categories;
 
         [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 1, Description = "The 0 indexed column containing the sparse map index for the origin.")]
         public IFunction<int> OriginColumn;
@@ -42,9 +42,9 @@ namespace TMG.Loading
 
         public override Matrix Invoke(ReadStream stream)
         {
-            var map = Map.Invoke();
-            var rowSize = map.Count;
-            var ret = new Matrix(map);
+            var categories = Categories.Invoke();
+            var rowSize = categories.Count;
+            var ret = new Matrix(categories, categories);
             var data = ret.Data;
             var originColumn = OriginColumn.Invoke();
             var destinationColumn = DestinationColumn.Invoke();
@@ -66,7 +66,7 @@ namespace TMG.Loading
                         reader.Get(out int originIndex, originColumn);
                         reader.Get(out int destinationIndex, originColumn);
                         reader.Get(out float dataValue, dataColumn);
-                        if ((flatOrigin = map.GetFlatIndex(originIndex)) >= 0 && (flatDestination = map.GetFlatIndex(destinationIndex)) >= 0)
+                        if ((flatOrigin = categories.GetFlatIndex(originIndex)) >= 0 && (flatDestination = categories.GetFlatIndex(destinationIndex)) >= 0)
                         {
                             // if we know where to put it
                             data[flatOrigin * rowSize + flatDestination] = dataValue;
