@@ -63,7 +63,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 return add;
             }
-            if(!ValidateSizes(mulLhs, mulRhs, Start, out var error))
+            if (!ValidateSizes(mulLhs, mulRhs, Start, out var error))
             {
                 return error;
             }
@@ -403,10 +403,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var flatRhs = rhs.OdData.Data;
                     var flatAdd = add.OdData.Data;
                     var rowSize = retMatrix.RowCategories.Count;
-                    Parallel.For(0, rowSize, (int i) =>
+                    const int stepSize = 64;
+                    Parallel.For(0, (int)Math.Ceiling(rowSize / (double)stepSize) + 1, (int i) =>
                     {
-                        VectorHelper.FusedMultiplyAdd(flatRet, flatLhs, flatRhs,
-                                                flatAdd, rowSize * i, rowSize);
+                        var pos = rowSize * i * stepSize;
+                        for (int j = 0; j < stepSize && pos < flatRet.Length; j++, pos += rowSize)
+                        {
+                            VectorHelper.FusedMultiplyAdd(flatRet, flatLhs, flatRhs, flatAdd, pos, rowSize);
+                        }
                     });
                     return new ComputationResult(retMatrix, true);
                 }

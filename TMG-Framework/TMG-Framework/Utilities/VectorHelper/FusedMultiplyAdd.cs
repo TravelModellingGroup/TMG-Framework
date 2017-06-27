@@ -122,21 +122,33 @@ namespace TMG.Utilities
             {
                 throw new ArgumentNullException();
             }
-            if(length - Vector<float>.Count >= rhs.Length)
+            var end = offset + length;
+            if(end > rhs.Length)
             {
                 throw new ArgumentOutOfRangeException();
             }
             int i;
-            for (i = 0; i < dest.Length - Vector<float>.Count && i < length - Vector<float>.Count; i += Vector<float>.Count)
+            for (i = offset; 
+                i + Vector<float>.Count * 2 < lhs.Length &&
+                i + Vector<float>.Count * 2 < rhs.Length &&
+                i + Vector<float>.Count * 2 < add.Length &&
+                i + Vector<float>.Count * 2 < dest.Length &&
+                i < end - Vector<float>.Count; i += Vector<float>.Count * 2)
             {
-                var l = new Vector<float>(lhs, offset + i);
-                var r = new Vector<float>(rhs, offset + i);
-                var vAdd = new Vector<float>(add, offset + i);
-                (l * r + vAdd).CopyTo(dest, offset + i);
+                var l1 = new Vector<float>(lhs, i);
+                var r1 = new Vector<float>(rhs, i);
+                var vAdd1 = new Vector<float>(add, i);
+                var l2 = new Vector<float>(lhs, i + Vector<float>.Count);
+                var r2 = new Vector<float>(rhs, i + Vector<float>.Count);
+                var vAdd2 = new Vector<float>(add, i + Vector<float>.Count);
+                var res1 = l1 * r1 + vAdd1;
+                var res2 = (l2 * r2 + vAdd2);
+                res1.CopyTo(dest, i);
+                res2.CopyTo(dest, i + Vector<float>.Count);
             }
-            for (; i < length; i++)
+            for (; i < end; i++)
             {
-                dest[offset + i] = lhs[offset + i] * rhs[offset + i] + add[offset + i];
+                dest[i] = lhs[i] * rhs[i] + add[i];
             }
         }
     }
