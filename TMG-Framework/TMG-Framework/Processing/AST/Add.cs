@@ -60,7 +60,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             var rhsMul = Rhs as Multiply;
             if (lhsMul != null)
             {
-                ex = new FusedMultiplyAdd(Start)
+                ex = new FusedMultiplyAdd(Start, Rhs.Start)
                 {
                     MulLhs = lhsMul.Lhs,
                     MulRhs = lhsMul.Rhs,
@@ -69,8 +69,8 @@ namespace TMG.Frameworks.Data.Processing.AST
             }
             else if (rhsMul != null)
             {
-                ex = new FusedMultiplyAdd(Start)
-                {
+                ex = new FusedMultiplyAdd(Start, Lhs.Start)
+                { 
                     MulLhs = rhsMul.Lhs,
                     MulRhs = rhsMul.Rhs,
                     Add = Lhs

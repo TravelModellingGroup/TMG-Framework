@@ -30,10 +30,11 @@ namespace TMG.Frameworks.Data.Processing.AST
         public Expression MulLhs;
         public Expression MulRhs;
         public Expression Add;
+        private int AddStart;
 
-        public FusedMultiplyAdd(int start) : base(start)
+        public FusedMultiplyAdd(int mulStart, int addStart) : base(mulStart)
         {
-
+            AddStart = addStart;
         }
 
         public override ComputationResult Evaluate(IModule[] dataSources)
@@ -62,11 +63,11 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 return add;
             }
-            if(!ValidateSizes(mulLhs, mulRhs, out var error))
+            if(!ValidateSizes(mulLhs, mulRhs, Start, out var error))
             {
                 return error;
             }
-            if (!ValidateSizes(mulRhs, add, out var error2))
+            if (!ValidateSizes(mulRhs, add, AddStart, out var error2))
             {
                 return error2;
             }

@@ -39,7 +39,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             return false;
         }
 
-        protected bool ValidateSizes(ComputationResult lhs, ComputationResult rhs, out ComputationResult errorResult)
+        protected bool ValidateSizes(ComputationResult lhs, ComputationResult rhs, int position, out ComputationResult errorResult)
         {
             errorResult = null;
             if (lhs.IsValue || lhs.IsVectorResult && rhs.IsOdResult)
@@ -55,7 +55,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     if (!(lhs.OdData.ColumnCategories == rhs.OdData.ColumnCategories
                         && lhs.OdData.RowCategories == rhs.OdData.RowCategories))
                     {
-                        return FailWithError(out errorResult, "Operation failed because data was not of compatible categories.");
+                        return FailWithError(out errorResult, $"Operation at position {position} failed because data was not of compatible categories.");
                     }
                 }
                 else if (rhs.IsVectorResult)
@@ -65,25 +65,25 @@ namespace TMG.Frameworks.Data.Processing.AST
                         case ComputationResult.VectorDirection.Horizontal:
                             if (!(lhs.OdData.ColumnCategories == rhs.VectorData.Categories))
                             {
-                                return FailWithError(out errorResult, "Operation failed because data was not of compatible categories.");
+                                return FailWithError(out errorResult, $"Operation at position {position} failed because data was not of compatible categories.");
                             }
                             break;
                         case ComputationResult.VectorDirection.Vertical:
                             if (!(lhs.OdData.RowCategories == rhs.VectorData.Categories))
                             {
-                                return FailWithError(out errorResult, "Operation failed because data was not of compatible categories.");
+                                return FailWithError(out errorResult, $"Operation at position {position} failed because data was not of compatible categories.");
                             }
                             break;
                         case ComputationResult.VectorDirection.Unassigned:
-                            return FailWithError(out errorResult, "Operation failed because a non-oriented vector can not be applied to a matrix.");
+                            return FailWithError(out errorResult, $"Operation at position {position} failed because a non-oriented vector can not be applied to a matrix.");
                     }
                 }
             }
             else if (lhs.IsVectorResult)
             {
-                if(rhs.IsVectorResult)
+                if (rhs.IsVectorResult)
                 {
-                    if(lhs.VectorData.Categories != rhs.VectorData.Categories)
+                    if (lhs.VectorData.Categories != rhs.VectorData.Categories)
                     {
                         return FailWithError(out errorResult, "Operation failed because data was not of compatible categories.");
                     }
@@ -120,7 +120,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             // if this ever becomes a real problem try to add some optimization to the expression tree
             return ex.OptimizeAst(ref ex, ref error);
         }
-        
+
 
         private static int FindStartOfBracket(char[] buffer, int start, int length, ref string error)
         {
@@ -160,7 +160,7 @@ namespace TMG.Frameworks.Data.Processing.AST
         private static bool IsCompareType(Expression e)
         {
             var t = e.GetType();
-            if(t == typeof(Bracket))
+            if (t == typeof(Bracket))
             {
                 return IsCompareType(((Bracket)e).InnerExpression);
             }
@@ -197,7 +197,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             if (!Compile(buffer, start, i - start, out toReturn.Lhs, ref error)) return false;
                             if (!Compile(buffer, i + 1, endPlusOne - i - 1, out toReturn.Rhs, ref error)) return false;
                             // test LHS to make sure it is a compare
-                            if(!IsCompareType(toReturn.Lhs) && !IsCompareType(toReturn.Rhs))
+                            if (!IsCompareType(toReturn.Lhs) && !IsCompareType(toReturn.Rhs))
                             {
                                 error = $"At position {i} we found an '&' character where neither the LHS and the RHS were flag types, at least one is required!";
                                 return false;
@@ -298,7 +298,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             if (i + 1 < endPlusOne && buffer[i + 1] == '=')
                             {
                                 // Inverse the LHS and RHS to reuse the greater comparisons
-                                BinaryExpression toReturn = new CompareGreaterThanOrEqual(i); 
+                                BinaryExpression toReturn = new CompareGreaterThanOrEqual(i);
                                 if (!Compile(buffer, i + 2, endPlusOne - i - 2, out toReturn.Lhs, ref error)) return false;
                                 if (!Compile(buffer, start, i - start, out toReturn.Rhs, ref error)) return false;
                                 ex = toReturn;
@@ -582,7 +582,7 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
-            ComputationResult lhs = null; 
+            ComputationResult lhs = null;
             ComputationResult rhs = null;
             Parallel.Invoke(
                 () => lhs = Lhs.Evaluate(dataSources),
@@ -595,7 +595,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 return rhs;
             }
-            if(!ValidateSizes(lhs, rhs, out var errorResult))
+            if (!ValidateSizes(lhs, rhs, Start, out var errorResult))
             {
                 return errorResult;
             }
@@ -606,7 +606,7 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         internal override bool OptimizeAst(ref Expression ex, ref string error)
         {
-            if(!Lhs.OptimizeAst(ref Lhs, ref error) || !Rhs.OptimizeAst(ref Rhs, ref error))
+            if (!Lhs.OptimizeAst(ref Lhs, ref error) || !Rhs.OptimizeAst(ref Rhs, ref error))
             {
                 return false;
             }
@@ -641,7 +641,7 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         internal override bool OptimizeAst(ref Expression ex, ref string error)
         {
-            if(!InnerExpression.OptimizeAst(ref ex, ref error))
+            if (!InnerExpression.OptimizeAst(ref ex, ref error))
             {
                 return false;
             }
