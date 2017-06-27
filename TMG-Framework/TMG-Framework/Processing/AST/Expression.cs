@@ -42,7 +42,7 @@ namespace TMG.Frameworks.Data.Processing.AST
         protected bool ValidateSizes(ComputationResult lhs, ComputationResult rhs, out ComputationResult errorResult)
         {
             errorResult = null;
-            if (lhs.IsValue)
+            if (lhs.IsValue || lhs.IsVectorResult && rhs.IsOdResult)
             {
                 var temp = rhs;
                 rhs = lhs;
@@ -75,7 +75,17 @@ namespace TMG.Frameworks.Data.Processing.AST
                             }
                             break;
                         case ComputationResult.VectorDirection.Unassigned:
-                            return FailWithError(out errorResult, "Operation failed because a non-oriented vector can not be applied to a ");
+                            return FailWithError(out errorResult, "Operation failed because a non-oriented vector can not be applied to a matrix.");
+                    }
+                }
+            }
+            else if (lhs.IsVectorResult)
+            {
+                if(rhs.IsVectorResult)
+                {
+                    if(lhs.VectorData.Categories != rhs.VectorData.Categories)
+                    {
+                        return FailWithError(out errorResult, "Operation failed because data was not of compatible categories.");
                     }
                 }
             }
