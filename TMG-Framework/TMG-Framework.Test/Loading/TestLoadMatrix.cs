@@ -47,7 +47,8 @@ namespace TMG.Test.Loading
             var matrixFileName = MatrixHelper.WriteMatrixToCSVMatrix(map, data);
             var matrixLoader = new LoadMatrixFromCSVMatrix()
             {
-                Categories = Helper.CreateParameter(map)
+                ColumnCategories = Helper.CreateParameter(map),
+                RowCategories = Helper.CreateParameter(map)
             };
             using (var stream = (new OpenReadStreamFromFile()).Invoke(matrixFileName))
             {
@@ -83,7 +84,8 @@ namespace TMG.Test.Loading
             var matrixFileName = MatrixHelper.WriteMatrixToCSVThirdNormalized(map, data);
             var matrixLoader = new LoadMatrixFromCSVThirdNormalized()
             {
-                Categories = Helper.CreateParameter(map),
+                RowCategories = Helper.CreateParameter(map),
+                ColumnCategories = Helper.CreateParameter(map),
                 OriginColumn = Helper.CreateParameter(0),
                 DestinationColumn = Helper.CreateParameter(0),
                 DataColumn = Helper.CreateParameter(0)

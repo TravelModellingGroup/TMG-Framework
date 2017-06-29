@@ -28,23 +28,27 @@ namespace TMG.Loading
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
     public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, Matrix>
     {
-        [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Categories> Categories;
+        [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+        public IFunction<Categories> RowCategories;
 
-        [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 1, Description = "The 0 indexed column containing the sparse map index for the origin.")]
+        [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
+        public IFunction<Categories> ColumnCategories;
+
+        [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the origin.")]
         public IFunction<int> OriginColumn;
 
-        [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the destination.")]
+        [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the destination.")]
         public IFunction<int> DestinationColumn;
 
-        [Parameter(DefaultValue = "2", Name = "Data Column", Index = 3, Description = "The 0 indexed column containing the data to load index.")]
+        [Parameter(DefaultValue = "2", Name = "Data Column", Index = 4, Description = "The 0 indexed column containing the data to load index.")]
         public IFunction<int> DataColumn;
 
         public override Matrix Invoke(ReadStream stream)
         {
-            var categories = Categories.Invoke();
-            var rowSize = categories.Count;
-            var ret = new Matrix(categories, categories);
+            var rowCategories = RowCategories.Invoke();
+            var columnCategories = ColumnCategories.Invoke();
+            var rowSize = rowCategories.Count;
+            var ret = new Matrix(rowCategories, columnCategories);
             var data = ret.Data;
             var originColumn = OriginColumn.Invoke();
             var destinationColumn = DestinationColumn.Invoke();
@@ -66,7 +70,7 @@ namespace TMG.Loading
                         reader.Get(out int originIndex, originColumn);
                         reader.Get(out int destinationIndex, originColumn);
                         reader.Get(out float dataValue, dataColumn);
-                        if ((flatOrigin = categories.GetFlatIndex(originIndex)) >= 0 && (flatDestination = categories.GetFlatIndex(destinationIndex)) >= 0)
+                        if ((flatOrigin = rowCategories.GetFlatIndex(originIndex)) >= 0 && (flatDestination = columnCategories.GetFlatIndex(destinationIndex)) >= 0)
                         {
                             // if we know where to put it
                             data[flatOrigin * rowSize + flatDestination] = dataValue;

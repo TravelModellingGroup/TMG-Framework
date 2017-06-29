@@ -29,15 +29,19 @@ namespace TMG.Loading
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
     public sealed class LoadMatrixFromCSVMatrix : BaseFunction<ReadStream, Matrix>
     {
-        [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Categories> Categories;
+        [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+        public IFunction<Categories> RowCategories;
+
+        [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
+        public IFunction<Categories> ColumnCategories;
 
         public override Matrix Invoke(ReadStream stream)
         {
-            var categories = Categories.Invoke();
-            var ret = new Matrix(categories, categories);
+            var columnCategories = ColumnCategories.Invoke();
+            var rowCategories = RowCategories.Invoke();
+            var ret = new Matrix(rowCategories, columnCategories);
             var flatData = ret.Data;
-            var rowSize = categories.Count;
+            var rowSize = columnCategories.Count;
             using (var reader = new CsvReader(stream, true))
             {
                 int columns = reader.LoadLine();
@@ -46,7 +50,7 @@ namespace TMG.Loading
                 for (int i = 1; i < columns; i++)
                 {
                     reader.Get(out int sparseIndex, i);
-                    if((destinationFlatIndex[i - 1] = categories.GetFlatIndex(sparseIndex)) < 0)
+                    if((destinationFlatIndex[i - 1] = columnCategories.GetFlatIndex(sparseIndex)) < 0)
                     {
                         throw new XTMFRuntimeException(this, $"Invalid sparse column index {sparseIndex}!");
                     }
@@ -56,7 +60,7 @@ namespace TMG.Loading
                     if(columns >= destinationFlatIndex.Length + 1)
                     {
                         reader.Get(out int sparseIndex, 0);
-                        var originOffset = categories.GetFlatIndex(sparseIndex) * rowSize;
+                        var originOffset = rowCategories.GetFlatIndex(sparseIndex) * rowSize;
                         if(originOffset < 0)
                         {
                             throw new XTMFRuntimeException(this, $"Invalid sparse row index {sparseIndex}!");
