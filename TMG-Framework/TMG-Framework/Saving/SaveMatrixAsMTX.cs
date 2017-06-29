@@ -38,35 +38,36 @@ namespace TMG.Saving
             using (var writer = new BinaryWriter(context.Stream))
             {
                 var matrix = context.Matrix;
-                var map = matrix.RowCategories;
-                var length = map.Count;
+                var rowCategories = matrix.RowCategories;
+                var columnCategories = matrix.ColumnCategories;
+                var rowLength = rowCategories.Count;
+                var columnLength = columnCategories.Count;
                 writer.Write(MagicNumber);
                 writer.Write((int)1);
                 writer.Write(FloatType);
                 writer.Write((int)2);
                 // write out the lengths for each index
-                writer.Write(length);
-                writer.Write(length);
+                writer.Write(rowLength);
+                writer.Write(columnLength);
                 writer.Flush();
-                using (var indexBuffer = new MemoryStream())
-                using (var indexWriter = new BinaryWriter(indexBuffer))
+                using (var indexWriter = new BinaryWriter(context.Stream, Encoding.Unicode, true))
                 {
-                    for (int i = 0; i < length; i++)
+                    for (int i = 0; i < rowLength; i++)
                     {
-                        indexWriter.Write(map.GetSparseIndex(i));
+                        indexWriter.Write(rowCategories.GetSparseIndex(i));
                     }
-                    indexWriter.Flush();
-                    // write out the indexes twice
-                    indexBuffer.WriteTo(context.Stream);
-                    indexBuffer.WriteTo(context.Stream);
+                    for (int i = 0; i < columnLength; i++)
+                    {
+                        indexWriter.Write(columnCategories.GetSparseIndex(i));
+                    }
                 }
                 // use conversion buffer to avoid copying the data
                 var buffer = new ConversionBuffer()
                 {
                     FloatData = matrix.Data
                 };
-                writer.Write(buffer.GetByteBuffer(length * length * sizeof(float)));
-                buffer.FinalizeAsFloatArray(length * length);
+                writer.Write(buffer.GetByteBuffer(rowLength * rowLength * sizeof(float)));
+                buffer.FinalizeAsFloatArray(rowLength * rowLength);
             }
         }
     }

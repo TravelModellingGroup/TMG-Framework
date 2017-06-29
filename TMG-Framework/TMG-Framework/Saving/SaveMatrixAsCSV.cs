@@ -61,25 +61,27 @@ namespace TMG.Saving
             using (StreamWriter writer = new StreamWriter(context.Stream))
             {
                 var matrix = context.Matrix;
-                var map = matrix.RowCategories;
-                var length = map.Count;
+                var rowCategories = matrix.RowCategories;
+                var columnCategories = matrix.ColumnCategories;
+                var rowLength = rowCategories.Count;
+                var columnLength = columnCategories.Count;
                 writer.Write('"');
                 writer.Write(FirstIndexHeader.Invoke().Replace('"', '\''));
                 writer.Write('\\');
                 writer.Write(SecondIndexHeader.Invoke().Replace('"', '\''));
                 writer.Write('"');
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i < columnLength; i++)
                 {
                     writer.Write(',');
-                    writer.Write(map.GetSparseIndex(i));
+                    writer.Write(columnCategories.GetSparseIndex(i));
                 }
                 writer.WriteLine();
                 var data = matrix.Data;
                 int pos = 0;
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i < rowLength; i++)
                 {
-                    writer.Write(map.GetSparseIndex(i));
-                    for (int j = 0; j < length; j++)
+                    writer.Write(rowCategories.GetSparseIndex(i));
+                    for (int j = 0; j < columnLength; j++)
                     {
                         writer.Write(',');
                         writer.Write(data[pos]);
