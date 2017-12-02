@@ -25,6 +25,8 @@ using TMG;
 using TMG.Frameworks.Data.Processing.AST;
 using TMG.Processing;
 using TMG.Test.Utilities;
+using System.Numerics;
+
 
 namespace TMG.Test.Processing
 {
@@ -37,15 +39,26 @@ namespace TMG.Test.Processing
             ExecutePipelineInOrderParallel<int> module = new ExecutePipelineInOrderParallel<int>()
             {
                 Name = "ModuleToTest",
-                ToExecuteInParallel = Helper.CreateModule((int input)=> input * 2),
-                ToExecuteNotInParallel = new []
+                ToExecuteInParallel = Helper.CreateModule((int input) => input * 2),
+                ToExecuteNotInParallel = new[]
                 {
-                    Helper.CreateModule((int i) => i + 1)
+                    Helper.CreateModule((int j) => j + 1)
                 }
             };
             var data = Enumerable.Range(0, 100).ToArray();
             var result = module.Invoke(data).ToArray();
-            for (int i = 0; i < data.Length; i++)
+            int i;
+            for (i = 0; i < data.Length - Vector<float>.Count; i += Vector<float>.Count)
+            {
+                if (!System.Numerics.Vector.EqualsAll(new Vector<int>(data, i), new Vector<int>(result, i)))
+                {
+                    for (int j = 0; j < Vector<float>.Count; j++)
+                    {
+                        Assert.AreEqual((i + j) * 2 + 1, result[i + j]);
+                    }
+                }
+            }
+            for (; i < data.Length; i++)
             {
                 Assert.AreEqual(i * 2 + 1, result[i]);
             }
