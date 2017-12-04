@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace TMG.Data
+namespace TMG
 {
     /// <summary>
     /// Represents an index into an object of Categories.
