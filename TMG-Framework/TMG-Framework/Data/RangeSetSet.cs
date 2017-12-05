@@ -37,15 +37,8 @@ namespace TMG
 
         public RangeSet this[int index]
         {
-            get
-            {
-                return RangeSets[index];
-            }
-
-            set
-            {
-                RangeSets[index] = value;
-            }
+            get => RangeSets[index];
+            set => RangeSets[index] = value;
         }
 
         public static bool TryParse(string rangeString, out RangeSetSet output)
@@ -103,23 +96,14 @@ namespace TMG
         /// Not Supported
         /// </summary>
         /// <param name="item"></param>
-        public void Add(RangeSet item)
-        {
-            throw new NotSupportedException();
-        }
+        public void Add(RangeSet item) => throw new NotSupportedException();
 
         /// <summary>
         /// Not Supported
         /// </summary>
-        public void Clear()
-        {
-            throw new NotSupportedException();
-        }
+        public void Clear() => throw new NotSupportedException();
 
-        public bool Contains(RangeSet item)
-        {
-            return IndexOf(item) != -1;
-        }
+        public bool Contains(RangeSet item) => IndexOf(item) != -1;
 
         public void CopyTo(RangeSet[] array, int arrayIndex)
         {
@@ -152,10 +136,7 @@ namespace TMG
             return true;
         }
 
-        public IEnumerator<RangeSet> GetEnumerator()
-        {
-            return ((ICollection<RangeSet>)RangeSets).GetEnumerator();
-        }
+        public IEnumerator<RangeSet> GetEnumerator() => ((ICollection<RangeSet>)RangeSets).GetEnumerator();
 
         public override int GetHashCode()
         {
@@ -217,23 +198,14 @@ namespace TMG
         /// </summary>
         /// <param name="index"></param>
         /// <param name="item"></param>
-        public void Insert(int index, RangeSet item)
-        {
-            throw new NotSupportedException();
-        }
+        public void Insert(int index, RangeSet item) => throw new NotSupportedException();
 
-        public bool Remove(RangeSet item)
-        {
-            throw new NotSupportedException();
-        }
+        public bool Remove(RangeSet item) => throw new NotSupportedException();
 
         /// <summary>
         /// Not Supported
         /// </summary>
-        public void RemoveAt(int index)
-        {
-            throw new NotSupportedException();
-        }
+        public void RemoveAt(int index) => throw new NotSupportedException();
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {

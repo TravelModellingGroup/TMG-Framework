@@ -22,40 +22,73 @@ using System.Text;
 
 namespace TMG
 {
+    /// <summary>
+    /// A 2D representation with categories for rows and columns
+    /// </summary>
     public sealed class Matrix
     {
+        /// <summary>
+        /// The categories for the rows.
+        /// </summary>
         public Categories RowCategories { get; private set; }
+
+        /// <summary>
+        /// The categories for the columns.
+        /// </summary>
         public Categories ColumnCategories { get; private set; }
+
+        /// <summary>
+        /// The backend storage for the matrix
+        /// </summary>
         public float[] Data { get; private set; }
 
-        private int RowSpan;
+        private int _RowSpan;
 
+        /// <summary>
+        /// Create a new matrix with the given row and column categories.
+        /// </summary>
+        /// <param name="rowCategories">The categories for the rows.</param>
+        /// <param name="columnCategories">The categories for the columns.</param>
         public Matrix(Categories rowCategories, Categories columnCategories)
         {
             RowCategories = rowCategories;
             ColumnCategories = columnCategories;
-            RowSpan = ColumnCategories.Count;
+            _RowSpan = ColumnCategories.Count;
             Data = new float[RowCategories.Count * ColumnCategories.Count];
         }
 
+        /// <summary>
+        /// Create a new matrix using the dimensions from the given vector.
+        /// </summary>
+        /// <param name="vector">The vector to get the dimensions from.</param>
         public Matrix(Vector vector)
         {
             ColumnCategories = RowCategories = vector.Categories;
-            RowSpan = ColumnCategories.Count;
+            _RowSpan = ColumnCategories.Count;
             Data = new float[RowCategories.Count * ColumnCategories.Count];
         }
 
+        /// <summary>
+        /// Create a new matrix with the dimensions from the provided
+        /// matrix.
+        /// </summary>
+        /// <param name="matrix">The matrix to copy the dimensions from.</param>
         public Matrix(Matrix matrix)
         {
             RowCategories = matrix.RowCategories;
             ColumnCategories = matrix.ColumnCategories;
-            RowSpan = matrix.RowSpan;
+            _RowSpan = matrix._RowSpan;
             Data = new float[RowCategories.Count * ColumnCategories.Count];
         }
 
+        /// <summary>
+        /// Get the row and column for a given flat index into the backend data
+        /// </summary>
+        /// <param name="flatIndex">The flat index in the data to get the sparse row and column for.</param>
+        /// <returns>The row and column in sparse space for this flat index.</returns>
         public (int Row, int Column) GetSparseIndex(int flatIndex)
         {
-            return (RowCategories.GetSparseIndex(flatIndex / RowSpan), RowCategories.GetSparseIndex(flatIndex % RowSpan));
+            return (RowCategories.GetSparseIndex(flatIndex / _RowSpan), RowCategories.GetSparseIndex(flatIndex % _RowSpan));
         }
 
         /// <summary>
@@ -66,7 +99,7 @@ namespace TMG
         /// <returns>The index in data for this data.</returns>
         public int GetFlatIndex(int flatRow, int floatColumn)
         {
-            return RowSpan * flatRow + floatColumn;
+            return _RowSpan * flatRow + floatColumn;
         }
 
         /// <summary>
@@ -76,7 +109,7 @@ namespace TMG
         /// <returns></returns>
         public int GetFlatRowIndex(int flatRow)
         {
-            return RowSpan * flatRow;
+            return _RowSpan * flatRow;
         }
 
         /// <summary>
@@ -91,7 +124,21 @@ namespace TMG
             {
                 return -1;
             }
-            return index * RowSpan;
+            return index * _RowSpan;
+        }
+
+        /// <summary>
+        /// Get a reference to a row in the matrix.
+        /// </summary>
+        /// <param name="flatRowIndex">The 0 indexed row number to get access to.</param>
+        /// <returns>A reference to the row.</returns>
+        public Span<float> GetRow(int flatRowIndex)
+        {
+            if(flatRowIndex < 0 | flatRowIndex + _RowSpan > RowCategories.Count)
+            {
+                throw new IndexOutOfRangeException(nameof(flatRowIndex));
+            }
+            return new Span<float>(Data, GetFlatRowIndex(flatRowIndex), _RowSpan);
         }
     }
 }

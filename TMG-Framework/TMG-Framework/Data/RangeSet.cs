@@ -24,9 +24,9 @@ using static System.String;
 
 namespace TMG
 {
-    public class RangeSet : IList<Range>
+    public sealed class RangeSet : IList<Range>
     {
-        protected readonly Range[] SetRanges;
+        private readonly Range[] SetRanges;
 
         public RangeSet(List<Range> tempRange)
         {
@@ -62,17 +62,10 @@ namespace TMG
 
         public bool IsReadOnly => false;
 
-        public virtual Range this[int index]
+        public Range this[int index]
         {
-            get
-            {
-                return SetRanges[index];
-            }
-
-            set
-            {
-                SetRanges[index] = value;
-            }
+            get => SetRanges[index];
+            set => SetRanges[index] = value;
         }
 
         public static bool TryParse(string rangeString, out RangeSet output)
@@ -151,7 +144,6 @@ namespace TMG
                                     return false;
                             }
                         break;
-
                     case 1:
                         if (IsNumber(c))
                         {
@@ -174,7 +166,6 @@ namespace TMG
                                     break;
                             }
                         break;
-
                     case 2:
                         if (IsNumber(c))
                         {
@@ -209,25 +200,13 @@ namespace TMG
             return true;
         }
 
-        public void Add(Range item)
-        {
-            throw new InvalidOperationException("Unable to add items");
-        }
+        public void Add(Range item) => throw new InvalidOperationException("Unable to add items");
 
-        public void Clear()
-        {
-            throw new InvalidOperationException("Unable to remove items");
-        }
+        public void Clear() => throw new InvalidOperationException("Unable to remove items");
 
-        public bool Contains(Range item)
-        {
-            return IndexOf(item) != -1;
-        }
+        public bool Contains(Range item) => IndexOf(item) != -1;
 
-        public bool Contains(float value)
-        {
-            return IndexOf(value) != -1;
-        }
+        public bool Contains(float value) => IndexOf(value) != -1;
 
         public bool Contains(int number)
         {
@@ -263,10 +242,7 @@ namespace TMG
             return true;
         }
 
-        public IEnumerator<Range> GetEnumerator()
-        {
-            return ((ICollection<Range>)SetRanges).GetEnumerator();
-        }
+        public IEnumerator<Range> GetEnumerator() => ((ICollection<Range>)SetRanges).GetEnumerator();
 
         public override int GetHashCode()
         {
@@ -356,20 +332,11 @@ namespace TMG
             return false;
         }
 
-        public bool Remove(Range item)
-        {
-            throw new InvalidOperationException("Unable to remove items");
-        }
+        public bool Remove(Range item) => throw new InvalidOperationException("Unable to remove items");
 
-        public void RemoveAt(int index)
-        {
-            throw new InvalidOperationException("Unable to remove items");
-        }
+        public void RemoveAt(int index) => throw new InvalidOperationException("Unable to remove items");
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return SetRanges.GetEnumerator();
-        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => SetRanges.GetEnumerator();
 
         public override string ToString()
         {
