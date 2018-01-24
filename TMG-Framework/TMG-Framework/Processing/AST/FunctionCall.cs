@@ -17,6 +17,7 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.Linq;
 using TMG.Utilities;
 using XTMF2;
 
@@ -46,7 +47,8 @@ namespace TMG.Frameworks.Data.Processing.AST
             ZeroMatrix,
             Matrix,
             IdentityMatrix,
-            Log
+            Log,
+            If
         }
 
         private FunctionType Type;
@@ -146,6 +148,9 @@ namespace TMG.Frameworks.Data.Processing.AST
                 case "log":
                     type = FunctionType.Log;
                     return true;
+                case "if":
+                    type = FunctionType.If;
+                    return true;
                 default:
                     error = "The function '" + call + "' is undefined!";
                     return false;
@@ -156,13 +161,34 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             // first evaluate the parameters
             var values = new ComputationResult[Parameters.Length];
-            for (int i = 0; i < values.Length; i++)
+            switch(Parameters.Length)
             {
-                values[i] = Parameters[i].Evaluate(dataSources);
-                if (values[i].Error)
-                {
-                    return values[i];
-                }
+                case 0:
+                    break;
+                case 1:
+                    {
+                        values[0] = Parameters[0].Evaluate(dataSources);
+                        if (values[0].Error)
+                        {
+                            return values[0];
+                        }
+                    }
+                    break;
+                default:
+                    {
+                        System.Threading.Tasks.Parallel.For(0, values.Length, (int i) =>
+                        {
+                            values[i] = Parameters[i].Evaluate(dataSources);
+                        });
+                        for (int i = 0; i < values.Length; i++)
+                        {
+                            if(values[i].Error)
+                            {
+                                return values[i];
+                            }
+                        }
+                    }
+                    break;
             }
 
             switch (Type)
@@ -351,9 +377,129 @@ namespace TMG.Frameworks.Data.Processing.AST
                         return new ComputationResult("Log must be executed with one parameter!");
                     }
                     return Log(values);
+                case FunctionType.If:
+                    if (values.Length != 3)
+                    {
+                        return new ComputationResult("If requires at 3 parameters (condition, valueIfTrue, valueIfFalse)!");
+                    }
+                    return ComputeIf(values);
 
             }
             return new ComputationResult("An undefined function was executed!");
+        }
+
+        private ComputationResult ComputeIf(ComputationResult[] values)
+        {
+            var condition = values[0];
+            var ifTrue = values[1];
+            var ifFalse = values[2];
+            if ((ifTrue.IsValue & !ifFalse.IsValue)
+                || (ifTrue.IsVectorResult & !ifFalse.IsVectorResult)
+                || (ifTrue.IsOdResult & !ifFalse.IsOdResult))
+            {
+                return new ComputationResult($"{Start + 1}:The True and False case of an if expression must be of the same dimensionality.");
+            }
+            if (condition.IsValue)
+            {
+                // in all cases we can just move the result to the next level
+                return condition.LiteralValue > 0f ? ifTrue : ifFalse;
+            }
+            else if (condition.IsVectorResult)
+            {
+                if (ifTrue.IsValue)
+                {
+                    var saveTo = values[0].Accumulator ? values[0].VectorData : new Vector(values[0].VectorData);
+                    var result = saveTo.Data;
+                    var cond = condition.VectorData.Data;
+                    var t = ifTrue.LiteralValue;
+                    var f = ifFalse.LiteralValue;
+                    for (int i = 0; i < result.Length; i++)
+                    {
+                        result[i] = cond[i] > 0f ? t : f;
+                    }
+                    return new ComputationResult(saveTo, true, condition.Direction);
+                }
+                else if (ifTrue.IsVectorResult)
+                {
+                    var saveTo = values[0].Accumulator ? values[0].VectorData : new Vector(values[0].VectorData);
+                    var result = saveTo.Data;
+                    var cond = condition.VectorData.Data;
+                    var t = ifTrue.VectorData.Data;
+                    var f = ifFalse.VectorData.Data;
+                    for (int i = 0; i < result.Length; i++)
+                    {
+                        result[i] = cond[i] > 0f ? t[i] : f[i];
+                    }
+                    return new ComputationResult(saveTo, true, condition.Direction);
+                }
+                else
+                {
+                    switch (condition.Direction)
+                    {
+                        case ComputationResult.VectorDirection.Unassigned:
+                            return new ComputationResult($"{Start + 1}:The directionality of the condition vector is required when working with a matrix values.");
+                        case ComputationResult.VectorDirection.Vertical:
+                            {
+                                var saveTo = values[1].Accumulator ? values[1].OdData : new Matrix(values[1].OdData);
+                                var result = saveTo.Data;
+                                var cond = condition.VectorData.Data;
+                                var t = ifTrue.OdData.Data;
+                                var f = ifFalse.OdData.Data;
+                                for (int i = 0; i < cond.Length; i++)
+                                {
+                                    var toAssign = cond[i] > 0 ? t : f;
+                                    var rowOffset = i * cond.Length;
+                                    Array.Copy(toAssign, rowOffset, result, rowOffset, cond.Length);
+                                }
+                                return new ComputationResult(saveTo, true);
+                            }
+                        case ComputationResult.VectorDirection.Horizontal:
+                            {
+                                var saveTo = values[1].Accumulator ? values[1].OdData : new Matrix(values[1].OdData);
+                                var result = saveTo.Data;
+                                var cond = condition.VectorData.Data;
+                                var t = ifTrue.OdData.Data;
+                                var f = ifFalse.OdData.Data;
+                                for (int i = 0; i < cond.Length; i++)
+                                {
+                                    int rowOffset = i * cond.Length;
+                                    for (int j = 0; j < cond.Length; j++)
+                                    {
+                                        result[rowOffset + j] = cond[j] > 0 ? t[rowOffset + j] : f[rowOffset + j];
+                                    }
+                                }
+                                return new ComputationResult(saveTo, true);
+                            }
+                    }
+                }
+            }
+            if (condition.IsOdResult)
+            {
+                if (!ifTrue.IsOdResult)
+                {
+                    return new ComputationResult($"{Start + 1}:The True and False cases must be a Matrix when the condition is a matrix.");
+                }
+                var saveTo = values[0].Accumulator ? values[0].OdData : new Matrix(values[0].OdData);
+                var cond = condition.OdData.Data;
+                var tr = ifTrue.OdData.Data;
+                var fa = ifFalse.OdData.Data;
+                var sa = saveTo.Data;
+                var columnSize = condition.OdData.GetFlatRowIndex(1);
+                // this will never have a remainder
+                var rowSize = cond.Length / columnSize;
+                System.Threading.Tasks.Parallel.For(0, rowSize, (int row) =>
+                {
+                    var start = columnSize * row;
+                    var end = columnSize * (row + 1);
+                    for (int i = start; i < end; i++)
+                    {
+                        sa[i] = cond[i] > 0f ? tr[i] : fa[i];
+                    }
+                });
+                
+                return new ComputationResult(saveTo, true);
+            }
+            return new ComputationResult($"{Start + 1}:This combination of parameter types has not been implemented for if!");
         }
 
         private ComputationResult Log(ComputationResult[] values)
