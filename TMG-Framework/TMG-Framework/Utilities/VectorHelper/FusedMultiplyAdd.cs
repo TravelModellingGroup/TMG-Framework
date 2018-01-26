@@ -37,14 +37,19 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float add, int length)
         {
-            int i;
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
             var vAdd = new Vector<float>(add);
-            for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
+            int i = 0;
+            for (; i < destSpan.Length - 1; i += 2)
             {
-                var l = new Vector<float>(lhs, lhsIndex + i);
-                var r = new Vector<float>(rhs, rhsIndex + i);
-                (l * r + vAdd).CopyTo(dest, destIndex + i);
+                destSpan[i] = lhsSpan[i] * rhsSpan[i] + vAdd;
+                destSpan[i + 1] = lhsSpan[i + 1] * rhsSpan[i + 1] + vAdd;
             }
+            i *= Vector<float>.Count;
             for (; i < length; i++)
             {
                 dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add;
@@ -57,14 +62,19 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float add, int length)
         {
-            int i;
             var vAdd = new Vector<float>(add);
             var r = new Vector<float>(rhs);
-            for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            int i = 0;
+            for (; i < destSpan.Length - 1; i += 2)
             {
-                var l = new Vector<float>(lhs, lhsIndex + i);
-                (l * r + vAdd).CopyTo(dest, destIndex + i);
+                destSpan[i] = lhsSpan[i] * r + vAdd;
+                destSpan[i + 1] = lhsSpan[i + 1] * rhs + vAdd;
             }
+            i *= Vector<float>.Count;
             for (; i < length; i++)
             {
                 dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add;
@@ -77,14 +87,19 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, float[] add, int addIndex, int length)
         {
-            int i;
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
             var r = new Vector<float>(rhs);
-            for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
+            var addSpan = (new Span<float>(add, addIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            int i = 0;
+            for (; i < destSpan.Length - 1; i += 2)
             {
-                var l = new Vector<float>(lhs, lhsIndex + i);
-                var vAdd = new Vector<float>(add, addIndex + i);
-                (l * r + vAdd).CopyTo(dest, destIndex + i);
+                destSpan[i] = lhsSpan[i] * r + addSpan[i];
+                destSpan[i + 1] = lhsSpan[i + 1] * r + addSpan[i + 1];
             }
+            i *= Vector<float>.Count;
             for (; i < length; i++)
             {
                 dest[destIndex + i] = lhs[lhsIndex + i] * rhs + add[addIndex + i];
@@ -97,16 +112,19 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void FusedMultiplyAdd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, float[] add, int addIndex, int length)
         {
-            
-            int i;
-            var vLength = length - Vector<float>.Count;
-            for (i = 0; i < vLength; i += Vector<float>.Count)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var addSpan = (new Span<float>(add, addIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            int i = 0;
+            for (; i < destSpan.Length - 1; i += 2)
             {
-                var l = new Vector<float>(lhs, lhsIndex + i);
-                var r = new Vector<float>(rhs, rhsIndex + i);
-                var vAdd = new Vector<float>(add, addIndex + i);
-                (l * r + vAdd).CopyTo(dest, destIndex + i);
+                destSpan[i] = lhsSpan[i] * rhsSpan[i] + addSpan[i];
+                destSpan[i + 1] = lhsSpan[i + 1] * rhsSpan[i + 1] + addSpan[i + 1];
             }
+            i *= Vector<float>.Count;
             for (; i < length; i++)
             {
                 dest[destIndex + i] = lhs[lhsIndex + i] * rhs[rhsIndex + i] + add[addIndex + i];
@@ -118,37 +136,26 @@ namespace TMG.Utilities
         /// </summary>
         public static void FusedMultiplyAdd(float[] dest, float[] lhs, float[] rhs, float[] add, int offset, int length)
         {
-            if(dest == null || lhs == null || rhs == null || add == null)
+            if (dest == null || lhs == null || rhs == null || add == null)
             {
                 throw new ArgumentNullException();
             }
-            var end = offset + length;
-            if(end > rhs.Length)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var addSpan = (new Span<float>(add, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+            int i = 0;
+            for (; i < destSpan.Length - 1; i+=2)
             {
-                throw new ArgumentOutOfRangeException();
+                destSpan[i] = lhsSpan[i] * rhsSpan[i] + addSpan[i];
+                destSpan[i + 1] = lhsSpan[i + 1] * rhsSpan[i + 1] + addSpan[i + 1];
             }
-            int i;
-            for (i = offset; 
-                i + Vector<float>.Count * 2 < lhs.Length &&
-                i + Vector<float>.Count * 2 < rhs.Length &&
-                i + Vector<float>.Count * 2 < add.Length &&
-                i + Vector<float>.Count * 2 < dest.Length &&
-                i < end - Vector<float>.Count; i += Vector<float>.Count * 2)
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                var l1 = new Vector<float>(lhs, i);
-                var r1 = new Vector<float>(rhs, i);
-                var vAdd1 = new Vector<float>(add, i);
-                var l2 = new Vector<float>(lhs, i + Vector<float>.Count);
-                var r2 = new Vector<float>(rhs, i + Vector<float>.Count);
-                var vAdd2 = new Vector<float>(add, i + Vector<float>.Count);
-                var res1 = l1 * r1 + vAdd1;
-                var res2 = (l2 * r2 + vAdd2);
-                res1.CopyTo(dest, i);
-                res2.CopyTo(dest, i + Vector<float>.Count);
-            }
-            for (; i < end; i++)
-            {
-                dest[i] = lhs[i] * rhs[i] + add[i];
+                dest[offset + i] = lhs[offset + i] * rhs[offset + i] + add[offset + i];
             }
         }
     }
