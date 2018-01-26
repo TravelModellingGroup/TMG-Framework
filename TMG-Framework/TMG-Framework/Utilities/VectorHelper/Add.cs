@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2015-2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2015-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF.
 
@@ -17,6 +17,7 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -27,16 +28,20 @@ namespace TMG.Utilities
     {
         public static void Add(float[] dest, float[] source, float scalar)
         {
+            var vectorLength = dest.Length / Vector<float>.Count;
+            var remainder = dest.Length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, 0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
+            var sourceSpan = (new Span<float>(source, 0, source.Length - remainder)).NonPortableCast<float, Vector<float>>();
             Vector<float> constant = new Vector<float>(scalar);
             // copy everything we can do inside of a vector
             int i = 0;
-            for (; i <= source.Length - Vector<float>.Count; i += Vector<float>.Count)
+            for (; i < vectorLength - 1; i += 2)
             {
-                var dynamic = new Vector<float>(source, i);
-                (constant + dynamic).CopyTo(dest, i);
+                destSpan[i] = sourceSpan[i] + constant;
+                destSpan[i + 1] = sourceSpan[i + 1] + constant;
             }
-            // copy the remainder
-            for (; i < source.Length; i++)
+            i *= Vector<float>.Count;
+            for (; i < dest.Length; i++)
             {
                 dest[i] = source[i] + scalar;
             }
@@ -44,15 +49,19 @@ namespace TMG.Utilities
 
         public static void Add(float[] dest, int destIndex, float[] source, int sourceIndex, float scalar, int length)
         {
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var sourceSpan = (new Span<float>(source, sourceIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
             Vector<float> constant = new Vector<float>(scalar);
             // copy everything we can do inside of a vector
             int i = 0;
-            for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+            for (; i < vectorLength - 1; i += 2)
             {
-                var dynamic = new Vector<float>(source, sourceIndex + i);
-                (constant + dynamic).CopyTo(dest, destIndex + i);
+                destSpan[i] = sourceSpan[i] + constant;
+                destSpan[i + 1] = sourceSpan[i + 1] + constant;
             }
-            // copy the remainder
+            i *= Vector<float>.Count;
             for (; i < length; i++)
             {
                 dest[destIndex + i] = source[sourceIndex + i] + scalar;
@@ -62,52 +71,45 @@ namespace TMG.Utilities
 
         public static void Add(float[] dest, float[] lhs, float[] rhs)
         {
+            var vectorLength = dest.Length / Vector<float>.Count;
+            var remainder = dest.Length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, 0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, 0, lhs.Length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, 0, rhs.Length - remainder)).NonPortableCast<float, Vector<float>>();
             // copy everything we can do inside of a vector
             int i = 0;
-            for (; i <= lhs.Length - Vector<float>.Count; i += Vector<float>.Count)
+            for (; i < vectorLength - 1; i += 2)
             {
-                var lhsV = new Vector<float>(lhs, i);
-                var rhsV = new Vector<float>(rhs, i);
-                (lhsV + rhsV).CopyTo(dest, i);
+                destSpan[i] = lhsSpan[i] + rhsSpan[i];
+                destSpan[i + 1] = lhsSpan[i + 1] + rhsSpan[i + 1];
             }
-            // copy the remainder
-            for (; i < lhs.Length; i++)
+            i *= Vector<float>.Count;
+            for (; i < dest.Length; i++)
             {
                 dest[i] = lhs[i] + rhs[i];
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Add(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, float[] third, int thirdIndex, int length)
+        public static void Add(float[] dest, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, float[] third, int thirdIndex, int length)
         {
-            if ((destIndex | firstIndex | secondIndex | thirdIndex) == 0)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var firstSpan = (new Span<float>(first, firstIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var secondSpan = (new Span<float>(second, secondIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var thirdSpan = (new Span<float>(second, thirdIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            // copy everything we can do inside of a vector
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
             {
-                int i = 0;
-                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var f = new Vector<float>(first, i);
-                    var s = new Vector<float>(second, i);
-                    var t = new Vector<float>(third, i);
-                    (f + s + t).CopyTo(destination, i);
-                }
-                // copy the remainder
-                for (; i < length; i++)
-                {
-                    destination[i] = first[i] + second[i] + third[i];
-                }
+                destSpan[i] = firstSpan[i] + secondSpan[i] + thirdSpan[i];
+                destSpan[i + 1] = firstSpan[i + 1] + secondSpan[i + 1] + thirdSpan[i + 1];
             }
-            else
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    (new Vector<float>(first, i + firstIndex) + new Vector<float>(second, i + secondIndex) + new Vector<float>(third, i + thirdIndex)).CopyTo(destination, i + destIndex);
-                }
-                // copy the remainder
-                for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                {
-                    destination[i + destIndex] = first[i + firstIndex] + second[i + secondIndex] + third[i + thirdIndex];
-
-                }
+                dest[destIndex + i] = first[firstIndex + i] + second[secondIndex + i] + third[thirdIndex + i];
             }
         }
 
@@ -122,34 +124,24 @@ namespace TMG.Utilities
         /// <param name="secondIndex"></param>
         /// <param name="length"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Add(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
+        public static void Add(float[] dest, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
         {
-            if ((destIndex | firstIndex | secondIndex) == 0)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var firstSpan = (new Span<float>(first, firstIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var secondSpan = (new Span<float>(second, secondIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            // copy everything we can do inside of a vector
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
             {
-                int i = 0;
-                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var f = new Vector<float>(first, i);
-                    var s = new Vector<float>(second, i);
-                    (f + s).CopyTo(destination, i);
-                }
-                // copy the remainder
-                for (; i < length; i++)
-                {
-                    destination[i] = first[i] + second[i];
-                }
+                destSpan[i] = firstSpan[i] + secondSpan[i];
+                destSpan[i + 1] = firstSpan[i + 1] + secondSpan[i + 1];
             }
-            else
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    (new Vector<float>(first, i + firstIndex) + new Vector<float>(second, i + secondIndex)).CopyTo(destination, i + destIndex);
-                }
-                // copy the remainder
-                for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                {
-                    destination[i + destIndex] = first[i + firstIndex] + second[i + secondIndex];
-                }
+                dest[destIndex + i] = first[firstIndex + i] + second[secondIndex + i];
             }
         }
 
@@ -159,17 +151,16 @@ namespace TMG.Utilities
             {
                 Vector<float> n = new Vector<float>(lhs);
                 var dest = destination[row];
-                var length = dest.Length;
                 var denom = rhs[row];
                 // copy everything we can do inside of a vector
                 int i = 0;
-                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                for (; i <= dest.Length - Vector<float>.Count; i += Vector<float>.Count)
                 {
                     var d = new Vector<float>(denom, i);
                     (n + d).CopyTo(dest, i);
                 }
                 // copy the remainder
-                for (; i < length; i++)
+                for (; i < dest.Length; i++)
                 {
                     dest[i] = lhs + denom[i];
                 }
@@ -182,17 +173,16 @@ namespace TMG.Utilities
             {
                 Vector<float> d = new Vector<float>(rhs);
                 var dest = destination[row];
-                var length = dest.Length;
                 var num = lhs[row];
                 // copy everything we can do inside of a vector
                 int i = 0;
-                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+                for (; i <= dest.Length - Vector<float>.Count; i += Vector<float>.Count)
                 {
                     var n = new Vector<float>(num, i);
                     (n + d).CopyTo(dest, i);
                 }
                 // copy the remainder
-                for (; i < length; i++)
+                for (; i < dest.Length; i++)
                 {
                     dest[i] = num[i] + rhs;
                 }
