@@ -149,21 +149,7 @@ namespace TMG.Utilities
         {
             Parallel.For(0, destination.Length, row =>
             {
-                Vector<float> n = new Vector<float>(lhs);
-                var dest = destination[row];
-                var denom = rhs[row];
-                // copy everything we can do inside of a vector
-                int i = 0;
-                for (; i <= dest.Length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var d = new Vector<float>(denom, i);
-                    (n + d).CopyTo(dest, i);
-                }
-                // copy the remainder
-                for (; i < dest.Length; i++)
-                {
-                    dest[i] = lhs + denom[i];
-                }
+                Add(destination[row], rhs[row], lhs);
             });
         }
 
@@ -171,21 +157,7 @@ namespace TMG.Utilities
         {
             Parallel.For(0, destination.Length, row =>
             {
-                Vector<float> d = new Vector<float>(rhs);
-                var dest = destination[row];
-                var num = lhs[row];
-                // copy everything we can do inside of a vector
-                int i = 0;
-                for (; i <= dest.Length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var n = new Vector<float>(num, i);
-                    (n + d).CopyTo(dest, i);
-                }
-                // copy the remainder
-                for (; i < dest.Length; i++)
-                {
-                    dest[i] = num[i] + rhs;
-                }
+                Add(destination[row], lhs[row], rhs);
             });
         }
 
@@ -193,23 +165,7 @@ namespace TMG.Utilities
         {
             Parallel.For(0, destination.Length, row =>
             {
-                var dest = destination[row];
-                var length = dest.Length;
-                var num = lhs[row];
-                var denom = rhs[row];
-                    // copy everything we can do inside of a vector
-                    int i = 0;
-                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var n = new Vector<float>(num, i);
-                    var d = new Vector<float>(denom, i);
-                    (n + d).CopyTo(dest, i);
-                }
-                    // copy the remainder
-                    for (; i < length; i++)
-                {
-                    dest[i] = num[i] + denom[i];
-                }
+                Add(destination[row], lhs[row], rhs[row]);
             });
         }
 

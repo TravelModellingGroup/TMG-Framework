@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2015-2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2015-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF.
 
@@ -17,6 +17,7 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -27,17 +28,19 @@ namespace TMG.Utilities
     {
         public static void Subtract(float[] dest, float[] lhs, float rhs)
         {
+            var vectorLength = dest.Length / Vector<float>.Count;
+            var remainder = dest.Length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, 0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, 0, lhs.Length - remainder)).NonPortableCast<float, Vector<float>>();
             Vector<float> rhsV = new Vector<float>(rhs);
-
-            // copy everything we can do inside of a vector
             int i = 0;
-            for (; i <= dest.Length - Vector<float>.Count; i += Vector<float>.Count)
+            for (; i < vectorLength - 1; i += 2)
             {
-                var lhsV = new Vector<float>(lhs, i);
-                (lhsV - rhsV).CopyTo(dest, i);
+                destSpan[i] = lhsSpan[i] - rhsV;
+                destSpan[i + 1] = lhsSpan[i + 1] - rhsV;
             }
-            // copy the remainder
-            for (; i < lhs.Length; i++)
+            i *= Vector<float>.Count;
+            for (; i < dest.Length; i++)
             {
                 dest[i] = lhs[i] - rhs;
             }
@@ -45,16 +48,18 @@ namespace TMG.Utilities
 
         public static void Subtract(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
         {
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
             Vector<float> rhsV = new Vector<float>(rhs);
-
-            // copy everything we can do inside of a vector
             int i = 0;
-            for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+            for (; i < vectorLength - 1; i += 2)
             {
-                var lhsV = new Vector<float>(lhs, lhsIndex + i);
-                (lhsV - rhsV).CopyTo(dest, destIndex + i);
+                destSpan[i] = lhsSpan[i] - rhsV;
+                destSpan[i + 1] = lhsSpan[i + 1] - rhsV;
             }
-            // copy the remainder
+            i *= Vector<float>.Count;
             for (; i < length; i++)
             {
                 dest[destIndex + i] = lhs[lhsIndex + i] - rhs;
@@ -63,17 +68,19 @@ namespace TMG.Utilities
 
         public static void Subtract(float[] dest, float lhs, float[] rhs)
         {
+            var vectorLength = dest.Length / Vector<float>.Count;
+            var remainder = dest.Length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, 0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, 0, rhs.Length - remainder)).NonPortableCast<float, Vector<float>>();
             Vector<float> lhsV = new Vector<float>(lhs);
-
-            // copy everything we can do inside of a vector
             int i = 0;
-            for (; i <= dest.Length - Vector<float>.Count; i += Vector<float>.Count)
+            for (; i < vectorLength - 1; i += 2)
             {
-                var rhsV = new Vector<float>(rhs, i);
-                (lhsV - rhsV).CopyTo(dest, i);
+                destSpan[i] = lhsV - rhsSpan[i];
+                destSpan[i + 1] = lhsV - rhsSpan[i + 1];
             }
-            // copy the remainder
-            for (; i < rhs.Length; i++)
+            i *= Vector<float>.Count;
+            for (; i < dest.Length; i++)
             {
                 dest[i] = lhs - rhs[i];
             }
@@ -81,16 +88,18 @@ namespace TMG.Utilities
 
         public static void Subtract(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
         {
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
             Vector<float> lhsV = new Vector<float>(lhs);
-
-            // copy everything we can do inside of a vector
             int i = 0;
-            for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
+            for (; i < vectorLength - 1; i += 2)
             {
-                var rhsV = new Vector<float>(rhs, rhsIndex + i);
-                (lhsV - rhsV).CopyTo(dest, destIndex + i);
+                destSpan[i] = lhsV - rhsSpan[i];
+                destSpan[i + 1] = lhsV - rhsSpan[i + 1];
             }
-            // copy the remainder
+            i *= Vector<float>.Count;
             for (; i < length; i++)
             {
                 dest[destIndex + i] = lhs - rhs[rhsIndex + i];
@@ -101,22 +110,7 @@ namespace TMG.Utilities
         {
             Parallel.For(0, destination.Length, row =>
             {
-                Vector<float> n = new Vector<float>(lhs);
-                var dest = destination[row];
-                var length = dest.Length;
-                var denom = rhs[row];
-                // copy everything we can do inside of a vector
-                int i = 0;
-                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var d = new Vector<float>(denom, i);
-                    (n - d).CopyTo(dest, i);
-                }
-                // copy the remainder
-                for (; i < length; i++)
-                {
-                    dest[i] = lhs - denom[i];
-                }
+                Subtract(destination[row], lhs, rhs[row]);
             });
         }
 
@@ -124,22 +118,7 @@ namespace TMG.Utilities
         {
             Parallel.For(0, destination.Length, row =>
             {
-                Vector<float> d = new Vector<float>(rhs);
-                var dest = destination[row];
-                var length = dest.Length;
-                var num = lhs[row];
-                // copy everything we can do inside of a vector
-                int i = 0;
-                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var n = new Vector<float>(num, i);
-                    (n - d).CopyTo(dest, i);
-                }
-                // copy the remainder
-                for (; i < length; i++)
-                {
-                    dest[i] = num[i] - rhs;
-                }
+                Subtract(destination[row], lhs[row], rhs);
             });
         }
 
@@ -147,65 +126,38 @@ namespace TMG.Utilities
         {
             Parallel.For(0, destination.Length, row =>
             {
-                var dest = destination[row];
-                var length = dest.Length;
-                var num = lhs[row];
-                var denom = rhs[row];
-                // copy everything we can do inside of a vector
-                int i = 0;
-                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var n = new Vector<float>(num, i);
-                    var d = new Vector<float>(denom, i);
-                    (n - d).CopyTo(dest, i);
-                }
-                // copy the remainder
-                for (; i < length; i++)
-                {
-                    dest[i] = num[i] - denom[i];
-                }
+                Subtract(destination[row], 0, lhs[row], 0, rhs[row], 0, destination[row].Length);
             });
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="destination"></param>
+        /// <param name="dest"></param>
         /// <param name="destIndex"></param>
-        /// <param name="first"></param>
-        /// <param name="firstIndex"></param>
-        /// <param name="second"></param>
-        /// <param name="secondIndex"></param>
+        /// <param name="lhs"></param>
+        /// <param name="lhsIndex"></param>
+        /// <param name="rhs"></param>
+        /// <param name="rhsIndex"></param>
         /// <param name="length"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Subtract(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
+        public static void Subtract(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
-            if ((destIndex | firstIndex | secondIndex) == 0)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
             {
-                int i = 0;
-                for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var f = new Vector<float>(first, i);
-                    var s = new Vector<float>(second, i);
-                    (f - s).CopyTo(destination, i);
-                }
-                // copy the remainder
-                for (; i < length; i++)
-                {
-                    destination[i] = first[i] - second[i];
-                }
+                destSpan[i] = lhsSpan[i] - rhsSpan[i];
+                destSpan[i + 1] = lhsSpan[i + 1] - rhsSpan[i + 1];
             }
-            else
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    (new Vector<float>(first, i + firstIndex) - new Vector<float>(second, i + secondIndex)).CopyTo(destination, i + destIndex);
-                }
-                // copy the remainder
-                for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                {
-                    destination[i + destIndex] = first[i + firstIndex] - second[i + secondIndex];
-                }
+                dest[destIndex + i] = lhs[lhsIndex + i] - rhs[rhsIndex + i];
             }
         }
     }

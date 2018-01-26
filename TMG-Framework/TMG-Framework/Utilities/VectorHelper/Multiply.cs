@@ -72,23 +72,7 @@ namespace TMG.Utilities
         {
             Parallel.For(0, destination.Length, row =>
             {
-                var length = destination[row].Length;
-                var vectorLength = length / Vector<float>.Count;
-                var remainder = length % Vector<float>.Count;
-                var destSpan = (new Span<float>(destination[row], 0, length - remainder)).NonPortableCast<float, Vector<float>>();
-                var firstSpan = (new Span<float>(rhs[row], 0, length - remainder)).NonPortableCast<float, Vector<float>>();
-                var vScalar = new Vector<float>(lhs);
-                int i = 0;
-                for (; i < vectorLength - 1; i += 2)
-                {
-                    destSpan[i] = firstSpan[i] * vScalar;
-                    destSpan[i + 1] = firstSpan[i + 1] * vScalar;
-                }
-                i *= Vector<float>.Count;
-                for (; i < length; i++)
-                {
-                    destination[row][i] = rhs[row][i] * lhs;
-                }
+                Multiply(destination[row], rhs[row], lhs);
             });
         }
 
@@ -96,24 +80,7 @@ namespace TMG.Utilities
         {
             Parallel.For(0, destination.Length, row =>
             {
-                var length = destination[row].Length;
-                var vectorLength = length / Vector<float>.Count;
-                var remainder = length % Vector<float>.Count;
-                var destSpan = (new Span<float>(destination[row], 0, length - remainder)).NonPortableCast<float, Vector<float>>();
-                var firstSpan = (new Span<float>(lhs[row], 0, length - remainder)).NonPortableCast<float, Vector<float>>();
-                var vScalar = new Vector<float>(rhs);
-                int i = 0;
-                for (; i < vectorLength - 1; i += 2)
-                {
-                    destSpan[i] = firstSpan[i] * vScalar;
-                    destSpan[i + 1] = firstSpan[i + 1] * vScalar;
-                }
-                i *= Vector<float>.Count;
-                // copy the remainder
-                for (; i < length; i++)
-                {
-                    destination[row][i] = lhs[row][i] * rhs;
-                }
+                Multiply(destination[row], lhs[row], rhs);
             });
         }
 
@@ -121,23 +88,7 @@ namespace TMG.Utilities
         {
             Parallel.For(0, destination.Length, row =>
             {
-                var length = destination[row].Length;
-                var vectorLength = length / Vector<float>.Count;
-                var remainder = length % Vector<float>.Count;
-                var destSpan = (new Span<float>(destination[row], 0, length - remainder)).NonPortableCast<float, Vector<float>>();
-                var firstSpan = (new Span<float>(lhs[row], 0, length - remainder)).NonPortableCast<float, Vector<float>>();
-                var secondSpan = (new Span<float>(rhs[row], 0, length - remainder)).NonPortableCast<float, Vector<float>>();
-                int i = 0;
-                for (; i < vectorLength - 1; i += 2)
-                {
-                    destSpan[i] = firstSpan[i] * secondSpan[i];
-                    destSpan[i + 1] = firstSpan[i + 1] * secondSpan[i + 1];
-                }
-                i *= Vector<float>.Count;
-                for (; i < length; i++)
-                {
-                    destination[row][i] = lhs[row][i] * rhs[row][i];
-                }
+                Multiply(destination[row], 0, lhs[row], 0, rhs[row], 0, destination[row].Length);
             });
         }
 
