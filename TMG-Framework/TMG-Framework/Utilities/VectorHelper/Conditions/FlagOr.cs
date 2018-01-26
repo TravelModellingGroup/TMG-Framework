@@ -19,6 +19,7 @@
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
+using static System.Numerics.Vector;
 // ReSharper disable CompareOfFloatsByEqualityOperator
 
 namespace TMG.Utilities
@@ -82,46 +83,25 @@ namespace TMG.Utilities
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
-        public static void FlagOr(float[] destination, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
+        public static void FlagOr(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var one = Vector<float>.One;
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            Vector<float> zero = Vector<float>.Zero;
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
             {
-                var one = Vector<float>.One;
-                if ((destIndex | lhsIndex | rhsIndex) == 0)
-                {
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(lhs, i);
-                        var s = new Vector<float>(rhs, i);
-                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(f, one), one, s).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = lhs[i] == 1.0f ? 1.0f : rhs[i];
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(new Vector<float>(lhs, i + lhsIndex), one), one, new Vector<float>(rhs, i + rhsIndex))
-                            .CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        destination[i + destIndex] = lhs[i + lhsIndex] == 1.0f ? 1.0f : rhs[i + rhsIndex];
-                    }
-                }
+                destSpan[i] = ConditionalSelect(System.Numerics.Vector.Equals(lhsSpan[i], one), one, rhsSpan[i]);
+                destSpan[i + 1] = ConditionalSelect(System.Numerics.Vector.Equals(lhsSpan[i + 1], one), one, rhsSpan[i + 1]);
             }
-            else
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    destination[i + destIndex] = lhs[i + lhsIndex] == 1.0f ? 1.0f : rhs[i + rhsIndex];
-                }
+                dest[i + destIndex] = lhs[i + lhsIndex] == 1.0f ? 1.0f : rhs[i + rhsIndex];
             }
         }
 
