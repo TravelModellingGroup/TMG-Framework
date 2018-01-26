@@ -20,6 +20,7 @@
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
+using static System.Numerics.Vector;
 
 namespace TMG.Utilities
 {
@@ -28,81 +29,50 @@ namespace TMG.Utilities
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
-        public static void FlagIfLessThanOrEqual(float[] destination, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
+        public static void FlagIfLessThanOrEqual(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsV = new Vector<float>(lhs);
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            Vector<float> zero = Vector<float>.Zero;
+            Vector<float> one = Vector<float>.One;
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
             {
-                Vector<float> zero = Vector<float>.Zero;
-                Vector<float> one = Vector<float>.One;
-                if ((destIndex | lhsIndex | rhsIndex) == 0)
-                {
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(lhs, i);
-                        var s = new Vector<float>(rhs, i);
-                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.LessThanOrEqual(f, s), one, zero).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = lhs[i] <= rhs[i] ? 1 : 0;
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.LessThanOrEqual(new Vector<float>(lhs, i + lhsIndex), new Vector<float>(rhs, i + rhsIndex)), one, zero)
-                            .CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        destination[i + destIndex] = lhs[i + lhsIndex] <= rhs[i + rhsIndex] ? 1 : 0;
-                    }
-                }
+                destSpan[i] = ConditionalSelect(LessThanOrEqual(lhsV, rhsSpan[i]), one, zero);
+                destSpan[i + 1] = ConditionalSelect(LessThanOrEqual(lhsV, rhsSpan[i]), one, zero);
             }
-            else
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    destination[i + destIndex] = lhs[i + lhsIndex] <= rhs[i + rhsIndex] ? 1 : 0;
-                }
+                dest[destIndex + i] = lhs <= rhs[rhsIndex + i] ? 1.0f : 0.0f;
             }
         }
 
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
-        public static void FlagIfLessThanOrEqual(float[] dest, float value, float[] data)
+        public static void FlagIfLessThanOrEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            Vector<float> zero = Vector<float>.Zero;
+            Vector<float> one = Vector<float>.One;
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
             {
-                int i;
-                if (dest.Length != data.Length)
-                {
-                    throw new ArgumentException("The size of the arrays are not the same!", nameof(dest));
-                }
-                Vector<float> zero = Vector<float>.Zero;
-                Vector<float> one = Vector<float>.One;
-                Vector<float> vValue = new Vector<float>(value);
-                for (i = 0; i < data.Length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var vData = new Vector<float>(data, i);
-                    System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.LessThanOrEqual(vData, vValue), one, zero).CopyTo(dest, i);
-                }
-                for (; i < data.Length; i++)
-                {
-                    dest[i] = data[i] <= value ? 1 : 0;
-                }
+                destSpan[i] = ConditionalSelect(LessThanOrEqual(lhsSpan[i], rhsSpan[i]), one, zero);
+                destSpan[i + 1] = ConditionalSelect(LessThanOrEqual(lhsSpan[i + 1], zero), one, zero);
             }
-            else
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                for (int i = 0; i < data.Length; i++)
-                {
-                    dest[i] = data[i] <= value ? 1 : 0;
-                }
+                dest[destIndex + i] = lhs[lhsIndex + i] <= rhs[rhsIndex + i] ? 1.0f : 0.0f;
             }
         }
 
@@ -122,7 +92,8 @@ namespace TMG.Utilities
         /// </summary>
         public static void FlagIfLessThanOrEqual(float[] dest, float[] data, float literalValue)
         {
-            FlagIfLessThanOrEqual(dest, literalValue, data);
+            // operator flips when moving rhs to lhs
+            FlagIfGreaterThanOrEqual(dest, 0, literalValue, data, 0, dest.Length);
         }
 
         /// <summary>
@@ -139,11 +110,11 @@ namespace TMG.Utilities
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
-        public static void FlagIfLessThanOrEqual(float[][] dest, float literalValue, float[][] data)
+        public static void FlagIfLessThanOrEqual(float[][] v1, float literalValue, float[][] v2)
         {
-            Parallel.For(0, dest.Length, i =>
+            Parallel.For(0, v1.Length, i =>
             {
-                FlagIfLessThanOrEqual(dest[i], literalValue, data[i]);
+                FlagIfGreaterThanOrEqual(v1[i], 0, literalValue, v2[i], 0, v1[i].Length);
             });
         }
     }
