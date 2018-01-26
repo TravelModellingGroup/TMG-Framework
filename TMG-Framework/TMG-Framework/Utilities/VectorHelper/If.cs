@@ -17,6 +17,7 @@
     along with XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -26,33 +27,25 @@ namespace TMG.Utilities
     public static partial class VectorHelper
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void If(float[] destination, int destIndex, float[] cond, int condIndex, float[] ifTrue, int trueIndex, float[] ifFalse, int falseIndex, int length)
+        public static void If(float[] dest, int destIndex, float[] cond, int condIndex, float[] ifTrue, int trueIndex, float[] ifFalse, int falseIndex, int length)
         {
-            if ((destIndex | condIndex | trueIndex | falseIndex) == 0)
+            var zero = Vector<float>.Zero;
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var condSpan = (new Span<float>(cond, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var trueSpan = (new Span<float>(ifTrue, trueIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var falseSpan = (new Span<float>(ifFalse, falseIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            int i = 0;
+            for (; i < vectorLength; i+=2)
             {
-                int i;
-                var zero = Vector<float>.Zero;
-                for(i = 0; i < destination.Length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    ConditionalSelect(GreaterThan(new Vector<float>(cond, i), zero), new Vector<float>(ifTrue, i), new Vector<float>(ifFalse, i)).CopyTo(destination, i);
-                }
-                for (i = 0; i < destination.Length; ++i)
-                {
-                    destination[i] = cond[i] > 0f ? ifTrue[i] : ifFalse[i];
-                }
+                destSpan[i] = ConditionalSelect(GreaterThan(condSpan[i], zero), trueSpan[i], falseSpan[i]);
+                destSpan[i + 1] = ConditionalSelect(GreaterThan(condSpan[i + 1], zero), trueSpan[i + 1], falseSpan[i + 1]);
             }
-            else
+            i *= Vector<float>.Count;
+            for(; i < length; i++)
             {
-                int i;
-                var zero = Vector<float>.Zero;
-                for (i = 0; i < destination.Length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    ConditionalSelect(GreaterThan(new Vector<float>(cond, condIndex + i), zero), new Vector<float>(ifTrue, trueIndex + i), new Vector<float>(ifFalse, falseIndex + i)).CopyTo(destination, destIndex + i);
-                }
-                for (i = 0; i < destination.Length; ++i)
-                {
-                    destination[destIndex + i] = cond[condIndex + i] > 0f ? ifTrue[trueIndex + i] : ifFalse[falseIndex + i];
-                }
+                dest[destIndex + i] = cond[condIndex + i] > 0f ? ifTrue[trueIndex + i] : ifFalse[falseIndex + i];
             }
         }
     }
