@@ -19,6 +19,7 @@
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
+using static System.Numerics.Vector;
 // ReSharper disable CompareOfFloatsByEqualityOperator
 
 namespace TMG.Utilities
@@ -37,31 +38,23 @@ namespace TMG.Utilities
             }
             else
             {
-                if (System.Numerics.Vector.IsHardwareAccelerated)
+                var length = dest.Length;
+                var vectorLength = length / Vector<float>.Count;
+                var remainder = length % Vector<float>.Count;
+                var destSpan = (new Span<float>(dest, 0, length - remainder)).NonPortableCast<float, Vector<float>>();
+                var dataSpan = (new Span<float>(data, 0, length - remainder)).NonPortableCast<float, Vector<float>>();
+                var valueV = new Vector<float>(value);
+                Vector<float> zero = Vector<float>.Zero;
+                int i = 0;
+                for (; i < vectorLength - 1; i += 2)
                 {
-                    int i;
-                    if (dest.Length != data.Length)
-                    {
-                        throw new ArgumentException("The size of the arrays are not the same!", nameof(dest));
-                    }
-                    Vector<float> zero = Vector<float>.Zero;
-                    Vector<float> vValue = new Vector<float>(value);
-                    for (i = 0; i < data.Length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var vData = new Vector<float>(data, i);
-                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(vData, zero), zero, vValue).CopyTo(dest, i);
-                    }
-                    for (; i < data.Length; i++)
-                    {
-                        dest[i] = data[i] == 0 ? 0.0f : value;
-                    }
+                    destSpan[i] = ConditionalSelect(System.Numerics.Vector.Equals(dataSpan[i], zero), zero, valueV);
+                    destSpan[i + 1] = ConditionalSelect(System.Numerics.Vector.Equals(dataSpan[i + 1], zero), zero, valueV);
                 }
-                else
+                i *= Vector<float>.Count;
+                for (; i < data.Length; i++)
                 {
-                    for (int i = 0; i < data.Length; i++)
-                    {
-                        dest[i] = data[i] == 0 ? 0.0f : value;
-                    }
+                    dest[i] = data[i] == 0 ? 0.0f : value;
                 }
             }
         }
@@ -78,27 +71,22 @@ namespace TMG.Utilities
             }
             else
             {
-                if (System.Numerics.Vector.IsHardwareAccelerated)
+                var vectorLength = length / Vector<float>.Count;
+                var remainder = length % Vector<float>.Count;
+                var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+                var dataSpan = (new Span<float>(data, dataIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+                var valueV = new Vector<float>(value);
+                Vector<float> zero = Vector<float>.Zero;
+                int i = 0;
+                for (; i < vectorLength - 1; i += 2)
                 {
-                    int i;
-                    Vector<float> zero = Vector<float>.Zero;
-                    Vector<float> vValue = new Vector<float>(value);
-                    for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var vData = new Vector<float>(data, dataIndex + i);
-                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(vData, zero), zero, vValue).CopyTo(dest, destIndex + i);
-                    }
-                    for (; i < length; i++)
-                    {
-                        dest[destIndex + i] = data[dataIndex + i] == 0 ? 0.0f : value;
-                    }
+                    destSpan[i] = ConditionalSelect(System.Numerics.Vector.Equals(dataSpan[i], zero), zero, valueV);
+                    destSpan[i + 1] = ConditionalSelect(System.Numerics.Vector.Equals(dataSpan[i + 1], zero), zero, valueV);
                 }
-                else
+                i *= Vector<float>.Count;
+                for (; i < length; i++)
                 {
-                    for (int i = 0; i < length; i++)
-                    {
-                        dest[destIndex + i] = data[dataIndex + i] == 0 ? 0.0f : value;
-                    }
+                    dest[destIndex + i] = data[dataIndex + i] == 0 ? 0.0f : value;
                 }
             }
         }
@@ -106,46 +94,24 @@ namespace TMG.Utilities
         /// <summary>
         /// Set the value to one if the condition is met.
         /// </summary>
-        public static void FlagAnd(float[] destination, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
+        public static void FlagAnd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            Vector<float> zero = Vector<float>.Zero;
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
             {
-                Vector<float> zero = Vector<float>.Zero;
-                if ((destIndex | lhsIndex | rhsIndex) == 0)
-                {
-                    int i = 0;
-                    for (; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        var f = new Vector<float>(lhs, i);
-                        var s = new Vector<float>(rhs, i);
-                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(f, zero), zero, s).CopyTo(destination, i);
-                    }
-                    // copy the remainder
-                    for (; i < length; i++)
-                    {
-                        destination[i] = lhs[i] == 0.0f ? 0.0f : rhs[i];
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i <= length - Vector<float>.Count; i += Vector<float>.Count)
-                    {
-                        System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(new Vector<float>(lhs, i + lhsIndex), zero), zero, new Vector<float>(rhs, i + rhsIndex))
-                            .CopyTo(destination, i + destIndex);
-                    }
-                    // copy the remainder
-                    for (int i = length - (length % Vector<float>.Count); i < length; i++)
-                    {
-                        destination[i + destIndex] = lhs[i + lhsIndex] == 0.0f ? 0.0f : rhs[i + rhsIndex];
-                    }
-                }
+                destSpan[i] = ConditionalSelect(System.Numerics.Vector.Equals(lhsSpan[i], zero), zero, rhsSpan[i]);
+                destSpan[i + 1] = ConditionalSelect(System.Numerics.Vector.Equals(lhsSpan[i + 1], zero), zero, rhsSpan[i + 1]);
             }
-            else
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    destination[i + destIndex] = lhs[i + lhsIndex] == 0.0f ? 0.0f : rhs[i + rhsIndex];
-                }
+                dest[destIndex + i] = lhs[lhsIndex + i] == 0 ? 0.0f : rhs[rhsIndex + i];
             }
         }
 
