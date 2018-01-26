@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2015-2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2015-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF.
 
@@ -19,6 +19,7 @@
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
+using static System.Numerics.Vector;
 // ReSharper disable CompareOfFloatsByEqualityOperator
 
 namespace TMG.Utilities
@@ -30,28 +31,23 @@ namespace TMG.Utilities
         /// </summary>
         public static void FlagIfEqual(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsV = new Vector<float>(lhs);
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            Vector<float> zero = Vector<float>.Zero;
+            Vector<float> one = Vector<float>.One;
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
             {
-                int i;
-                Vector<float> zero = Vector<float>.Zero;
-                Vector<float> one = Vector<float>.One;
-                Vector<float> vLhs = new Vector<float>(lhs);
-                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var vRhs = new Vector<float>(rhs, rhsIndex + i);
-                    System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(vLhs, vRhs), one, zero).CopyTo(dest, i);
-                }
-                for (; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs == rhs[rhsIndex + i] ? 1 : 0;
-                }
+                destSpan[i] = ConditionalSelect(System.Numerics.Vector.Equals(lhsV, rhsSpan[i]), one, zero);
+                destSpan[i + 1] = ConditionalSelect(System.Numerics.Vector.Equals(lhsV, rhsSpan[i]), one, zero);
             }
-            else
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs == rhs[rhsIndex + i] ? 1 : 0;
-                }
+                dest[destIndex + i] = lhs == rhs[rhsIndex + i] ? 1.0f : 0.0f;
             }
         }
 
@@ -60,29 +56,7 @@ namespace TMG.Utilities
         /// </summary>
         public static void FlagIfEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
-            {
-                int i;
-                Vector<float> zero = Vector<float>.Zero;
-                Vector<float> one = Vector<float>.One;
-                Vector<float> vRhs = new Vector<float>(rhs);
-                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var vLhs = new Vector<float>(lhs, lhsIndex + i);
-                    System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(vLhs, vRhs), one, zero).CopyTo(dest, destIndex + i);
-                }
-                for (; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] == rhs ? 1 : 0;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] == rhs ? 1 : 0;
-                }
-            }
+            FlagIfEqual(dest, destIndex, rhs, lhs, lhsIndex, length);
         }
 
         /// <summary>
@@ -90,28 +64,23 @@ namespace TMG.Utilities
         /// </summary>
         public static void FlagIfEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
         {
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            Vector<float> zero = Vector<float>.Zero;
+            Vector<float> one = Vector<float>.One;
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
             {
-                int i;
-                Vector<float> zero = Vector<float>.Zero;
-                Vector<float> one = Vector<float>.One;
-                for (i = 0; i < length - Vector<float>.Count; i += Vector<float>.Count)
-                {
-                    var vLhs = new Vector<float>(lhs, lhsIndex + i);
-                    var vRhs = new Vector<float>(rhs, rhsIndex + i);
-                    System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.Equals(vLhs, vRhs), one, zero).CopyTo(dest, destIndex + i);
-                }
-                for (; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] == rhs[rhsIndex + i] ? 1 : 0;
-                }
+                destSpan[i] = ConditionalSelect(System.Numerics.Vector.Equals(lhsSpan[i], rhsSpan[i]), one, zero);
+                destSpan[i + 1] = ConditionalSelect(System.Numerics.Vector.Equals(lhsSpan[i + 1], zero), one, zero);
             }
-            else
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    dest[destIndex + i] = lhs[lhsIndex + i] == rhs[rhsIndex + i] ? 1 : 0;
-                }
+                dest[destIndex + i] = lhs[lhsIndex + i] == rhs[rhsIndex + i] ? 1.0f : 0.0f;
             }
         }
     }
