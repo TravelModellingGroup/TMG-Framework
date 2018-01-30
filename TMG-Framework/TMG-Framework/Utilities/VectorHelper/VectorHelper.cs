@@ -502,7 +502,7 @@ namespace TMG.Utilities
             for (; i < vectorDest.Length - 1; i += 2)
             {
                 vectorColumnSum[i] += (vectorDest[i] = vectorFirst[i] * vectorSecond[i] * third[i] * scalarV);
-                vectorColumnSum[i + 1] += (vectorDest[i + 1] = vectorFirst[i + 1] * vectorSecond[i + 1] * third[i] * scalarV);
+                vectorColumnSum[i + 1] += (vectorDest[i + 1] = vectorFirst[i + 1] * vectorSecond[i + 1] * third[i + 1] * scalarV);
             }
             i *= Vector<float>.Count;
             for (; i < dest.Length; i++)
@@ -825,7 +825,7 @@ namespace TMG.Utilities
             for (; i < vectorDest.Length - 1; i += 2)
             {
                 vectorDest[i] = Log(vectorX[i]);
-                vectorDest[i] = Log(vectorX[i + 1]);
+                vectorDest[i + 1] = Log(vectorX[i + 1]);
             }
             i *= Vector<float>.Count;
             for (; i < dest.Length; i++)
