@@ -822,12 +822,14 @@ namespace TMG.Utilities
             var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorX = (x.Slice(0, x.Length - remainder)).NonPortableCast<float, Vector<float>>();
             int i = 0;
+            /*
+            The following code will be reintroduced when the Log has been validated.
             for (; i < vectorDest.Length - 1; i += 2)
             {
                 vectorDest[i] = Log(vectorX[i]);
                 vectorDest[i + 1] = Log(vectorX[i + 1]);
             }
-            i *= Vector<float>.Count;
+            i *= Vector<float>.Count;*/
             for (; i < dest.Length; i++)
             {
                 dest[i] = (float)Math.Log(x[i]);
@@ -847,6 +849,53 @@ namespace TMG.Utilities
         {
             Log(new Span<float>(destination, destIndex, length),
                 new Span<float>(x, xIndex, length));
+        }
+
+        internal static void ReplaceIfNaN(float[] dest, float[] source, float[] replacement, int offset, int length)
+        {
+            if (dest == null || source == null || replacement == null)
+            {
+                throw new ArgumentNullException();
+            }
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var sourceSpan = (new Span<float>(source, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var replacementSpan = (new Span<float>(replacement, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+            int i = 0;
+            for (; i < destSpan.Length - 1; i += 2)
+            {
+                destSpan[i] = System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.GreaterThanOrEqual(sourceSpan[i], sourceSpan[i]), sourceSpan[i], replacementSpan[i]);
+                destSpan[i + 1] = System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.GreaterThanOrEqual(sourceSpan[i + 1], sourceSpan[i + 1]), sourceSpan[i + 1], replacementSpan[i + 1]);
+            }
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
+            {
+                dest[offset + i] = !float.IsNaN(source[offset + i]) ? source[offset + i] : replacement[offset + i];
+            }
+        }
+
+        public static void Negate(float[] dest, float[] source, int offset, int length)
+        {
+            if (dest == null || source == null)
+            {
+                throw new ArgumentNullException();
+            }
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (new Span<float>(dest, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var sourceSpan = (new Span<float>(source, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+            int i = 0;
+            for (; i < destSpan.Length - 1; i += 2)
+            {
+                destSpan[i] = System.Numerics.Vector.Negate(sourceSpan[i]);
+                destSpan[i + 1] = System.Numerics.Vector.Negate(sourceSpan[i + 1]);
+            }
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
+            {
+                dest[offset + i] = -source[offset + i];
+            }
         }
     }
 }
