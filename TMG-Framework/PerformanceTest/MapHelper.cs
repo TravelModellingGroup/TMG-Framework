@@ -74,7 +74,7 @@ namespace PerformanceTest
         {
             try
             {
-                LoadMapFromCSV mapLoader = new LoadMapFromCSV();
+                LoadCategoriesFromCSV mapLoader = new LoadCategoriesFromCSV();
                 OpenReadStreamFromFile streamLoader = new OpenReadStreamFromFile();
                 using (var reader = streamLoader.Invoke(fileName))
                 {

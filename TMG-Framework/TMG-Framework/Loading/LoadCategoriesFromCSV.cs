@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2017 University of Toronto
+    Copyright 2017-2018 University of Toronto
 
     This file is part of TMG-Framework for XTMF2.
 
@@ -24,9 +24,9 @@ using XTMF2;
 
 namespace TMG.Loading
 {
-    [Module(Name = "Load Map From CSV", Description = "Loads a map where each row has a different sparse index.",
+    [Module(Name = "Load Categories From CSV", Description = "Loads categories where each row has a different sparse index.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadMapFromCSV : BaseFunction<ReadStream, Categories>
+    public sealed class LoadCategoriesFromCSV : BaseFunction<ReadStream, Categories>
     {
         public override Categories Invoke(ReadStream stream)
         {
