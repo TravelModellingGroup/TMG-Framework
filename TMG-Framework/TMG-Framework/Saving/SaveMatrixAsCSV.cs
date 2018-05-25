@@ -117,10 +117,10 @@ namespace TMG.Saving
                     //ignore zeroed out data to save disk space
                     if(data[i] != 0.0)
                     {
-                        var pos = matrix.GetSparseIndex(i);
-                        writer.Write(pos.Row);
+                        var (row, column) = matrix.GetSparseIndex(i);
+                        writer.Write(row);
                         writer.Write(',');
-                        writer.Write(pos.Column);
+                        writer.Write(column);
                         writer.Write(',');
                         writer.WriteLine(data[i]);
                     }
