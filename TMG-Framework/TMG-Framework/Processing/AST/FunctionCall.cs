@@ -52,21 +52,21 @@ namespace TMG.Frameworks.Data.Processing.AST
             IfNaN
         }
 
-        private FunctionType Type;
+        private readonly FunctionType _type;
 
-        private Expression[] Parameters;
+        private Expression[] _parameters;
 
         private FunctionCall(int start, FunctionType call, Expression[] parameters) : base(start)
         {
-            Parameters = parameters;
-            Type = call;
+            _parameters = parameters;
+            _type = call;
         }
 
         internal override bool OptimizeAst(ref Expression ex, ref string error)
         {
-            for (int i = 0; i < Parameters.Length; i++)
+            for (int i = 0; i < _parameters.Length; i++)
             {
-                if (!Parameters[i].OptimizeAst(ref Parameters[i], ref error))
+                if (!_parameters[i].OptimizeAst(ref _parameters[i], ref error))
                 {
                     return false;
                 }
@@ -164,14 +164,14 @@ namespace TMG.Frameworks.Data.Processing.AST
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
             // first evaluate the parameters
-            var values = new ComputationResult[Parameters.Length];
-            switch(Parameters.Length)
+            var values = new ComputationResult[_parameters.Length];
+            switch(_parameters.Length)
             {
                 case 0:
                     break;
                 case 1:
                     {
-                        values[0] = Parameters[0].Evaluate(dataSources);
+                        values[0] = _parameters[0].Evaluate(dataSources);
                         if (values[0].Error)
                         {
                             return values[0];
@@ -182,7 +182,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     {
                         System.Threading.Tasks.Parallel.For(0, values.Length, (int i) =>
                         {
-                            values[i] = Parameters[i].Evaluate(dataSources);
+                            values[i] = _parameters[i].Evaluate(dataSources);
                         });
                         for (int i = 0; i < values.Length; i++)
                         {
@@ -195,7 +195,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     break;
             }
 
-            switch (Type)
+            switch (_type)
             {
                 case FunctionType.AsHorizontal:
                     if (values.Length != 1)

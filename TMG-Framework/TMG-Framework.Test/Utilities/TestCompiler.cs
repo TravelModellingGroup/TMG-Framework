@@ -29,7 +29,7 @@ namespace XTMF.Testing.TMG.Data
     [TestClass]
     public class TestCompiler
     {
-        Categories categories = new Categories(new List<int>() { 1, 2 });
+        readonly Categories categories = new Categories(new List<int>() { 1, 2 });
         /// <summary>
         /// Create a new simple matrix for testing.
         /// </summary>
