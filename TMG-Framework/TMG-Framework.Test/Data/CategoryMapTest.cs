@@ -29,22 +29,23 @@ namespace TMG.Test.Data
         [TestMethod]
         public void Aggregate()
         {
+            string error = null;
             Categories a = new Categories(new List<int> { 1, 3, 5, 7 });
             Categories b = new Categories(new List<int> { 2, 4 });
-            CategoryMap map = new CategoryMap(a, b,
+            Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
                 new List<(int originFlatIndex, int destinationFlatIndex)>()
                 {
                     (0, 0),
                     (1, 0),
                     (2, 1),
                     (3, 1)
-                });
+                }, out var map, ref error), error);
             var va = new Vector(a);
             va.Data[0] = 3;
             va.Data[1] = 7;
             va.Data[2] = 2;
             va.Data[3] = 4;
-            var result = map.AggregateToDestination(va);
+            Assert.IsTrue(map.AggregateToDestination(va, out var result, ref error), error);
             Assert.AreEqual(2, result.Data.Length);
             Assert.AreSame(b, result.Categories);
             Assert.AreEqual(10, result.Data[0]);

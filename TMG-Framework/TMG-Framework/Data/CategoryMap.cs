@@ -42,59 +42,82 @@ namespace TMG
 
         private readonly List<(int originFlatIndex, int destinationFlatIndex)> _baseToDestination;
 
+        public static bool CreateCategoryMap(Categories baseCategories, Categories destinationCategories,
+            List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination, out CategoryMap map, ref string error)
+        {
+            if(!ValidateMapping(baseCategories, destinationCategories, baseToDestination, ref error))
+            {
+                map = null;
+                return false;
+            }
+            map = new CategoryMap(baseCategories, destinationCategories, baseToDestination);
+            return true;
+        }
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="baseCategories"></param>
         /// <param name="destinationCategories"></param>
         /// <param name="baseToDestination"></param>
-        public CategoryMap(Categories baseCategories, Categories destinationCategories, 
+        private CategoryMap(Categories baseCategories, Categories destinationCategories, 
             List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination)
         {
             _baseCategories = baseCategories ?? throw new ArgumentNullException(nameof(baseCategories));
             _destination = destinationCategories ?? throw new ArgumentNullException(nameof(destinationCategories));
             _baseToDestination = baseToDestination;
-            ValidateMapping(baseToDestination);
+        }
+
+        private static bool FailWith(ref string error, string message)
+        {
+            error = message;
+            return false;
         }
 
         /// <summary>
         /// Ensure that all of the indexes exist in the base and destination categories.
         /// </summary>
         /// <param name="baseToDestination"></param>
-        private void ValidateMapping(List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination)
+        private static bool ValidateMapping(Categories baseCategories, Categories destinationCategories, 
+            List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination, ref string error)
         {
             foreach(var (originFlatIndex, destinationFlatIndex) in baseToDestination)
             {
-                if (originFlatIndex < 0 || originFlatIndex >= _baseCategories.Count)
-                    throw new IndexOutOfRangeException($"The base categories does not contain a flat index of {originFlatIndex}!");
-                if (destinationFlatIndex < 0 || destinationFlatIndex >= _destination.Count)
-                    throw new IndexOutOfRangeException($"The destination categories does not contain a flat index of {destinationFlatIndex}!");
+                if (originFlatIndex < 0 || originFlatIndex >= baseCategories.Count)
+                    return FailWith(ref error, $"The base categories does not contain a flat index of {originFlatIndex}!");
+                if (destinationFlatIndex < 0 || destinationFlatIndex >= destinationCategories.Count)
+                    return FailWith(ref error, $"The destination categories does not contain a flat index of {destinationFlatIndex}!");
             }
+            return true;
         }
+
 
         /// <summary>
         /// Aggregate the baseVector data into the destination category system.
         /// </summary>
         /// <param name="baseVector">The vector to aggregate</param>
-        /// <returns>A new vector with the mapped results from the base into the destination categories.</returns>
-        public Vector AggregateToDestination(Vector baseVector)
+        /// <param name="ret"></param>
+        /// <param name="error"></param>
+        /// <returns></returns>
+        public bool AggregateToDestination(Vector baseVector, out Vector ret, ref string error)
         {
+            ret = null;
             if (baseVector == null)
             {
-                throw new ArgumentNullException(nameof(baseVector));
+                return FailWith(ref error, "baseVector was null!");
             }
             if(baseVector.Categories != _baseCategories)
             {
-                throw new ArgumentException("Invalid Base Categories", nameof(baseVector));
+                return FailWith(ref error, "Invalid Base Categories");
             }
-            var ret = new Vector(Destination);
+            ret = new Vector(Destination);
             var b = baseVector.Data;
             var r = ret.Data;
             foreach(var (originFlatIndex, destinationFlatIndex) in _baseToDestination)
             {
                 r[destinationFlatIndex] += b[originFlatIndex];
             }
-            return ret;
+            return true;
         }
     }
 }
