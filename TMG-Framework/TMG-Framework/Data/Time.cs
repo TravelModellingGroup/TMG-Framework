@@ -35,7 +35,7 @@ namespace TMG
         /// <summary>
         /// Our internal representation, to the millisecond
         /// </summary>
-        private long _InternalTime;
+        private long _internalTime;
 
         /// <summary>
         /// Converts the given float time in format HH.MM to
@@ -46,12 +46,12 @@ namespace TMG
         {
             var hours = (long)time;
             var minutes = (long)(Math.Round((time - (long)time) * 100));
-            _InternalTime = (hours * 3600000L + minutes * 60000L);
+            _internalTime = (hours * 3600000L + minutes * 60000L);
         }
 
         public Time(DateTime time)
         {
-            _InternalTime = ((60 * (60 * time.Hour) + time.Minute) + time.Second) * 1000 + time.Millisecond;
+            _internalTime = ((60 * (60 * time.Hour) + time.Minute) + time.Second) * 1000 + time.Millisecond;
         }
 
         /// <summary>
@@ -76,8 +76,8 @@ namespace TMG
         /// </summary>
         public int Hours
         {
-            get => (int)(_InternalTime / 3600000L);
-            set => _InternalTime = (_InternalTime % 3600000L + (value * 3600000L));
+            get => (int)(_internalTime / 3600000L);
+            set => _internalTime = (_internalTime % 3600000L + (value * 3600000L));
         }
 
         /// <summary>
@@ -85,8 +85,8 @@ namespace TMG
         /// </summary>
         public int Minutes
         {
-            get => (int)((_InternalTime / 60000L) % 60L);
-            set => _InternalTime = _InternalTime - ((_InternalTime / 60000L) % 60L) + (value * 60000L);
+            get => (int)((_internalTime / 60000L) % 60L);
+            set => _internalTime = _internalTime - ((_internalTime / 60000L) % 60L) + (value * 60000L);
         }
 
         /// <summary>
@@ -94,44 +94,44 @@ namespace TMG
         /// </summary>
         public int Seconds
         {
-            get => (int)((_InternalTime / 1000L) % 60L);
+            get => (int)((_internalTime / 1000L) % 60L);
             set
             {
-                var temp = _InternalTime / 1000L;
-                _InternalTime = ((temp - temp % 60L) + value) * 1000L;
+                var temp = _internalTime / 1000L;
+                _internalTime = ((temp - temp % 60L) + value) * 1000L;
             }
         }
 
-        public static Time FromMinutes(float result) => new Time() { _InternalTime = (long)(result * 60000.0f) };
+        public static Time FromMinutes(float result) => new Time() { _internalTime = (long)(result * 60000.0f) };
 
         public static implicit operator DateTime(Time t) => new DateTime(0, 0, 0, t.Hours, t.Minutes, t.Seconds, 0);
 
         public static implicit operator Time(DateTime t) => new Time(t);
 
-        public static bool Intersection(Time start1, Time end1, Time start2, Time end2) => !((end1._InternalTime < start2._InternalTime)
-                | (end2._InternalTime < start1._InternalTime));
+        public static bool Intersection(Time start1, Time end1, Time start2, Time end2) => !((end1._internalTime < start2._internalTime)
+                | (end2._internalTime < start1._internalTime));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Intersection(Time start1, Time end1, Time start2, Time end2, out Time intersection)
         {
-            if ((end1._InternalTime < start2._InternalTime)
-                | (end2._InternalTime < start1._InternalTime))
+            if ((end1._internalTime < start2._internalTime)
+                | (end2._internalTime < start1._internalTime))
             {
                 intersection = new Time();
                 return false;
             }
             // passenger is first
-            if (start1._InternalTime <= start2._InternalTime)
+            if (start1._internalTime <= start2._internalTime)
             {
-                intersection._InternalTime =
-                    (end1._InternalTime >= end2._InternalTime) ? end2._InternalTime - start2._InternalTime : end1._InternalTime - start2._InternalTime;
+                intersection._internalTime =
+                    (end1._internalTime >= end2._internalTime) ? end2._internalTime - start2._internalTime : end1._internalTime - start2._internalTime;
                 return true;
             }
             else
             {
                 // passenger is second
-                intersection._InternalTime =
-                    (end1._InternalTime >= end2._InternalTime) ? end2._InternalTime - start1._InternalTime : end1._InternalTime - start1._InternalTime;
+                intersection._internalTime =
+                    (end1._internalTime >= end2._internalTime) ? end2._internalTime - start1._internalTime : end1._internalTime - start1._internalTime;
                 return true;
             }
         }
@@ -139,25 +139,25 @@ namespace TMG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Intersection(Time start1, Time end1, Time start2, Time end2, out Time intersectionStart, out Time intersectionEnd)
         {
-            if (end1._InternalTime < start2._InternalTime
-                || end2._InternalTime < start1._InternalTime)
+            if (end1._internalTime < start2._internalTime
+                || end2._internalTime < start1._internalTime)
             {
                 intersectionStart = new Time();
                 intersectionEnd = new Time();
                 return false;
             }
             // passenger is first
-            if (start1._InternalTime <= start2._InternalTime)
+            if (start1._internalTime <= start2._internalTime)
             {
-                intersectionStart._InternalTime = start2._InternalTime;
-                intersectionEnd._InternalTime = (end1._InternalTime >= end2._InternalTime) ? end2._InternalTime : end1._InternalTime;
+                intersectionStart._internalTime = start2._internalTime;
+                intersectionEnd._internalTime = (end1._internalTime >= end2._internalTime) ? end2._internalTime : end1._internalTime;
                 return true;
             }
             else
             {
                 // passenger is second
-                intersectionStart._InternalTime = start1._InternalTime;
-                intersectionEnd._InternalTime = (end1._InternalTime >= end2._InternalTime) ? end2._InternalTime : end1._InternalTime;
+                intersectionStart._internalTime = start1._internalTime;
+                intersectionEnd._internalTime = (end1._internalTime >= end2._internalTime) ? end2._internalTime : end1._internalTime;
                 return true;
             }
         }
@@ -168,9 +168,9 @@ namespace TMG
         /// <param name="t1"></param>
         /// <param name="t2"></param>
         /// <returns></returns>
-        public static Time operator -(Time t1, Time t2) => new Time() { _InternalTime = t1._InternalTime - t2._InternalTime };
+        public static Time operator -(Time t1, Time t2) => new Time() { _internalTime = t1._internalTime - t2._internalTime };
 
-        public static Time operator -(Time t1) => new Time() { _InternalTime = -t1._InternalTime };
+        public static Time operator -(Time t1) => new Time() { _internalTime = -t1._internalTime };
 
         /// <summary>
         ///
@@ -178,7 +178,7 @@ namespace TMG
         /// <param name="t1"></param>
         /// <param name="t2"></param>
         /// <returns></returns>
-        public static bool operator !=(Time t1, Time t2) => t1._InternalTime != t2._InternalTime;
+        public static bool operator !=(Time t1, Time t2) => t1._internalTime != t2._internalTime;
 
         /// <summary>
         ///
@@ -186,7 +186,7 @@ namespace TMG
         /// <param name="time"></param>
         /// <param name="percent"></param>
         /// <returns></returns>
-        public static Time operator *(float percent, Time time) => new Time() { _InternalTime = (long)(Math.Round(percent * time._InternalTime)) };
+        public static Time operator *(float percent, Time time) => new Time() { _internalTime = (long)(Math.Round(percent * time._internalTime)) };
 
         /// <summary>
         ///
@@ -200,7 +200,7 @@ namespace TMG
             {
                 throw new DivideByZeroException();
             }
-            return (float)t1._InternalTime / t2._InternalTime;
+            return (float)t1._internalTime / t2._internalTime;
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace TMG
         /// <param name="t2"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Time operator +(Time t1, Time t2) => new Time() { _InternalTime = t1._InternalTime + t2._InternalTime };
+        public static Time operator +(Time t1, Time t2) => new Time() { _internalTime = t1._internalTime + t2._internalTime };
 
         /// <summary>
         ///
@@ -219,7 +219,7 @@ namespace TMG
         /// <param name="t2"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator <(Time t1, Time t2) => t1._InternalTime < t2._InternalTime;
+        public static bool operator <(Time t1, Time t2) => t1._internalTime < t2._internalTime;
 
         /// <summary>
         ///
@@ -228,7 +228,7 @@ namespace TMG
         /// <param name="t2"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator <=(Time t1, Time t2) => t1._InternalTime <= t2._InternalTime;
+        public static bool operator <=(Time t1, Time t2) => t1._internalTime <= t2._internalTime;
 
         /// <summary>
         ///
@@ -237,7 +237,7 @@ namespace TMG
         /// <param name="t2"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(Time t1, Time t2) => t1._InternalTime == t2._InternalTime;
+        public static bool operator ==(Time t1, Time t2) => t1._internalTime == t2._internalTime;
 
         /// <summary>
         ///
@@ -246,7 +246,7 @@ namespace TMG
         /// <param name="t2"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator >(Time t1, Time t2) => t1._InternalTime > t2._InternalTime;
+        public static bool operator >(Time t1, Time t2) => t1._internalTime > t2._internalTime;
 
         /// <summary>
         ///
@@ -255,7 +255,7 @@ namespace TMG
         /// <param name="t2"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator >=(Time t1, Time t2) => t1._InternalTime >= t2._InternalTime;
+        public static bool operator >=(Time t1, Time t2) => t1._internalTime >= t2._internalTime;
 
         public static bool TryParse(string timeString, out Time time)
         {
@@ -486,21 +486,21 @@ namespace TMG
                         return false;
                 }
             }
-            time._InternalTime = (long)(hours * 3600 + minutes * 60 + seconds) * 1000;
+            time._internalTime = (long)(hours * 3600 + minutes * 60 + seconds) * 1000;
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int CompareTo(Time other)
         {
-            return _InternalTime < other._InternalTime ? -1 : (_InternalTime == other._InternalTime ? 0 : 1);
+            return _internalTime < other._internalTime ? -1 : (_internalTime == other._internalTime ? 0 : 1);
         }
 
         public override bool Equals(object obj)
         {
             if (obj is Time other)
             {
-                return _InternalTime == other._InternalTime;
+                return _internalTime == other._internalTime;
             }
             return base.Equals(obj);
         }
@@ -514,7 +514,7 @@ namespace TMG
         public float ToFloat() => Hours + (Minutes * 0.01f) + (Seconds * 0.0001f);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float ToMinutes() => _InternalTime * 1.6666666666666666666666666666667e-5f;
+        public float ToMinutes() => _internalTime * 1.6666666666666666666666666666667e-5f;
 
         /// <summary>
         ///
@@ -522,7 +522,7 @@ namespace TMG
         /// <returns></returns>
         override public string ToString()
         {
-            if ((_InternalTime / 1000) % 60 == 0)
+            if ((_internalTime / 1000) % 60 == 0)
             {
                 return String.Format("{0}:{1:00}", Hours, Minutes);
             }

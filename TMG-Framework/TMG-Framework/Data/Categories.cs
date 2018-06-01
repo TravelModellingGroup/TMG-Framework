@@ -47,7 +47,7 @@ namespace TMG
         /// </summary>
         /// <param name="sparseIndex"></param>
         /// <returns></returns>
-        public int GetFlatIndex(int sparseIndex)
+        public int GetFlatIndex(CategoryIndex sparseIndex)
         {
             return Elements.BinarySearch(sparseIndex);
         }
@@ -57,7 +57,7 @@ namespace TMG
         /// </summary>
         /// <param name="flatIndex"></param>
         /// <returns></returns>
-        public int GetSparseIndex(int flatIndex)
+        public CategoryIndex GetSparseIndex(int flatIndex)
         {
             if(flatIndex < 0 || flatIndex >= Elements.Count)
             {

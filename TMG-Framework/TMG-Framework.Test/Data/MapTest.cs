@@ -33,8 +33,8 @@ namespace TMG.Test.Data
             var set = new List<int>() { 2, 6, 4, 8, 10 };
             var map = new Categories(set);
             Assert.AreEqual(set.Count, map.Count);
-            Assert.AreEqual(4, map.GetSparseIndex(1));
-            Assert.AreEqual(6, map.GetSparseIndex(2));
+            Assert.AreEqual((CategoryIndex)4, map.GetSparseIndex(1));
+            Assert.AreEqual((CategoryIndex)6, map.GetSparseIndex(2));
 
             Assert.AreEqual(0, map.GetFlatIndex(2));
             Assert.AreEqual(1, map.GetFlatIndex(4));
