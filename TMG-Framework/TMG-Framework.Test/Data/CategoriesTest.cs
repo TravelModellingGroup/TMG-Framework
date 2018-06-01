@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2017 University of Toronto
+    Copyright 2017-2018 University of Toronto
 
     This file is part of TMG-Framework for XTMF2.
 
@@ -25,21 +25,21 @@ using System.Collections.Generic;
 namespace TMG.Test.Data
 {
     [TestClass]
-    public class SparseMapTest
+    public class CategoriesTest
     {
         [TestMethod]
         public void CreateMap()
         {
             var set = new List<int>() { 2, 6, 4, 8, 10 };
-            var map = new Categories(set);
-            Assert.AreEqual(set.Count, map.Count);
-            Assert.AreEqual((CategoryIndex)4, map.GetSparseIndex(1));
-            Assert.AreEqual((CategoryIndex)6, map.GetSparseIndex(2));
+            var categories = new Categories(set);
+            Assert.AreEqual(set.Count, categories.Count);
+            Assert.AreEqual((CategoryIndex)4, categories.GetSparseIndex(1));
+            Assert.AreEqual((CategoryIndex)6, categories.GetSparseIndex(2));
 
-            Assert.AreEqual(0, map.GetFlatIndex(2));
-            Assert.AreEqual(1, map.GetFlatIndex(4));
-            Assert.AreEqual(2, map.GetFlatIndex(6));
-            Assert.AreEqual(3, map.GetFlatIndex(8));
+            Assert.AreEqual(0, categories.GetFlatIndex(2));
+            Assert.AreEqual(1, categories.GetFlatIndex(4));
+            Assert.AreEqual(2, categories.GetFlatIndex(6));
+            Assert.AreEqual(3, categories.GetFlatIndex(8));
         }
     }
 }
