@@ -53,6 +53,11 @@ namespace TMG.Utilities
         private readonly bool SpacesAsSeperator;
 
         /// <summary>
+        /// The number of columns that are currently loaded
+        /// </summary>
+        public int Columns { get; private set; } = 0;
+
+        /// <summary>
         /// Create a link to a CSV file
         /// </summary>
         /// <param name="fileName"></param>
@@ -187,6 +192,7 @@ namespace TMG.Utilities
                                 Data[numberOfColumns++].End = i;
                             }
                             columns = numberOfColumns;
+                            Columns = columns;
                             return true;
                         }
                     }
@@ -261,6 +267,7 @@ namespace TMG.Utilities
                                 Data[numberOfColumns++].End = i - 1;
                             }
                             columns = numberOfColumns;
+                            Columns = columns;
                             return true;
                         }
                     }
@@ -326,6 +333,7 @@ namespace TMG.Utilities
             {
                 columns = addOne ? numberOfColumns + 1 : numberOfColumns;
             }
+            Columns = columns;
             return true;
         }
 
@@ -337,6 +345,7 @@ namespace TMG.Utilities
             Reader.BaseStream.Seek(0, SeekOrigin.Begin);
             DataBuffer2 = null;
             DataBufferLength = -1;
+            Columns = 0;
         }
 
         private void ExpandDataSections()
