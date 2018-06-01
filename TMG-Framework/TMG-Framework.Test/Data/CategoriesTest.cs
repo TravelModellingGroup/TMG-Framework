@@ -30,8 +30,9 @@ namespace TMG.Test.Data
         [TestMethod]
         public void CreateMap()
         {
+            string error = null;
             var set = new List<int>() { 2, 6, 4, 8, 10 };
-            var categories = new Categories(set);
+            var categories = Categories.CreateCategories(set, ref error);
             Assert.AreEqual(set.Count, categories.Count);
             Assert.AreEqual((CategoryIndex)4, categories.GetSparseIndex(1));
             Assert.AreEqual((CategoryIndex)6, categories.GetSparseIndex(2));

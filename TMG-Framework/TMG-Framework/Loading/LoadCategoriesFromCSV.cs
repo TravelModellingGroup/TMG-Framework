@@ -43,7 +43,17 @@ namespace TMG.Loading
                     }
                 }
             }
-            return new Categories(record);
+            if(record.Count == 0)
+            {
+                throw new XTMFRuntimeException(this, "Unable to create Categories object with no contained categories.");
+            }
+            string error = null;
+            var ret = Categories.CreateCategories(record, ref error);
+            if(ret == null)
+            {
+                throw new XTMFRuntimeException(this, error);
+            }
+            return ret;
         }
     }
 }

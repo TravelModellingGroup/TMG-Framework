@@ -30,8 +30,10 @@ namespace TMG.Test.Data
         public void Aggregate()
         {
             string error = null;
-            Categories a = new Categories(new List<int> { 1, 3, 5, 7 });
-            Categories b = new Categories(new List<int> { 2, 4 });
+            Categories a = Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, ref error);
+            Assert.IsNotNull(a, error);
+            Categories b = Categories.CreateCategories(new List<int> { 2, 4 }, ref error);
+            Assert.IsNotNull(b, error);
             Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
                 new List<(int originFlatIndex, int destinationFlatIndex)>()
                 {

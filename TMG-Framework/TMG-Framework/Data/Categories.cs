@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2017 University of Toronto
+    Copyright 2017-2018 University of Toronto
 
     This file is part of TMG-Framework for XTMF2.
 
@@ -23,23 +23,49 @@ using System.Linq;
 
 namespace TMG
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public sealed class Categories
     {
-        public int Count => Elements.Count;
+        /// <summary>
+        /// Get the number of elements in the categories.
+        /// </summary>
+        public int Count => _elements.Count;
 
         /// <summary>
         /// TODO: Update the representation later on to something more efficient
         /// </summary>
-        private readonly List<int> Elements;
+        private readonly List<int> _elements;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="elements"></param>
+        /// <param name="error"></param>
+        /// <returns></returns>
+        public static Categories CreateCategories(List<int> elements, ref string error)
+        {
+            elements = elements?.ToList() ?? throw new ArgumentNullException(nameof(elements));
+            elements.Sort();
+            for (int i = 1; i < elements.Count; i++)
+            {
+                if(elements[i - 1] == elements[i])
+                {
+                    error = $"Found a duplicate category {elements[i]}!";
+                    return null;
+                }
+            }
+            return new Categories(elements);
+        }
 
         /// <summary>
         /// Create a SparseMap from a list of elements
         /// </summary>
         /// <param name="elements">The sorted elements to use</param>
-        public Categories(List<int> elements)
+        private Categories(List<int> elements)
         {
-            Elements = elements?.ToList() ?? throw new ArgumentNullException(nameof(elements));
-            Elements.Sort();
+            _elements = elements;
         }
 
         /// <summary>
@@ -49,7 +75,7 @@ namespace TMG
         /// <returns></returns>
         public int GetFlatIndex(CategoryIndex sparseIndex)
         {
-            return Elements.BinarySearch(sparseIndex);
+            return _elements.BinarySearch(sparseIndex);
         }
 
         /// <summary>
@@ -59,11 +85,11 @@ namespace TMG
         /// <returns></returns>
         public CategoryIndex GetSparseIndex(int flatIndex)
         {
-            if(flatIndex < 0 || flatIndex >= Elements.Count)
+            if(flatIndex < 0 || flatIndex >= _elements.Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(flatIndex));
             }
-            return Elements[flatIndex];
+            return _elements[flatIndex];
         }
     }
 }
