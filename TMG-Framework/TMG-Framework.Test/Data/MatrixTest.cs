@@ -62,7 +62,8 @@ namespace TMG.Test.Data
 
         private static Categories CreateMap()
         {
-            return new Categories(new List<int>() { 2, 6, 4, 8, 10 });
+            string error = null;
+            return Categories.CreateCategories(new List<int>() { 2, 6, 4, 8, 10 }, ref error);
         }
     }
 }

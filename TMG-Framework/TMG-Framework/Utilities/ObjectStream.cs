@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2017 University of Toronto
+    Copyright 2018 University of Toronto
 
     This file is part of TMG-Framework for XTMF2.
 
@@ -17,29 +17,27 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using XTMF2;
-using System.Reflection;
 using System.Collections.Generic;
+using System.Text;
+using XTMF2;
 
-namespace TMG.Test.Data
+namespace TMG
 {
-    [TestClass]
-    public class SparseMapTest
+    public abstract class ObjectStream<OUT> : BaseFunction<OUT>
     {
-        [TestMethod]
-        public void CreateMap()
-        {
-            var set = new List<int>() { 2, 6, 4, 8, 10 };
-            var map = new Categories(set);
-            Assert.AreEqual(set.Count, map.Count);
-            Assert.AreEqual(4, map.GetSparseIndex(1));
-            Assert.AreEqual(6, map.GetSparseIndex(2));
+        /// <summary>
+        /// Invoke this function to signal that the stream should
+        /// restart the stream.
+        /// </summary>
+        public abstract void Reset();
+    }
 
-            Assert.AreEqual(0, map.GetFlatIndex(2));
-            Assert.AreEqual(1, map.GetFlatIndex(4));
-            Assert.AreEqual(2, map.GetFlatIndex(6));
-            Assert.AreEqual(3, map.GetFlatIndex(8));
-        }
+    public abstract class ObjectStream<IN,OUT> : BaseFunction<IN,OUT>
+    {
+        /// <summary>
+        /// Invoke this function to signal that the stream should
+        /// restart the stream.
+        /// </summary>
+        public abstract void Reset();
     }
 }

@@ -57,5 +57,26 @@ namespace TMG.Test.Utilities
                 return null;
             }
         }
+
+        internal static bool Compare(Vector expected, Vector test, ref string error)
+        {
+            if (expected.Categories != test.Categories)
+            {
+                error = "The categories are not the same!";
+                return false;
+            }
+            // compare the data
+            var expectedData = expected.Data;
+            var testData = test.Data;
+            for (int i = 0; i < testData.Length; i++)
+            {
+                if (expectedData[i] != testData[i])
+                {
+                    error = $"Found different elements at position {i}: {expectedData[i]} != {testData[i]}!";
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }

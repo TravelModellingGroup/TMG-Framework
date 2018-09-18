@@ -22,39 +22,42 @@ namespace TMG
 {
     public sealed class Vector
     {
-        public Categories Categories { get; private set; }
-        public float[] Data { get; private set; }
+        public Categories Categories => _categories;
+        private readonly Categories _categories;
+
+        public float[] Data => _data;
+        private readonly float[] _data;
 
         public Vector(Categories categories)
         {
-            Categories = categories;
-            Data = new float[Categories.Count];
+            _categories = categories;
+            _data = new float[Categories.Count];
         }
 
         public Vector(Vector vector)
         {
-            Categories = vector.Categories;
-            Data = new float[Categories.Count];
+            _categories = vector.Categories;
+            _data = new float[_categories.Count];
         }
 
-        public float this[int sparseIndex]
+        public float this[CategoryIndex sparseIndex]
         {
             get
             {
-                var index = Categories.GetFlatIndex(sparseIndex);
+                var index = _categories.GetFlatIndex(sparseIndex);
                 if(index >= 0)
                 {
-                    return Data[index];
+                    return _data[index];
                 }
                 return 0.0f;
             }
 
             set
             {
-                var index = Categories.GetFlatIndex(sparseIndex);
+                var index = _categories.GetFlatIndex(sparseIndex);
                 if (index >= 0)
                 {
-                    Data[index] = value;
+                    _data[index] = value;
                 }
                 throw new ArgumentOutOfRangeException(nameof(sparseIndex));
             }

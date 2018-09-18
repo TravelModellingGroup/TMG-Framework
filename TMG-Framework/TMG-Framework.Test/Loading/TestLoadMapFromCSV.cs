@@ -42,7 +42,7 @@ namespace TMG.Test.Loading
             Assert.AreEqual(64, result.Count);
             for (int i = 0; i < result.Count; i++)
             {
-                Assert.AreEqual(i + 1, result.GetSparseIndex(i));
+                Assert.AreEqual((CategoryIndex)(i + 1), result.GetSparseIndex(i));
             }
         }
 
@@ -54,7 +54,7 @@ namespace TMG.Test.Loading
             Assert.AreEqual(64, result.Count);
             for (int i = 0; i < result.Count; i++)
             {
-                Assert.AreEqual(i + 1, result.GetSparseIndex(i));
+                Assert.AreEqual((CategoryIndex)(i + 1), result.GetSparseIndex(i));
             }
         }
     }

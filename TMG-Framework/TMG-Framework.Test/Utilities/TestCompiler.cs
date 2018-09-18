@@ -29,7 +29,13 @@ namespace XTMF.Testing.TMG.Data
     [TestClass]
     public class TestCompiler
     {
-        Categories categories = new Categories(new List<int>() { 1, 2 });
+        readonly Categories categories;
+
+        public TestCompiler()
+        {
+            string error = null;
+            categories = Categories.CreateCategories(new List<int>() { 1, 2 }, ref error);
+        }
         /// <summary>
         /// Create a new simple matrix for testing.
         /// </summary>
@@ -1125,6 +1131,61 @@ namespace XTMF.Testing.TMG.Data
             {
                 CreateData("B", 1, 0, 1, 1)
             }, 2.0f, -2.0f, 2.0f, 2.0f);
+        }
+
+        [TestMethod]
+        public void TestLog()
+        {
+            CompareMatrix("Log(B)", new IModule[]
+            {
+                CreateData("B", 1, 0.5f, 0.25f, 0.125f)
+            }, (float)Math.Log(1), (float)Math.Log(0.5f), (float)Math.Log(0.25f), (float)Math.Log(0.125f));
+        }
+
+        [TestMethod]
+        public void TestIfNaN()
+        {
+            CompareMatrix("IfNaN(B, C)", new IModule[]
+            {
+                CreateData("B", 1, float.NaN, float.NaN, 0.125f),
+                CreateData("C", 1, 2, 3, 4)
+            }, 1, 2, 3, 0.125f);
+        }
+
+        [TestMethod]
+        public void TestNegate()
+        {
+            CompareMatrix("-B", new IModule[]
+            {
+                CreateData("B", 1, 0.5f, 0.25f, 0.125f)
+            }, -1, -0.5f, -0.25f, -0.125f);
+        }
+
+        [TestMethod]
+        public void TestNegateWithAdd()
+        {
+            CompareMatrix("-10 + B", new IModule[]
+            {
+                CreateData("B", 1, 2, 3, 4)
+            }, -9, -8, -7, -6);
+        }
+
+        [TestMethod]
+        public void TestNegateWithExp()
+        {
+            CompareMatrix("-B^-1", new IModule[]
+            {
+                CreateData("B", 1, 2, 4, 8)
+            }, -1, -0.5f, -0.25f, -0.125f);
+        }
+
+        [TestMethod]
+        public void TestNegateWithMul()
+        {
+            CompareMatrix("B*-1", new IModule[]
+            {
+                CreateData("B", 1, 2, 4, 8)
+            }, -1, -2, -4, -8);
         }
 
         /// <summary>

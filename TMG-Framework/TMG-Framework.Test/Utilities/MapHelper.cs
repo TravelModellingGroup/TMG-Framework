@@ -76,7 +76,7 @@ namespace TMG.Test.Utilities
         {
             try
             {
-                LoadMapFromCSV mapLoader = new LoadMapFromCSV();
+                var mapLoader = new LoadCategoriesFromCSV();
                 OpenReadStreamFromFile streamLoader = new OpenReadStreamFromFile();
                 using (var reader = streamLoader.Invoke(fileName))
                 {

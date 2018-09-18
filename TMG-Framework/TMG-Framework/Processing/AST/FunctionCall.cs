@@ -48,24 +48,25 @@ namespace TMG.Frameworks.Data.Processing.AST
             Matrix,
             IdentityMatrix,
             Log,
-            If
+            If,
+            IfNaN
         }
 
-        private FunctionType Type;
+        private readonly FunctionType _type;
 
-        private Expression[] Parameters;
+        private Expression[] _parameters;
 
         private FunctionCall(int start, FunctionType call, Expression[] parameters) : base(start)
         {
-            Parameters = parameters;
-            Type = call;
+            _parameters = parameters;
+            _type = call;
         }
 
         internal override bool OptimizeAst(ref Expression ex, ref string error)
         {
-            for (int i = 0; i < Parameters.Length; i++)
+            for (int i = 0; i < _parameters.Length; i++)
             {
-                if (!Parameters[i].OptimizeAst(ref Parameters[i], ref error))
+                if (!_parameters[i].OptimizeAst(ref _parameters[i], ref error))
                 {
                     return false;
                 }
@@ -151,6 +152,9 @@ namespace TMG.Frameworks.Data.Processing.AST
                 case "if":
                     type = FunctionType.If;
                     return true;
+                case "ifnan":
+                    type = FunctionType.IfNaN;
+                    return true;
                 default:
                     error = "The function '" + call + "' is undefined!";
                     return false;
@@ -160,14 +164,14 @@ namespace TMG.Frameworks.Data.Processing.AST
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
             // first evaluate the parameters
-            var values = new ComputationResult[Parameters.Length];
-            switch(Parameters.Length)
+            var values = new ComputationResult[_parameters.Length];
+            switch(_parameters.Length)
             {
                 case 0:
                     break;
                 case 1:
                     {
-                        values[0] = Parameters[0].Evaluate(dataSources);
+                        values[0] = _parameters[0].Evaluate(dataSources);
                         if (values[0].Error)
                         {
                             return values[0];
@@ -178,7 +182,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     {
                         System.Threading.Tasks.Parallel.For(0, values.Length, (int i) =>
                         {
-                            values[i] = Parameters[i].Evaluate(dataSources);
+                            values[i] = _parameters[i].Evaluate(dataSources);
                         });
                         for (int i = 0; i < values.Length; i++)
                         {
@@ -191,7 +195,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     break;
             }
 
-            switch (Type)
+            switch (_type)
             {
                 case FunctionType.AsHorizontal:
                     if (values.Length != 1)
@@ -383,9 +387,47 @@ namespace TMG.Frameworks.Data.Processing.AST
                         return new ComputationResult("If requires at 3 parameters (condition, valueIfTrue, valueIfFalse)!");
                     }
                     return ComputeIf(values);
+                case FunctionType.IfNaN:
+                    if (values.Length != 2)
+                    {
+                        return new ComputationResult("IfNaN requires 2 parameters (original,replacement)!");
+                    }
+                    return ComputeIfNaN(values);
 
             }
             return new ComputationResult("An undefined function was executed!");
+        }
+
+        private ComputationResult ComputeIfNaN(ComputationResult[] values)
+        {
+            var condition = values[0];
+            var replacement = values[1];
+            // both must be the same size
+            if (condition.IsValue && replacement.IsValue)
+            {
+                return new ComputationResult(!float.IsNaN(condition.LiteralValue) ? condition.LiteralValue : replacement.LiteralValue);
+            }
+            else if (condition.IsVectorResult && replacement.IsVectorResult)
+            {
+                var saveTo = values[0].Accumulator ? values[0].VectorData : new Vector(values[0].VectorData);
+                VectorHelper.ReplaceIfNaN(saveTo.Data, condition.VectorData.Data, replacement.VectorData.Data, 0, replacement.VectorData.Data.Length);
+                return new ComputationResult(saveTo, true, condition.Direction);
+            }
+            else if (condition.IsOdResult && replacement.IsOdResult)
+            {
+                var saveTo = values[0].Accumulator ? values[0].OdData : new Matrix(values[0].OdData);
+                var flatSave = saveTo.Data;
+                var flatCond = condition.OdData.Data;
+                var flatRep = replacement.OdData.Data;
+                int rows = values[0].OdData.RowCategories.Count;
+                int columns = values[0].OdData.ColumnCategories.Count;
+                System.Threading.Tasks.Parallel.For(0, rows, (int i) =>
+                {
+                    VectorHelper.ReplaceIfNaN(flatSave, flatCond, flatRep, i * columns, columns);
+                });
+                return new ComputationResult(saveTo, true);
+            }
+            return new ComputationResult($"{Start + 1}:The Condition and Replacement case of an IfNaN expression must be of the same dimensionality.");
         }
 
         private ComputationResult ComputeIf(ComputationResult[] values)
@@ -512,14 +554,16 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 var saveTo = values[0].Accumulator ? values[0].VectorData : new Vector(values[0].VectorData);
                 var flat = saveTo.Data;
-                VectorHelper.Log(flat, 0, flat, 0, flat.Length);
+                var source = values[0].VectorData.Data;
+                VectorHelper.Log(flat, 0, source, 0, source.Length);
                 return new ComputationResult(saveTo, true);
             }
             else
             {
                 var saveTo = values[0].Accumulator ? values[0].OdData : new Matrix(values[0].OdData);
                 var flat = saveTo.Data;
-                VectorHelper.Log(flat, 0, flat, 0, flat.Length);
+                var source = values[0].OdData.Data;
+                VectorHelper.Log(flat, 0, source, 0, source.Length);
                 return new ComputationResult(saveTo, true);
             }
         }

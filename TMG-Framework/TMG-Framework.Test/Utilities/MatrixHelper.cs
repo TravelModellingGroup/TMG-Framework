@@ -92,6 +92,32 @@ namespace TMG.Test.Utilities
             }
         }
 
+        internal static bool Compare(Matrix expected, Matrix testCase, ref string error)
+        {
+            if(expected.ColumnCategories != testCase.ColumnCategories)
+            {
+                error = "The column categories are not the same!";
+                return false;
+            }
+            if(expected.RowCategories != testCase.RowCategories)
+            {
+                error = "The row categories are not the same!";
+                return false;
+            }
+            // compare the data
+            var expectedData = expected.Data;
+            var testData = testCase.Data;
+            for (int i = 0; i < testData.Length; i++)
+            {
+                if(expectedData[i] != testData[i])
+                {
+                    error = $"Found different elements at position {i}: {expectedData[i]} != {testData[i]}!";
+                    return false;
+                }
+            }
+            return true;
+        }
+
         internal static string WriteMatrixToMTX(Categories categories, float[][] data)
         {
             Assert.AreEqual(categories.Count, data.Length);
