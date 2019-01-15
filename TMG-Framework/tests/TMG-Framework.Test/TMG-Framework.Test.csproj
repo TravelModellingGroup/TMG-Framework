@@ -24,9 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\XTMF2\XTMF2\XTMF2\XTMF2.csproj" />
-    <ProjectReference Include="..\..\XTMF2\XTMF2\XTMFInterfaces\XTMFInterfaces.csproj" />
-    <ProjectReference Include="..\TMG-Framework\TMG-Framework.csproj" />
+    <ProjectReference Include="..\..\..\XTMF2\src\XTMF2.Interfaces\XTMF2.Interfaces.csproj" />
+    <ProjectReference Include="..\..\..\XTMF2\src\XTMF2\XTMF2.csproj" />
+    <ProjectReference Include="..\..\src\TMG-Framework\TMG-Framework.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -20,13 +20,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\XTMF2\XTMF2\XTMF2\XTMF2.csproj" />
-    <ProjectReference Include="..\..\XTMF2\XTMF2\XTMFInterfaces\XTMFInterfaces.csproj" />
+    <PackageReference Include="System.Memory" Version="4.5.0" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Memory" Version="4.5.0" />
-    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+    <ProjectReference Include="..\..\..\XTMF2\src\XTMF2.Interfaces\XTMF2.Interfaces.csproj" />
+    <ProjectReference Include="..\..\..\XTMF2\src\XTMF2\XTMF2.csproj" />
   </ItemGroup>
 
 </Project>
