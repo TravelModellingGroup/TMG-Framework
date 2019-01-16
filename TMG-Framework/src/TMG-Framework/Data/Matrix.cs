@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2017 University of Toronto
+    Copyright 2017-2019 University of Toronto
 
     This file is part of TMG-Framework for XTMF2.
 
@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using static TMG.Utilities.ExceptionHelper;
 
 namespace TMG
 {
@@ -30,20 +31,17 @@ namespace TMG
         /// <summary>
         /// The categories for the rows.
         /// </summary>
-        public Categories RowCategories => _rowCategories;
-        private readonly Categories _rowCategories;
+        public Categories RowCategories { get; }
 
         /// <summary>
         /// The categories for the columns.
         /// </summary>
-        public Categories ColumnCategories => _columnCategories;
-        private readonly Categories _columnCategories;
+        public Categories ColumnCategories { get; }
 
         /// <summary>
         /// The backend storage for the matrix
         /// </summary>
-        public float[] Data => _data;
-        private readonly float[] _data;
+        public float[] Data { get; }
 
         private int _rowSpan;
 
@@ -54,10 +52,10 @@ namespace TMG
         /// <param name="columnCategories">The categories for the columns.</param>
         public Matrix(Categories rowCategories, Categories columnCategories)
         {
-            _rowCategories = rowCategories;
-            _columnCategories = columnCategories;
+            RowCategories = rowCategories ?? throw new ArgumentNullException(nameof(rowCategories));
+            ColumnCategories = columnCategories ?? throw new ArgumentNullException(nameof(columnCategories));
             _rowSpan = ColumnCategories.Count;
-            _data = new float[_rowCategories.Count * _columnCategories.Count];
+            Data = new float[RowCategories.Count * ColumnCategories.Count];
         }
 
         /// <summary>
@@ -66,9 +64,13 @@ namespace TMG
         /// <param name="vector">The vector to get the dimensions from.</param>
         public Matrix(Vector vector)
         {
-            _columnCategories = _rowCategories = vector.Categories;
+            if (vector == null)
+            {
+                ThrowParameterNull(nameof(vector));
+            }
+            ColumnCategories = RowCategories = vector.Categories;
             _rowSpan = ColumnCategories.Count;
-            _data = new float[_rowCategories.Count * _columnCategories.Count];
+            Data = new float[RowCategories.Count * ColumnCategories.Count];
         }
 
         /// <summary>
@@ -78,10 +80,14 @@ namespace TMG
         /// <param name="matrix">The matrix to copy the dimensions from.</param>
         public Matrix(Matrix matrix)
         {
-            _rowCategories = matrix.RowCategories;
-            _columnCategories = matrix.ColumnCategories;
+            if (matrix == null)
+            {
+                ThrowParameterNull(nameof(matrix));
+            }
+            RowCategories = matrix.RowCategories;
+            ColumnCategories = matrix.ColumnCategories;
             _rowSpan = matrix._rowSpan;
-            _data = new float[_rowCategories.Count * _columnCategories.Count];
+            Data = new float[RowCategories.Count * ColumnCategories.Count];
         }
 
         /// <summary>
@@ -91,7 +97,7 @@ namespace TMG
         /// <returns>The row and column in sparse space for this flat index.</returns>
         public (CategoryIndex Row, CategoryIndex Column) GetSparseIndex(int flatIndex)
         {
-            return (_rowCategories.GetSparseIndex(flatIndex / _rowSpan), _rowCategories.GetSparseIndex(flatIndex % _rowSpan));
+            return (RowCategories.GetSparseIndex(flatIndex / _rowSpan), RowCategories.GetSparseIndex(flatIndex % _rowSpan));
         }
 
         /// <summary>
@@ -122,12 +128,8 @@ namespace TMG
         /// <returns>The index in data for the start of this row</returns>
         public int GetSparseRowIndex(CategoryIndex sparseRow)
         {
-            var index = _rowCategories.GetFlatIndex(sparseRow);
-            if(index < 0)
-            {
-                return -1;
-            }
-            return index * _rowSpan;
+            var index = RowCategories.GetFlatIndex(sparseRow);
+            return index >= 0 ? index * _rowSpan : -1;
         }
 
         /// <summary>
@@ -137,11 +139,11 @@ namespace TMG
         /// <returns>A reference to the row.</returns>
         public Span<float> GetRow(int flatRowIndex)
         {
-            if(flatRowIndex < 0 | flatRowIndex + _rowSpan > _rowCategories.Count)
+            if(flatRowIndex < 0 | flatRowIndex + _rowSpan > RowCategories.Count)
             {
-                throw new IndexOutOfRangeException(nameof(flatRowIndex));
+                ThrowOutOfRangeException(nameof(flatRowIndex));
             }
-            return new Span<float>(_data, GetFlatRowIndex(flatRowIndex), _rowSpan);
+            return new Span<float>(Data, GetFlatRowIndex(flatRowIndex), _rowSpan);
         }
     }
 }

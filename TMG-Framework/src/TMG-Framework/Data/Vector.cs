@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2017 University of Toronto
+    Copyright 2017-2019 University of Toronto
 
     This file is part of TMG-Framework for XTMF2.
 
@@ -17,49 +17,69 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using static TMG.Utilities.ExceptionHelper;
 
 namespace TMG
 {
+    /// <summary>
+    /// Represents a single dimension floating point data storage with a given shape.
+    /// </summary>
     public sealed class Vector
     {
-        public Categories Categories => _categories;
-        private readonly Categories _categories;
+        /// <summary>
+        /// The categories that shape this vector.
+        /// </summary>
+        public Categories Categories { get; }
 
-        public float[] Data => _data;
-        private readonly float[] _data;
+        /// <summary>
+        /// The backing data for this vector.
+        /// </summary>
+        public float[] Data { get; }
 
+        /// <summary>
+        /// Create a new vector given the shape of the categories.
+        /// </summary>
+        /// <param name="categories">The categories to shape the vector around.</param>
         public Vector(Categories categories)
         {
-            _categories = categories;
-            _data = new float[Categories.Count];
+            if(categories == null)
+            {
+                ThrowParameterNull(nameof(categories));
+            }
+            Categories = categories;
+            Data = new float[Categories.Count];
         }
 
+        /// <summary>
+        /// Create a new vector given the shape of the given vector.
+        /// This will not create a clone of the given vector.
+        /// </summary>
+        /// <param name="vector">The vector to use to create the shape from.</param>
         public Vector(Vector vector)
         {
-            _categories = vector.Categories;
-            _data = new float[_categories.Count];
+            if(vector == null)
+            {
+                ThrowParameterNull(nameof(vector));
+            }
+            Categories = vector.Categories;
+            Data = new float[Categories.Count];
         }
 
         public float this[CategoryIndex sparseIndex]
         {
             get
             {
-                var index = _categories.GetFlatIndex(sparseIndex);
-                if(index >= 0)
-                {
-                    return _data[index];
-                }
-                return 0.0f;
+                var index = Categories.GetFlatIndex(sparseIndex);
+                return index >= 0 ? Data[index] : 0.0f;
             }
-
             set
             {
-                var index = _categories.GetFlatIndex(sparseIndex);
+                var index = Categories.GetFlatIndex(sparseIndex);
                 if (index >= 0)
                 {
-                    _data[index] = value;
+                    Data[index] = value;
                 }
-                throw new ArgumentOutOfRangeException(nameof(sparseIndex));
+                ThrowOutOfRangeException(nameof(sparseIndex));
             }
         }
     }
