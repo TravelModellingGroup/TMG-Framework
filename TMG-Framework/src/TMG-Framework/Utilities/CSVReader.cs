@@ -21,7 +21,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using XTMF2;
 
 namespace TMG.Utilities
 {
@@ -53,11 +52,6 @@ namespace TMG.Utilities
         private readonly bool SpacesAsSeperator;
 
         /// <summary>
-        /// The number of columns that are currently loaded
-        /// </summary>
-        public int Columns { get; private set; } = 0;
-
-        /// <summary>
         /// Create a link to a CSV file
         /// </summary>
         /// <param name="fileName"></param>
@@ -72,7 +66,7 @@ namespace TMG.Utilities
             SpacesAsSeperator = spacesAsSeperator;
         }
 
-        public CsvReader(ReadStream stream, bool spacesAsSeperator = false)
+        public CsvReader(Stream stream, bool spacesAsSeperator = false)
         {
             FileName = "Stream";
             Reader = new BinaryReader(stream);
@@ -174,6 +168,7 @@ namespace TMG.Utilities
             var i = 0;
             var prevC = '\0';
             var quote = false;
+            var previousWasQuote = false;
             if (SpacesAsSeperator)
             {
                 while (true)
@@ -192,7 +187,6 @@ namespace TMG.Utilities
                                 Data[numberOfColumns++].End = i;
                             }
                             columns = numberOfColumns;
-                            Columns = columns;
                             return true;
                         }
                     }
@@ -212,17 +206,32 @@ namespace TMG.Utilities
                     }
                     if ((c == '"'))
                     {
-                        if (prevEnd == i - 1)
+                        if (previousWasQuote)
                         {
+                            // if the previous was a quote, reactive quote mode and
+                            // add it to the line buffer
+                            previousWasQuote = false;
                             quote = true;
-                            continue;
                         }
-                        if (quote)
+                        else
                         {
-                            quote = false;
-                            continue;
+                            previousWasQuote = true;
+                            if (prevEnd == i - 1)
+                            {
+                                quote = true;
+                                continue;
+                            }
+                            if (quote)
+                            {
+                                quote = false;
+                                continue;
+                            }
                         }
                         // if it is just in the middle continue on
+                    }
+                    else
+                    {
+                        previousWasQuote = false;
                     }
                     if (LinePosition >= LineBuffer.Length)
                     {
@@ -264,10 +273,9 @@ namespace TMG.Utilities
                             if (addOne)
                             {
                                 Data[numberOfColumns].Start = prevEnd + 1;
-                                Data[numberOfColumns++].End = i - 1;
+                                Data[numberOfColumns++].End = i;
                             }
                             columns = numberOfColumns;
-                            Columns = columns;
                             return true;
                         }
                     }
@@ -287,17 +295,32 @@ namespace TMG.Utilities
                     }
                     if ((c == '"'))
                     {
-                        if (prevEnd == i - 1)
+                        if (previousWasQuote)
                         {
+                            // if the previous was a quote, reactive quote mode and
+                            // add it to the line buffer
+                            previousWasQuote = false;
                             quote = true;
-                            continue;
                         }
-                        if (quote)
+                        else
                         {
-                            quote = false;
-                            continue;
+                            previousWasQuote = true;
+                            if (prevEnd == i - 1)
+                            {
+                                quote = true;
+                                continue;
+                            }
+                            if (quote)
+                            {
+                                quote = false;
+                                continue;
+                            }
                         }
                         // if it is just in the middle continue on
+                    }
+                    else
+                    {
+                        previousWasQuote = false;
                     }
                     if (LinePosition >= LineBuffer.Length)
                     {
@@ -333,7 +356,6 @@ namespace TMG.Utilities
             {
                 columns = addOne ? numberOfColumns + 1 : numberOfColumns;
             }
-            Columns = columns;
             return true;
         }
 
@@ -345,7 +367,6 @@ namespace TMG.Utilities
             Reader.BaseStream.Seek(0, SeekOrigin.Begin);
             DataBuffer2 = null;
             DataBufferLength = -1;
-            Columns = 0;
         }
 
         private void ExpandDataSections()
@@ -383,7 +404,7 @@ namespace TMG.Utilities
             Task.Run(() =>
             {
                 NextDataBufferLength = Reader.Read(DataBuffer2, 0, DataBuffer.Length);
-                Interlocked.MemoryBarrier();
+                Thread.MemoryBarrier();
                 NextDataReady = true;
             });
         }
@@ -404,7 +425,7 @@ namespace TMG.Utilities
             }
             if (!LoadedFromStream)
             {
-                Reader?.Dispose();
+                Reader?.Close();
             }
         }
 
