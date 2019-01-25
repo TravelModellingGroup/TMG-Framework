@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using static TMG.Utilities.ExceptionHelper;
 
 namespace TMG
 {
@@ -49,6 +50,11 @@ namespace TMG
 
         public static bool TryParse(ref string error, string rangeString, out RangeSetSet output)
         {
+            if (rangeString == null)
+            {
+                ThrowParameterNull(nameof(rangeString));
+            }
+
             var rangeSets = new List<RangeSet>();
             output = null;
             var strLength = rangeString.Length;
@@ -152,7 +158,7 @@ namespace TMG
         {
             if (item == null)
             {
-                throw new ArgumentNullException("item", "The item to search for must not be null!");
+                ThrowParameterNull(nameof(item));
             }
             for (var i = 0; i < RangeSets.Length; i++)
             {

@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Text;
 using static System.Char;
 using static System.String;
+using static TMG.Utilities.ExceptionHelper;
 
 namespace TMG
 {
@@ -39,7 +40,10 @@ namespace TMG
         /// <param name="numbers">The numbers to use to generate the ranges</param>
         public RangeSet(IList<int> numbers)
         {
-            if (numbers == null) throw new ArgumentNullException(nameof(numbers));
+            if (numbers == null)
+            {
+                ThrowParameterNull(nameof(numbers));
+            }
             var array = new int[numbers.Count];
             numbers.CopyTo(array, 0);
             Array.Sort(array);

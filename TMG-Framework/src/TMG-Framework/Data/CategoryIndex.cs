@@ -25,7 +25,7 @@ namespace TMG
     /// <summary>
     /// Represents an index into an object of Categories.
     /// </summary>
-    public struct CategoryIndex
+    public readonly struct CategoryIndex
     {
         private readonly int _Value;
 

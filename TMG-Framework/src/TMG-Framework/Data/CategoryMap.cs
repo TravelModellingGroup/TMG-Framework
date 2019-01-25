@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2018 University of Toronto
+    Copyright 2018-2019 University of Toronto
 
     This file is part of TMG-Framework for XTMF2.
 
@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using static TMG.Utilities.ExceptionHelper;
 
 namespace TMG
 {
@@ -31,27 +32,37 @@ namespace TMG
         /// <summary>
         /// 
         /// </summary>
-        public Categories Base => _baseCategories;
-        private readonly Categories _baseCategories;
+        public Categories Base { get; }
 
         /// <summary>
         /// 
         /// </summary>
-        public Categories Destination => _destination;
-        private readonly Categories _destination;
+        public Categories Destination { get; }
 
         private readonly List<(int originFlatIndex, int destinationFlatIndex)> _baseToDestination;
 
         public static bool CreateCategoryMap(Categories baseCategories, Categories destinationCategories,
             List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination, out CategoryMap map, ref string error)
         {
-            if(!ValidateMapping(baseCategories, destinationCategories, baseToDestination, ref error))
+            if (baseCategories == null)
             {
-                map = null;
-                return false;
+                ThrowParameterNull(nameof(baseCategories));
             }
-            map = new CategoryMap(baseCategories, destinationCategories, baseToDestination);
-            return true;
+            if (destinationCategories == null)
+            {
+                ThrowParameterNull(nameof(destinationCategories));
+            }
+            if (baseToDestination == null)
+            {
+                ThrowParameterNull(nameof(baseToDestination));
+            }
+            if (ValidateMapping(baseCategories, destinationCategories, baseToDestination, ref error))
+            {
+                map = new CategoryMap(baseCategories, destinationCategories, baseToDestination);
+                return true;
+            }
+            map = null;
+            return false;
         }
 
         /// <summary>
@@ -63,8 +74,20 @@ namespace TMG
         private CategoryMap(Categories baseCategories, Categories destinationCategories, 
             List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination)
         {
-            _baseCategories = baseCategories ?? throw new ArgumentNullException(nameof(baseCategories));
-            _destination = destinationCategories ?? throw new ArgumentNullException(nameof(destinationCategories));
+            if(baseCategories == null)
+            {
+                ThrowParameterNull(nameof(baseCategories));
+            }
+            if(destinationCategories == null)
+            {
+                ThrowParameterNull(nameof(destinationCategories));
+            }
+            if(baseToDestination == null)
+            {
+                ThrowParameterNull(nameof(baseToDestination));
+            }
+            Base = baseCategories;
+            Destination = destinationCategories;
             _baseToDestination = baseToDestination;
         }
 
@@ -81,7 +104,19 @@ namespace TMG
         private static bool ValidateMapping(Categories baseCategories, Categories destinationCategories, 
             List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination, ref string error)
         {
-            foreach(var (originFlatIndex, destinationFlatIndex) in baseToDestination)
+            if (baseCategories == null)
+            {
+                return FailWith(ref error, "baseCategories was null!");
+            }
+            if (destinationCategories == null)
+            {
+                return FailWith(ref error, "destinationCategories was null!");
+            }
+            if (baseToDestination == null)
+            {
+                return FailWith(ref error, "baseToDestination was null!");
+            }
+            foreach (var (originFlatIndex, destinationFlatIndex) in baseToDestination)
             {
                 if (originFlatIndex < 0 || originFlatIndex >= baseCategories.Count)
                     return FailWith(ref error, $"The base categories does not contain a flat index of {originFlatIndex}!");
@@ -106,7 +141,7 @@ namespace TMG
             {
                 return FailWith(ref error, "baseVector was null!");
             }
-            if(baseVector.Categories != _baseCategories)
+            if(baseVector.Categories != Base)
             {
                 return FailWith(ref error, "Invalid Base Categories");
             }

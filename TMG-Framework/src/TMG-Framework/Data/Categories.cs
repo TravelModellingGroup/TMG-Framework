@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using static TMG.Utilities.ExceptionHelper;
 
 namespace TMG
 {
@@ -65,6 +66,10 @@ namespace TMG
         /// <param name="elements">The sorted elements to use</param>
         private Categories(List<int> elements)
         {
+            if(elements == null)
+            {
+                ThrowParameterNull(nameof(elements));
+            }
             _elements = elements;
         }
 
@@ -87,7 +92,7 @@ namespace TMG
         {
             if(flatIndex < 0 || flatIndex >= _elements.Count)
             {
-                throw new ArgumentOutOfRangeException(nameof(flatIndex));
+                ThrowOutOfRangeException(nameof(flatIndex));
             }
             return _elements[flatIndex];
         }
