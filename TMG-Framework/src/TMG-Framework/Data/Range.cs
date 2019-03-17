@@ -21,7 +21,7 @@ using System.Collections.Generic;
 
 namespace TMG
 {
-    public struct Range
+    public readonly struct Range
     {
         public readonly int Start;
         public readonly int Stop;
