@@ -58,7 +58,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = rhs.Accumulator ? rhs.VectorData : new Vector(rhs.VectorData);
                     var flat = retVector.Data;
-                    VectorHelper.Subtract(flat, lhs.VectorData.Data, rhs.LiteralValue);
+                    VectorHelper.Subtract(flat, lhs.LiteralValue, rhs.VectorData.Data);
                     return new ComputationResult(retVector, true);
                 }
                 else
