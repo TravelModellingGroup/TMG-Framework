@@ -49,7 +49,10 @@ namespace TMG.Frameworks.Data.Processing.AST
             IdentityMatrix,
             Log,
             If,
-            IfNaN
+            IfNaN,
+            Normalize,
+            NormalizeColumns,
+            NormalizeRows
         }
 
         private readonly FunctionType _type;
@@ -155,6 +158,15 @@ namespace TMG.Frameworks.Data.Processing.AST
                 case "ifnan":
                     type = FunctionType.IfNaN;
                     return true;
+                case "normalize":
+                    type = FunctionType.Normalize;
+                    return true;
+                case "normalizecolumns":
+                    type = FunctionType.NormalizeColumns;
+                    return true;
+                case "normalizerows":
+                    type = FunctionType.NormalizeRows;
+                    return true;
                 default:
                     error = "The function '" + call + "' is undefined!";
                     return false;
@@ -165,7 +177,7 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             // first evaluate the parameters
             var values = new ComputationResult[_parameters.Length];
-            switch(_parameters.Length)
+            switch (_parameters.Length)
             {
                 case 0:
                     break;
@@ -186,7 +198,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         });
                         for (int i = 0; i < values.Length; i++)
                         {
-                            if(values[i].Error)
+                            if (values[i].Error)
                             {
                                 return values[i];
                             }
@@ -393,9 +405,124 @@ namespace TMG.Frameworks.Data.Processing.AST
                         return new ComputationResult("IfNaN requires 2 parameters (original,replacement)!");
                     }
                     return ComputeIfNaN(values);
+                case FunctionType.Normalize:
+                    if (values.Length != 1)
+                    {
+                        return new ComputationResult("Normalize requires 1 parameter, a matrix to be normalized.");
+                    }
+                    return ComputeNormalize(values);
+                case FunctionType.NormalizeColumns:
+                    if (values.Length != 1)
+                    {
+                        return new ComputationResult("NormalizeColumns requires 1 parameter, a matrix to be normalized.");
+                    }
+                    return ComputeNormalizeColumns(values);
+                case FunctionType.NormalizeRows:
+                    if (values.Length != 1)
+                    {
+                        return new ComputationResult("NormalizeRows requires 1 parameter, a matrix to be normalized.");
+                    }
+                    return ComputeNormalizeRows(values);
 
             }
             return new ComputationResult("An undefined function was executed!");
+        }
+
+        private ComputationResult ComputeNormalizeColumns(ComputationResult[] values)
+        {
+            var toNormalize = values[0];
+            if (toNormalize.IsValue)
+            {
+                return new ComputationResult($"{Start + 1}:Normalize requires its parameter to be of type Matrix, not a scalar.");
+            }
+            if (toNormalize.IsVectorResult)
+            {
+                return new ComputationResult($"{Start + 1}:Normalize requires its parameter to be of type Matrix, not a vector.");
+            }
+            var writeTo = toNormalize.Accumulator ? toNormalize.OdData : new Matrix(toNormalize.OdData);
+            var readFrom = toNormalize.OdData;
+            var rowLength = readFrom.RowCategories.Count;
+            // This could be executed in parallel if proved to be more efficient
+            var columnTotals = new float[readFrom.ColumnCategories.Count];
+            var columnSpan = columnTotals.AsSpan();
+            for (int i = 0; i < rowLength; i++)
+            {
+                var readRow = readFrom.GetRow(i);
+                VectorHelper.Add(columnSpan, 0, columnSpan, 0, readRow, 0, readRow.Length);
+            }
+            System.Threading.Tasks.Parallel.For(0, rowLength, (int i) =>
+            {
+                var writeRow = writeTo.GetRow(i);
+                var readRow = readFrom.GetRow(i);
+                for (int j = 0; j < writeRow.Length; j++)
+                {
+                    writeRow[j] = columnTotals[j] != 0f ? readRow[j] / columnTotals[j] : 0f;
+                }
+            });
+            return new ComputationResult(writeTo, true);
+        }
+
+        private ComputationResult ComputeNormalizeRows(ComputationResult[] values)
+        {
+            var toNormalize = values[0];
+            if (toNormalize.IsValue)
+            {
+                return new ComputationResult($"{Start + 1}:Normalize requires its parameter to be of type Matrix, not a scalar.");
+            }
+            if (toNormalize.IsVectorResult)
+            {
+                return new ComputationResult($"{Start + 1}:Normalize requires its parameter to be of type Matrix, not a vector.");
+            }
+            var rowLength = toNormalize.OdData.RowCategories.Count;
+            var writeTo = toNormalize.Accumulator ? toNormalize.OdData : new Matrix(toNormalize.OdData);
+            var readFrom = toNormalize.OdData;
+            System.Threading.Tasks.Parallel.For(0, rowLength, (int i) =>
+            {
+                var flatWrite = writeTo.GetRow(i);
+                var flatRead = readFrom.GetRow(i);
+                var denominator = VectorHelper.Sum(flatRead);
+                if (denominator != 0f)
+                {
+                    VectorHelper.Divide(flatWrite, flatRead, denominator);
+                }
+                else if (flatRead == flatWrite)
+                {
+                    // we only need to accumulate if we are going to return a previously accumulated matrix.
+                    VectorHelper.Memset(flatWrite, 0f);
+                }
+            });
+            return new ComputationResult(writeTo, true);
+        }
+
+        private ComputationResult ComputeNormalize(ComputationResult[] values)
+        {
+            var toNormalize = values[0];
+            if (toNormalize.IsValue)
+            {
+                return new ComputationResult($"{Start + 1}:Normalize requires its parameter to be of type Matrix, not a scalar.");
+            }
+            if (toNormalize.IsVectorResult)
+            {
+                return new ComputationResult($"{Start + 1}:Normalize requires its parameter to be of type Matrix, not a vector.");
+            }
+            var writeTo = toNormalize.Accumulator ? toNormalize.OdData : new Matrix(toNormalize.OdData);
+            var flatWrite = writeTo.Data;
+            var flatRead = toNormalize.OdData.Data;
+            // sum the whole matrix in parallel using SIMD for each array
+            var denominator = VectorHelper.Sum(flatRead, 0, flatRead.Length);
+            if (denominator == 0f)
+            {
+                // only clear the write array if it was an accumulator
+                if (flatRead == flatWrite)
+                {
+                    Array.Clear(flatWrite, 0, flatRead.Length);
+                }
+            }
+            else
+            {
+                VectorHelper.Divide(flatWrite, flatRead, denominator);
+            }
+            return new ComputationResult(writeTo, true);
         }
 
         private ComputationResult ComputeIfNaN(ComputationResult[] values)
@@ -538,7 +665,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         sa[i] = cond[i] > 0f ? tr[i] : fa[i];
                     }
                 });
-                
+
                 return new ComputationResult(saveTo, true);
             }
             return new ComputationResult($"{Start + 1}:This combination of parameter types has not been implemented for if!");
@@ -603,7 +730,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     return new ComputationResult("Matrix was executed with an unassigned orientation vector!");
                 case ComputationResult.VectorDirection.Vertical:
                     // each row is the single value
-                    for (int i = 0; i < flatVector.Length; i ++)
+                    for (int i = 0; i < flatVector.Length; i++)
                     {
                         VectorHelper.Set(flatMatrix, i * rowSize, flatVector[i], rowSize);
                     }

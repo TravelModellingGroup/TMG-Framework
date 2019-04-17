@@ -139,11 +139,12 @@ namespace TMG
         /// <returns>A reference to the row.</returns>
         public Span<float> GetRow(int flatRowIndex)
         {
-            if(flatRowIndex < 0 | flatRowIndex + _rowSpan > RowCategories.Count)
+            if ((flatRowIndex < 0) | (flatRowIndex > RowCategories.Count))
             {
                 ThrowOutOfRangeException(nameof(flatRowIndex));
             }
-            return new Span<float>(Data, GetFlatRowIndex(flatRowIndex), _rowSpan);
+            flatRowIndex = GetFlatRowIndex(flatRowIndex);
+            return new Span<float>(Data, flatRowIndex, _rowSpan);
         }
     }
 }

@@ -145,6 +145,36 @@ namespace TMG.Utilities
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dest"></param>
+        /// <param name="destIndex"></param>
+        /// <param name="lhs"></param>
+        /// <param name="lhsIndex"></param>
+        /// <param name="rhs"></param>
+        /// <param name="rhsIndex"></param>
+        /// <param name="length"></param>
+        internal static void Add(Span<float> dest, int destIndex, Span<float> lhs, int lhsIndex, Span<float> rhs, int rhsIndex, int length)
+        {
+            var vectorLength = length / Vector<float>.Count;
+            var remainder = length % Vector<float>.Count;
+            var destSpan = (dest.Slice(destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (lhs.Slice(lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            var rhsSpan = (rhs.Slice(rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
+            {
+                destSpan[i] = lhsSpan[i] + rhsSpan[i];
+                destSpan[i + 1] = lhsSpan[i + 1] + rhsSpan[i + 1];
+            }
+            i *= Vector<float>.Count;
+            for (; i < length; i++)
+            {
+                dest[destIndex + i] = lhs[lhsIndex + i] + rhs[rhsIndex + i];
+            }
+        }
+
         public static void Add(float[][] destination, float lhs, float[][] rhs)
         {
             Parallel.For(0, destination.Length, row =>

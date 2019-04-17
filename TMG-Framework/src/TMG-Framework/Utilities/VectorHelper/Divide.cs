@@ -208,5 +208,26 @@ namespace TMG.Utilities
                 dest[destIndex + i] = lhs / rhs[rhsIndex + i];
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Divide(Span<float> dest, Span<float> lhs, float rhs)
+        {
+            var vectorLength = dest.Length / Vector<float>.Count;
+            var remainder = dest.Length % Vector<float>.Count;
+            var destSpan = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
+            var lhsSpan = (lhs.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
+            var vRhs = new Vector<float>(rhs);
+            int i = 0;
+            for (; i < vectorLength - 1; i += 2)
+            {
+                destSpan[i] = lhsSpan[i] / vRhs;
+                destSpan[i + 1] = lhsSpan[i + 1] / vRhs;
+            }
+            i *= Vector<float>.Count;
+            for (; i < dest.Length; i++)
+            {
+                dest[i] = lhs[i] / rhs;
+            }
+        }
     }
 }

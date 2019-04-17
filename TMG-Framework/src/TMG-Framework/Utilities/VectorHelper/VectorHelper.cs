@@ -63,7 +63,6 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sum(Span<float> array)
         {
-            var vectorLength = array.Length / Vector<float>.Count;
             var remainder = array.Length % Vector<float>.Count;
             var vectorSpan = (array.Slice(0, array.Length - remainder)).NonPortableCast<float, Vector<float>>();
             int i = 0;
@@ -106,7 +105,6 @@ namespace TMG.Utilities
             {
                 throw new ArgumentException("The length of the parameters are not the same!", nameof(second));
             }
-            var vectorLength = first.Length / Vector<float>.Count;
             var remainder = first.Length % Vector<float>.Count;
             var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -150,7 +148,6 @@ namespace TMG.Utilities
             {
                 throw new ArgumentException("The length of the parameters are not the same!", nameof(second));
             }
-            var vectorLength = first.Length / Vector<float>.Count;
             var remainder = first.Length % Vector<float>.Count;
             var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -199,7 +196,6 @@ namespace TMG.Utilities
             {
                 throw new ArgumentException("The length of the parameters are not the same!", nameof(second));
             }
-            var vectorLength = first.Length / Vector<float>.Count;
             var remainder = first.Length % Vector<float>.Count;
             var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -227,7 +223,6 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Set(Span<float> dest, float value)
         {
-            var vectorLength = dest.Length / Vector<float>.Count;
             var remainder = dest.Length % Vector<float>.Count;
             var vectorFirst = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vValue = new Vector<float>(value);
@@ -275,7 +270,6 @@ namespace TMG.Utilities
             {
                 throw new ArgumentException("The length of the parameters are not the same!", nameof(source));
             }
-            var vectorLength = dest.Length / Vector<float>.Count;
             var remainder = dest.Length % Vector<float>.Count;
             var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorSource = (source.Slice(0, source.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -310,7 +304,6 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float MultiplyAndSum(Span<float> dest, Span<float> first, Span<float> second)
         {
-            var vectorLength = dest.Length / Vector<float>.Count;
             var remainder = dest.Length % Vector<float>.Count;
             var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -355,7 +348,6 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float MultiplyAndSum(Span<float> first, Span<float> second)
         {
-            var vectorLength = first.Length / Vector<float>.Count;
             var remainder = first.Length % Vector<float>.Count;
             var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -395,7 +387,6 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Multiply3AndSum(Span<float> first, Span<float> second, Span<float> third)
         {
-            var vectorLength = first.Length / Vector<float>.Count;
             var remainder = first.Length % Vector<float>.Count;
             var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -442,7 +433,6 @@ namespace TMG.Utilities
             Span<float> second, float scalar, Span<float> columnSum)
         {
             Vector<float> scalarV = new Vector<float>(scalar);
-            var vectorLength = first.Length / Vector<float>.Count;
             var remainder = first.Length % Vector<float>.Count;
             var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -491,7 +481,6 @@ namespace TMG.Utilities
             Span<float> second, Span<float> third, float scalar, Span<float> columnSum)
         {
             Vector<float> scalarV = new Vector<float>(scalar);
-            var vectorLength = first.Length / Vector<float>.Count;
             var remainder = first.Length % Vector<float>.Count;
             var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -501,8 +490,8 @@ namespace TMG.Utilities
             int i = 0;
             for (; i < vectorDest.Length - 1; i += 2)
             {
-                vectorColumnSum[i] += (vectorDest[i] = vectorFirst[i] * vectorSecond[i] * third[i] * scalarV);
-                vectorColumnSum[i + 1] += (vectorDest[i + 1] = vectorFirst[i + 1] * vectorSecond[i + 1] * third[i + 1] * scalarV);
+                vectorColumnSum[i] += (vectorDest[i] = vectorFirst[i] * vectorSecond[i] * vectorThird[i] * scalarV);
+                vectorColumnSum[i + 1] += (vectorDest[i + 1] = vectorFirst[i + 1] * vectorSecond[i + 1] * vectorThird[i + 1] * scalarV);
             }
             i *= Vector<float>.Count;
             for (; i < dest.Length; i++)
@@ -542,7 +531,6 @@ namespace TMG.Utilities
         public static void Average(Span<float> dest, Span<float> first, Span<float> second)
         {
             Vector<float> half = new Vector<float>(0.5f);
-            var vectorLength = first.Length / Vector<float>.Count;
             var remainder = first.Length % Vector<float>.Count;
             var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -618,7 +606,6 @@ namespace TMG.Utilities
         public static void ReplaceIfNotFinite(Span<float> dest, float alternateValue)
         {
             Vector<float> altV = new Vector<float>(alternateValue);
-            var vectorLength = dest.Length / Vector<float>.Count;
             var remainder = dest.Length % Vector<float>.Count;
             var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             int i = 0;
@@ -655,7 +642,6 @@ namespace TMG.Utilities
         {
             Vector<float> altV = new Vector<float>(alternateValue);
             Vector<float> minV = new Vector<float>(minimum);
-            var vectorLength = dest.Length / Vector<float>.Count;
             var remainder = dest.Length % Vector<float>.Count;
             var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             int i = 0;
@@ -684,7 +670,6 @@ namespace TMG.Utilities
         public static bool AnyGreaterThan(Span<float> data, float rhs)
         {
             var rhsV = new Vector<float>(rhs);
-            var vectorLength = data.Length / Vector<float>.Count;
             var remainder = data.Length % Vector<float>.Count;
             var vectorData = (data.Slice(0, data.Length - remainder)).NonPortableCast<float, Vector<float>>();
             int i = 0;
@@ -718,7 +703,6 @@ namespace TMG.Utilities
         {
             var baseV = new Vector<float>(baseNumber);
             var maxmumVariationV = new Vector<float>(maxVarriation);
-            var vectorLength = data.Length / Vector<float>.Count;
             var remainder = data.Length % Vector<float>.Count;
             var vectorData = (data.Slice(0, data.Length - remainder)).NonPortableCast<float, Vector<float>>();
             int i = 0;
@@ -817,7 +801,6 @@ namespace TMG.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Log(Span<float> dest, Span<float> x)
         {
-            var vectorLength = dest.Length / Vector<float>.Count;
             var remainder = dest.Length % Vector<float>.Count;
             var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
             var vectorX = (x.Slice(0, x.Length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -857,7 +840,6 @@ namespace TMG.Utilities
             {
                 throw new ArgumentNullException();
             }
-            var vectorLength = length / Vector<float>.Count;
             var remainder = length % Vector<float>.Count;
             var destSpan = (new Span<float>(dest, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
             var sourceSpan = (new Span<float>(source, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -881,7 +863,6 @@ namespace TMG.Utilities
             {
                 throw new ArgumentNullException();
             }
-            var vectorLength = length / Vector<float>.Count;
             var remainder = length % Vector<float>.Count;
             var destSpan = (new Span<float>(dest, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
             var sourceSpan = (new Span<float>(source, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
@@ -895,6 +876,32 @@ namespace TMG.Utilities
             for (; i < length; i++)
             {
                 dest[offset + i] = -source[offset + i];
+            }
+        }
+
+        /// <summary>
+        /// Set all of the values in the given span to the given value.
+        /// </summary>
+        /// <param name="dest">The destination to set.</param>
+        /// <param name="value">The value to set it to.</param>
+        internal static void Memset(Span<float> dest, float value)
+        {
+            if (dest == null)
+            {
+                throw new ArgumentNullException(nameof(dest));
+            }
+            var remainder = (dest.Length) % Vector<float>.Count;
+            var destSpan = dest.Slice(0, dest.Length - remainder).NonPortableCast<float, Vector<float>>();
+            var vValue = new Vector<float>(value);
+            int i = 0;
+            for (; i < destSpan.Length; i++)
+            {
+                destSpan[i] = vValue;
+            }
+            i *= Vector<float>.Count;
+            for(;i<dest.Length;i++)
+            {
+                dest[i] = value;
             }
         }
     }
