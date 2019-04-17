@@ -57,7 +57,7 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         private readonly FunctionType _type;
 
-        private Expression[] _parameters;
+        private readonly Expression[] _parameters;
 
         private FunctionCall(int start, FunctionType call, Expression[] parameters) : base(start)
         {

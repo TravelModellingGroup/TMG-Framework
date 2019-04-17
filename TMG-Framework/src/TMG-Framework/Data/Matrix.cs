@@ -43,7 +43,10 @@ namespace TMG
         /// </summary>
         public float[] Data { get; }
 
-        private int _rowSpan;
+        /// <summary>
+        /// Used as a quick lookup for the number of columns per row.
+        /// </summary>
+        private readonly int _rowSpan;
 
         /// <summary>
         /// Create a new matrix with the given row and column categories.
