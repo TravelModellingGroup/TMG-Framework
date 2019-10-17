@@ -38,7 +38,7 @@ namespace TMG.Test.Saving
             var fileName = Path.GetTempFileName();
             try
             {
-                using (var writeStream = new OpenWriteStreamFromFile().Invoke(fileName))
+                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
                 {
                     new SaveMatrixAsMTX().Invoke((a, writeStream));
                 }
@@ -61,12 +61,12 @@ namespace TMG.Test.Saving
             var fileName = Path.GetTempFileName();
             try
             {
-                using (var writeStream = new OpenWriteStreamFromFile().Invoke(fileName))
+                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
                 {
                     new SaveMatrixAsMTX().Invoke((a, writeStream));
                 }
                 // Now that the matrix has been saved attempt to load it back in.
-                using (var readStream = new OpenReadStreamFromFile().Invoke(fileName))
+                using (var readStream = Helper.CreateReadStreamFromFile(fileName))
                 {
                     var readMatrix = new TMG.Loading.LoadMatrixFromMTX()
                     {

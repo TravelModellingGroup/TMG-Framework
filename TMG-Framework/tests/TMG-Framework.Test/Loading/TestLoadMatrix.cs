@@ -50,7 +50,10 @@ namespace TMG.Test.Loading
                 ColumnCategories = Helper.CreateParameter(map),
                 RowCategories = Helper.CreateParameter(map)
             };
-            using (var stream = (new OpenReadStreamFromFile()).Invoke(matrixFileName))
+            using (var stream = (new OpenReadStreamFromFile()
+            {
+                FilePath = Helper.CreateParameter(matrixFileName)
+            }).Invoke())
             {
                 var vector = matrixLoader.Invoke(stream);
                 Assert.AreSame(map, vector.RowCategories);
@@ -90,7 +93,10 @@ namespace TMG.Test.Loading
                 DestinationColumn = Helper.CreateParameter(0),
                 DataColumn = Helper.CreateParameter(0)
             };
-            using (var stream = (new OpenReadStreamFromFile()).Invoke(matrixFileName))
+            using (var stream = (new OpenReadStreamFromFile()
+            {
+                FilePath = Helper.CreateParameter(matrixFileName)
+            }).Invoke())
             {
                 var vector = matrixLoader.Invoke(stream);
                 Assert.AreSame(map, vector.RowCategories);
@@ -126,7 +132,10 @@ namespace TMG.Test.Loading
             {
                 Categories = Helper.CreateParameter(map),
             };
-            using (var stream = (new OpenReadStreamFromFile()).Invoke(matrixFileName))
+            using (var stream = (new OpenReadStreamFromFile()
+            {
+                FilePath = Helper.CreateParameter(matrixFileName)
+            }).Invoke())
             {
                 var vector = matrixLoader.Invoke(stream);
                 Assert.AreSame(map, vector.RowCategories);

@@ -34,5 +34,31 @@ namespace PerformanceTest
                 Value = value
             };
         }
+
+        /// <summary>
+        /// Create a ReadStream from the given file path.
+        /// </summary>
+        /// <param name="fileName">The path to the file to read.</param>
+        /// <returns>A ReadStream for the given file.</returns>
+        internal static ReadStream CreateReadStreamFromFile(string fileName)
+        {
+            return (new OpenReadStreamFromFile()
+            {
+                FilePath = CreateParameter(fileName)
+            }).Invoke();
+        }
+
+        /// <summary>
+        /// Create a WriteStream to the given file path.
+        /// </summary>
+        /// <param name="fileName">The path to the file to write.</param>
+        /// <returns>A WriteStream for the given file.</returns>
+        internal static WriteStream CreateWriteStreamFromFile(string fileName)
+        {
+            return (new OpenWriteStreamFromFile()
+            {
+                FilePath = CreateParameter(fileName)
+            }).Invoke();
+        }
     }
 }
