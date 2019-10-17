@@ -43,8 +43,7 @@ namespace TMG.Test.Utilities
                     MapColumnName = Helper.CreateParameter("Zone"),
                     DataColumnName = Helper.CreateParameter("Data")
                 };
-                using (var writeStream = (new XTMF2.RuntimeModules.OpenWriteStreamFromFile())
-                    .Invoke(fileName))
+                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
                 {
                     save.Invoke((vector, writeStream));
                 }

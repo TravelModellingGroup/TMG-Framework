@@ -44,8 +44,7 @@ namespace TMG.Test.Utilities
                     FirstIndexHeader = Helper.CreateParameter("Origin"),
                     SecondIndexHeader = Helper.CreateParameter("Destination")
                 };
-                using (var writeStream = (new XTMF2.RuntimeModules.OpenWriteStreamFromFile())
-                    .Invoke(fileName))
+                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
                 {
                     save.Invoke((matrix, writeStream));
                 }
@@ -77,8 +76,7 @@ namespace TMG.Test.Utilities
                     SecondIndexHeader = Helper.CreateParameter("Destination"),
                     DataIndexHeader = Helper.CreateParameter("Data")
                 };
-                using (var writeStream = (new XTMF2.RuntimeModules.OpenWriteStreamFromFile())
-                    .Invoke(fileName))
+                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
                 {
                     save.Invoke((matrix, writeStream));
                 }
@@ -130,8 +128,7 @@ namespace TMG.Test.Utilities
                     Array.Copy(data[i], 0, matrix.Data, i * data.Length, data[i].Length);
                 }
                 var save = new SaveMatrixAsMTX();
-                using (var writeStream = (new XTMF2.RuntimeModules.OpenWriteStreamFromFile())
-                    .Invoke(fileName))
+                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
                 {
                     save.Invoke((matrix, writeStream));
                 }

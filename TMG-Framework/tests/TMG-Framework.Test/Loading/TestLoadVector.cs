@@ -47,7 +47,7 @@ namespace TMG.Test.Loading
                 MapColumn = Helper.CreateParameter(0),
                 DataColumn = Helper.CreateParameter(1)
             };
-            using (var stream = (new OpenReadStreamFromFile()).Invoke(vectorFileName))
+            using (var stream = Helper.CreateReadStreamFromFile(vectorFileName))
             {
                 var vector = vecLoader.Invoke(stream);
                 Assert.AreSame(map, vector.Categories);
