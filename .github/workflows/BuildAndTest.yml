@@ -7,6 +7,8 @@ jobs:
     runs-on: windows-2019   
     steps:
     - uses: actions/checkout@v1
+    - name: Step Into Directory
+      run: cd TMG-Framework
     - name: Setup .NetCore
       uses: actions/setup-dotnet@v1
       with:
