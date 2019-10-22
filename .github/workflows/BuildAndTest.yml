@@ -18,7 +18,11 @@ jobs:
       with:
         dotnet-version: 3.0.100
     - name: Build with dotnet
-      run: dotnet build --configuration Release
+      run: |
+        cd
+        dotnet build --configuration Release
     - name: Unit Tests
-      run: dotnet test
+      run: |
+        cd
+        dotnet test
       
