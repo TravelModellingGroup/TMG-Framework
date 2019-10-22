@@ -7,22 +7,16 @@ jobs:
     runs-on: windows-2019   
     steps:
     - uses: actions/checkout@v1
-    - name: Step Into Directory
-      run: |
-        cd
-        cd TMG-Framework
-        cd
-        dir
     - name: Setup .NetCore
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.0.100
     - name: Build with dotnet
       run: |
-        cd
+        cd TMG-Framework
         dotnet build --configuration Release
     - name: Unit Tests
       run: |
-        cd
+        cd TMG-Framework
         dotnet test
       
