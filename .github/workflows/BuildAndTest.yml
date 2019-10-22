@@ -12,6 +12,7 @@ jobs:
         cd
         cd TMG-Framework
         cd
+        dir
     - name: Setup .NetCore
       uses: actions/setup-dotnet@v1
       with:
