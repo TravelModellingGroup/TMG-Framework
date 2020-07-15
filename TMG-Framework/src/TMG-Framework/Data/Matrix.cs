@@ -18,6 +18,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using static TMG.Utilities.ExceptionHelper;
 
@@ -98,6 +99,7 @@ namespace TMG
         /// </summary>
         /// <param name="flatIndex">The flat index in the data to get the sparse row and column for.</param>
         /// <returns>The row and column in sparse space for this flat index.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public (CategoryIndex Row, CategoryIndex Column) GetSparseIndex(int flatIndex)
         {
             return (RowCategories.GetSparseIndex(flatIndex / _rowSpan), RowCategories.GetSparseIndex(flatIndex % _rowSpan));
@@ -109,6 +111,7 @@ namespace TMG
         /// <param name="flatRow">The row to lookup</param>
         /// <param name="floatColumn">The column to lookup</param>
         /// <returns>The index in data for this data.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public int GetFlatIndex(int flatRow, int floatColumn)
         {
             return _rowSpan * flatRow + floatColumn;
@@ -119,6 +122,7 @@ namespace TMG
         /// </summary>
         /// <param name="flatRow">The flat index of the row to get</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public int GetFlatRowIndex(int flatRow)
         {
             return _rowSpan * flatRow;
@@ -129,6 +133,7 @@ namespace TMG
         /// </summary>
         /// <param name="sparseRow">The sparse row index to lookup</param>
         /// <returns>The index in data for the start of this row</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public int GetSparseRowIndex(CategoryIndex sparseRow)
         {
             var index = RowCategories.GetFlatIndex(sparseRow);
@@ -140,6 +145,7 @@ namespace TMG
         /// </summary>
         /// <param name="flatRowIndex">The 0 indexed row number to get access to.</param>
         /// <returns>A reference to the row.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public Span<float> GetRow(int flatRowIndex)
         {
             if ((flatRowIndex < 0) | (flatRowIndex > RowCategories.Count))
@@ -148,6 +154,35 @@ namespace TMG
             }
             flatRowIndex = GetFlatRowIndex(flatRowIndex);
             return new Span<float>(Data, flatRowIndex, _rowSpan);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public ref float GetFromSparseIndexes(int rowIndex, int columnIndex)
+        {
+            var o = RowCategories.GetFlatIndex(rowIndex);
+            var d = ColumnCategories.GetFlatIndex(columnIndex);
+            if(o < 0)
+            {
+                InvalidRow(rowIndex);
+            }
+            if(d < 0)
+            {
+                InvalidColumns(columnIndex);
+            }
+            return ref GetRow(o)[d];
+        }
+
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void InvalidColumns(int columnIndex)
+        {
+            throw new ArgumentOutOfRangeException($"Invalid column index {columnIndex}!");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void InvalidRow(int rowIndex)
+        {
+            throw new ArgumentOutOfRangeException($"Invalid row index {rowIndex}!");
         }
     }
 }

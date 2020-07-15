@@ -20,6 +20,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using TMG.Loading;
 using XTMF2.RuntimeModules;
@@ -86,6 +87,17 @@ namespace TMG.Test.Utilities
             {
                 File.Delete(fileName);
             }
+        }
+
+        /// <summary>
+        /// Generate categories that are 1 indexed.
+        /// </summary>
+        /// <param name="numberOfElements">The number of elements to have.</param>
+        /// <returns>A new Categories with sparse space in [1..numberOfElements]</returns>
+        internal static Categories LoadMap(int numberOfElements)
+        {
+            string error = null;
+            return Categories.CreateCategories(Enumerable.Range(1, numberOfElements).ToList(), ref error);
         }
     }
 }
