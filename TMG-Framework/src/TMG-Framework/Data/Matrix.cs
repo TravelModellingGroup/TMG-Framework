@@ -109,12 +109,12 @@ namespace TMG
         /// Get the index in data given the flat row and columns
         /// </summary>
         /// <param name="flatRow">The row to lookup</param>
-        /// <param name="floatColumn">The column to lookup</param>
+        /// <param name="flatColumn">The column to lookup</param>
         /// <returns>The index in data for this data.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public int GetFlatIndex(int flatRow, int floatColumn)
+        public int GetFlatIndex(int flatRow, int flatColumn)
         {
-            return _rowSpan * flatRow + floatColumn;
+            return _rowSpan * flatRow + flatColumn;
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace TMG
             {
                 InvalidColumns(columnIndex);
             }
-            return ref GetRow(o)[d];
+            return ref Data[GetFlatIndex(o,d)];
         }
 
 
