@@ -33,7 +33,7 @@ namespace TMG.Utilities
         /// <summary>
         /// The reader we use to get the IO data
         /// </summary>
-        private BinaryReader Reader;
+        private readonly BinaryReader Reader;
 
         /// <summary>
         /// The segments set when we read in a line
@@ -47,8 +47,6 @@ namespace TMG.Utilities
 
         private int DataBufferPosition;
 
-        private readonly bool LoadedFromStream;
-
         private readonly bool SpacesAsSeperator;
 
         /// <summary>
@@ -61,7 +59,6 @@ namespace TMG.Utilities
             FileName = fileName;
             Reader = new BinaryReader(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
             BaseStream = Reader.BaseStream;
-            LoadedFromStream = false;
             DataBufferLength = -1;
             SpacesAsSeperator = spacesAsSeperator;
         }
@@ -69,9 +66,8 @@ namespace TMG.Utilities
         public CsvReader(Stream stream, bool spacesAsSeperator = false)
         {
             FileName = "Stream";
-            Reader = new BinaryReader(stream);
+            Reader = new BinaryReader(stream, System.Text.Encoding.UTF8, true);
             BaseStream = Reader.BaseStream;
-            LoadedFromStream = true;
             DataBufferLength = -1;
             SpacesAsSeperator = spacesAsSeperator;
         }
@@ -423,10 +419,7 @@ namespace TMG.Utilities
             {
                 GC.SuppressFinalize(this);
             }
-            if (!LoadedFromStream)
-            {
-                Reader?.Close();
-            }
+            Reader.Dispose();
         }
 
         ~CsvReader()
@@ -436,7 +429,7 @@ namespace TMG.Utilities
 
         public void Dispose()
         {
-            Dispose(true);
+            Dispose(false);
         }
 
         #endregion IDisposable Members
