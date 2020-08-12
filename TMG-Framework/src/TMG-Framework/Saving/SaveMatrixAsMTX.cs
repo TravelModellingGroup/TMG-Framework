@@ -22,6 +22,7 @@ using System.Text;
 using System.IO;
 using XTMF2;
 using TMG.Utilities;
+using System.Runtime.InteropServices;
 
 namespace TMG.Saving
 {
@@ -61,13 +62,8 @@ namespace TMG.Saving
                         indexWriter.Write(columnCategories.GetSparseIndex(i));
                     }
                 }
-                // use conversion buffer to avoid copying the data
-                var buffer = new ConversionBuffer()
-                {
-                    FloatData = matrix.Data
-                };
-                writer.Write(buffer.GetByteBuffer(rowLength * rowLength * sizeof(float)));
-                buffer.FinalizeAsFloatArray(rowLength * rowLength);
+                // use span to avoid copying the data
+                writer.Write(MemoryMarshal.Cast<float,byte>(new Span<float>(matrix.Data)));
             }
         }
     }

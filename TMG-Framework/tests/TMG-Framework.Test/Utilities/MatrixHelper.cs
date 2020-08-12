@@ -25,7 +25,7 @@ using TMG.Saving;
 
 namespace TMG.Test.Utilities
 {
-    class MatrixHelper
+    static class MatrixHelper
     {
         internal static string WriteMatrixToCSVMatrix(Categories categories, float[][] data)
         {

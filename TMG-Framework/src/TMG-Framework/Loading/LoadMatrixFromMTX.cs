@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using TMG.Utilities;
 using XTMF2;
@@ -63,31 +64,26 @@ namespace TMG.Loading
                 int secondSize = reader.ReadInt32();
                 if(categories.Count != firstSize)
                 {
-                    throw new XTMFRuntimeException(this, $"The matrix had the wrong number of elements in the first dimension!");
+                    throw new XTMFRuntimeException(this, "The matrix had the wrong number of elements in the first dimension!");
                 }
                 if (categories.Count != secondSize)
                 {
-                    throw new XTMFRuntimeException(this, $"The matrix had the wrong number of elements in the second dimension!");
+                    throw new XTMFRuntimeException(this, "The matrix had the wrong number of elements in the second dimension!");
                 }
                 ValidateIndexes(reader, categories);
                 ValidateIndexes(reader, categories);
-                var dataSize = categories.Count * categories.Count * sizeof(float);
-                ConversionBuffer buffer = new ConversionBuffer()
-                {
-                    FloatData = matrix.Data
-                };
-                buffer.GetByteBuffer(dataSize);
+                var data = matrix.Data;
+                var dataSize = data.Length * sizeof(float);
                 var soFar = 0;
                 while (soFar < dataSize)
                 {
-                    var amount = reader.Read(buffer.ByteData, soFar, dataSize - soFar);
+                    var amount = reader.Read(MemoryMarshal.Cast<float,byte>(new Span<float>(data))[soFar..dataSize]);
                     if(amount == 0)
                     {
                         throw new XTMFRuntimeException(this, $"The matrix expected {dataSize}bytes but we only could get {soFar}bytes!");
                     }
                     soFar += amount;
                 }
-                buffer.FinalizeAsFloatArray(dataSize / sizeof(float));
             }
             return matrix;
         }
