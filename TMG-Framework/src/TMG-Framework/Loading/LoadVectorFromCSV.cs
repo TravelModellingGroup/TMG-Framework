@@ -51,7 +51,6 @@ namespace TMG.Loading
             var minColumnSize = Math.Max(mapColumn, dataColumn);
             using (var reader = new CsvReader(stream, true))
             {
-                reader.LoadLine();
                 while(reader.LoadLine(out var columns))
                 {
                     // This is strictly greater because the column size is 0 indexed

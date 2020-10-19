@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2014-2017 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2014-2020 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF.
 
@@ -49,6 +49,11 @@ namespace TMG.Utilities
 
         private readonly bool SpacesAsSeperator;
 
+        private readonly string[] _headers;
+        public ReadOnlySpan<string> Headers => _headers;
+
+        public long LineNumber { get; private set; }
+
         /// <summary>
         /// Create a link to a CSV file
         /// </summary>
@@ -61,6 +66,11 @@ namespace TMG.Utilities
             BaseStream = Reader.BaseStream;
             DataBufferLength = -1;
             SpacesAsSeperator = spacesAsSeperator;
+            _headers = LoadLine(out int columns) && columns > 0 ? new string[columns] : Array.Empty<string>();
+            for (int i = 0; i < _headers.Length; i++)
+            {
+                Get(out _headers[i], i);
+            }
         }
 
         public CsvReader(Stream stream, bool spacesAsSeperator = false)
@@ -70,6 +80,11 @@ namespace TMG.Utilities
             BaseStream = Reader.BaseStream;
             DataBufferLength = -1;
             SpacesAsSeperator = spacesAsSeperator;
+            _headers = LoadLine(out int columns) && columns > 0 ? new string[columns] : Array.Empty<string>();
+            for (int i = 0; i < _headers.Length; i++)
+            {
+                Get(out _headers[i], i);
+            }
         }
 
         public Stream BaseStream
@@ -82,7 +97,7 @@ namespace TMG.Utilities
         /// <summary>
         /// The file name
         /// </summary>
-        public string FileName { get; private set; }
+        public string FileName { get; }
 
         public void Close()
         {
@@ -90,15 +105,42 @@ namespace TMG.Utilities
         }
 
         /// <summary>
-        ///
+        /// Find the index of the column with the given header.
+        /// </summary>
+        /// <param name="header">The name of the header to search for.</param>
+        /// <returns>The index for the column with the given name. -1 if the header is not found.</returns>
+        public int GetColumnIndexWithHeader(string header)
+        {
+            for (int i = 0; i < _headers.Length; i++)
+            {
+                if(header.Equals(_headers[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>
+        ///Get a float from a col position
         /// </summary>
         /// <param name="item">Where to put the data</param>
         /// <param name="pos">Which column to read from, 0 indexed</param>
         public void Get(out float item, int pos)
         {
-            int first;
             var data = Data[pos];
-            item = ParseUtilities.ParseFixedFloat(LineBuffer, (first = data.Start), data.End - first);
+            item = float.Parse(LineBuffer.AsSpan(data.Start, data.End - data.Start));
+        }
+
+        /// <summary>
+        ///Get a double from a col position
+        /// </summary>
+        /// <param name="item">Where to put the data</param>
+        /// <param name="pos">Which column to read from, 0 indexed</param>
+        public void Get(out double item, int pos)
+        {
+            var data = Data[pos];
+            item = double.Parse(LineBuffer.AsSpan(data.Start, data.End - data.Start));
         }
 
         /// <summary>
@@ -108,9 +150,8 @@ namespace TMG.Utilities
         /// <param name="pos">Which column to read from, 0 indexed</param>
         public void Get(out int item, int pos)
         {
-            int first;
             var data = Data[pos];
-            item = ParseUtilities.ParseFixedInt(LineBuffer, (first = data.Start), data.End - first);
+            item = int.Parse(LineBuffer.AsSpan(data.Start, data.End - data.Start));
         }
 
         /// <summary>
@@ -132,6 +173,17 @@ namespace TMG.Utilities
         {
             var data = Data[pos];
             item = new string(LineBuffer, data.Start, data.End - data.Start);
+        }
+
+        /// <summary>
+        /// Get a read-only span of a string out
+        /// </summary>
+        /// <param name="item">Where to initialize the span</param>
+        /// <param name="pos">Which column to read from, 0 indexed</param>
+        public void Get(out ReadOnlySpan<char> item, int pos)
+        {
+            var data = Data[pos];
+            item = LineBuffer.AsSpan(data.Start, data.End - data.Start);
         }
 
         /// <summary>
@@ -159,6 +211,7 @@ namespace TMG.Utilities
                 columns = 0;
                 return false;
             }
+            LineNumber++;
             var prevEnd = -1;
             var addOne = false;
             var i = 0;
@@ -179,15 +232,14 @@ namespace TMG.Utilities
                         {
                             if (addOne)
                             {
-                                Data[numberOfColumns].Start = prevEnd + 1;
-                                Data[numberOfColumns++].End = i;
+                                Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
                             }
                             columns = numberOfColumns;
                             return true;
                         }
                     }
                     c = DataBuffer[DataBufferPosition++];
-                    if ((c == '\n') | (c == '\0'))
+                    if ((c == '\n') || (c == '\0'))
                     {
                         if (prevC != '\r')
                         {
@@ -195,12 +247,11 @@ namespace TMG.Utilities
                             {
                                 ExpandDataSections();
                             }
-                            Data[numberOfColumns].Start = prevEnd + 1;
-                            Data[numberOfColumns++].End = i;
+                            Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
                         }
                         break;
                     }
-                    if ((c == '"'))
+                    if (c == '"')
                     {
                         if (previousWasQuote)
                         {
@@ -243,8 +294,7 @@ namespace TMG.Utilities
                         {
                             ExpandDataSections();
                         }
-                        Data[numberOfColumns].Start = prevEnd + 1;
-                        Data[numberOfColumns++].End = prevEnd = i;
+                        Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, prevEnd = i);
                     }
                     else
                     {
@@ -268,15 +318,14 @@ namespace TMG.Utilities
                         {
                             if (addOne)
                             {
-                                Data[numberOfColumns].Start = prevEnd + 1;
-                                Data[numberOfColumns++].End = i;
+                                Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
                             }
                             columns = numberOfColumns;
                             return true;
                         }
                     }
                     c = DataBuffer[DataBufferPosition++];
-                    if ((c == '\n') | (c == '\0'))
+                    if ((c == '\n') || (c == '\0'))
                     {
                         if (prevC != '\r')
                         {
@@ -284,12 +333,11 @@ namespace TMG.Utilities
                             {
                                 ExpandDataSections();
                             }
-                            Data[numberOfColumns].Start = prevEnd + 1;
-                            Data[numberOfColumns++].End = i;
+                            Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
                         }
                         break;
                     }
-                    if ((c == '"'))
+                    if (c == '"')
                     {
                         if (previousWasQuote)
                         {
@@ -332,8 +380,7 @@ namespace TMG.Utilities
                         {
                             ExpandDataSections();
                         }
-                        Data[numberOfColumns].Start = prevEnd + 1;
-                        Data[numberOfColumns++].End = prevEnd = i;
+                        Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, prevEnd = i);
                     }
                     else
                     {
@@ -363,6 +410,7 @@ namespace TMG.Utilities
             Reader.BaseStream.Seek(0, SeekOrigin.Begin);
             DataBuffer2 = null;
             DataBufferLength = -1;
+            LineNumber = 0;
         }
 
         private void ExpandDataSections()
@@ -405,10 +453,16 @@ namespace TMG.Utilities
             });
         }
 
-        private struct CsvPartition
+        private readonly struct CsvPartition
         {
-            public int End;
-            public int Start;
+            public readonly int End;
+            public readonly int Start;
+
+            public CsvPartition(int start, int end)
+            {
+                Start = start;
+                End = end;
+            }
         }
 
         #region IDisposable Members
