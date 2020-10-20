@@ -33,7 +33,6 @@ namespace TMG.Loading
             var record = new List<int>();
             using(var reader = new CsvReader(stream, false))
             {
-                reader.LoadLine();
                 while(reader.LoadLine(out var columns))
                 {
                     if(columns > 0)

@@ -44,18 +44,18 @@ namespace TMG.Loading
             var rowSize = columnCategories.Count;
             using (var reader = new CsvReader(stream, true))
             {
-                int columns = reader.LoadLine();
+                var headers = reader.Headers;
                 // read in the destination indexes
-                int[] destinationFlatIndex = new int[columns - 1];
-                for (int i = 1; i < columns; i++)
+                int[] destinationFlatIndex = new int[headers.Length - 1];
+                for (int i = 1; i < headers.Length; i++)
                 {
-                    reader.Get(out int sparseIndex, i);
+                    var sparseIndex = int.Parse(headers[i]);
                     if((destinationFlatIndex[i - 1] = columnCategories.GetFlatIndex(sparseIndex)) < 0)
                     {
                         throw new XTMFRuntimeException(this, $"Invalid sparse column index {sparseIndex}!");
                     }
                 }
-                while(reader.LoadLine(out columns))
+                while(reader.LoadLine(out var columns))
                 {
                     if(columns >= destinationFlatIndex.Length + 1)
                     {

@@ -62,18 +62,17 @@ namespace TMG.Processing
             int columnIndex = ColumnIndex!.Invoke();
             int minimumRowSize = Math.Max(rowIndex, columnIndex) + 1;
             // Process header
-            int columns = reader.LoadLine();
-            for (int i = 0; i < columns; i++)
+            var headers = reader.Headers;
+            for (int i = 0; i < headers.Length; i++)
             {
-                reader.Get(out string header, i);
-                writer.Write(header);
+                writer.Write(headers[i]);
                 // it is safe to just have a comma after since we are adding a new column
                 writer.Write(',');
             }
             writer.Write(columnName);
             writer.WriteLine();
             // Process main body
-            while(reader.LoadLine(out columns))
+            while(reader.LoadLine(out var columns))
             {
                 if (columns >= minimumRowSize)
                 {
