@@ -29,12 +29,14 @@ namespace XTMF.Testing.TMG.Data
     [TestClass]
     public class TestCompiler
     {
-        readonly Categories categories;
+        readonly Categories matrixCategories;
+        readonly Categories vectorCategories;
 
         public TestCompiler()
         {
             string error = null;
-            categories = Categories.CreateCategories(new List<int>() { 1, 2 }, ref error);
+            matrixCategories = Categories.CreateCategories(new List<int>() { 1, 2 }, ref error);
+            vectorCategories = Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, ref error);
         }
         /// <summary>
         /// Create a new simple matrix for testing.
@@ -45,14 +47,47 @@ namespace XTMF.Testing.TMG.Data
         /// <param name="m21"></param>
         /// <param name="m22"></param>
         /// <returns></returns>
-        private IFunction<Matrix> CreateData(string name, float m11, float m12, float m21, float m22)
+        private IFunction<Matrix> CreateMatrixData(string name, float m11, float m12, float m21, float m22)
         {
-            var matrix = new Matrix(categories, categories);
+            var matrix = new Matrix(matrixCategories, matrixCategories);
             matrix.Data[0] = m11;
             matrix.Data[1] = m12;
             matrix.Data[2] = m21;
             matrix.Data[3] = m22;
             return new MatrixSource(matrix) { Name = name };
+        }
+
+        /// <summary>
+        /// Create a new simple matrix for testing.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="m11"></param>
+        /// <param name="m12"></param>
+        /// <param name="m21"></param>
+        /// <param name="m22"></param>
+        /// <returns></returns>
+        private IFunction<Vector> CreateVectorData(string name, float m1, float m2, float m3, float m4)
+        {
+            var ret = new Vector(vectorCategories);
+            ret.Data[0] = m1;
+            ret.Data[1] = m2;
+            ret.Data[2] = m3;
+            ret.Data[3] = m4;
+            return new VectorSource(ret) { Name = name };
+        }
+
+        /// <summary>
+        /// Create a new simple matrix for testing.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="m11"></param>
+        /// <param name="m12"></param>
+        /// <param name="m21"></param>
+        /// <param name="m22"></param>
+        /// <returns></returns>
+        private IFunction<float> CreateScalarData(string name, float m1)
+        {
+            return new ScalarSource(m1) { Name = name };
         }
 
         /// <summary>
@@ -64,7 +99,7 @@ namespace XTMF.Testing.TMG.Data
         /// <returns></returns>
         private IFunction<Vector> CreateData(string name, float m1, float m2)
         {
-            var vector = new Vector(categories);
+            var vector = new Vector(matrixCategories);
             vector.Data[0] = m1;
             vector.Data[1] = m2;
             return new VectorSource(vector) { Name = name };
@@ -75,8 +110,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A + B", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 3.0f, 6.0f, 9.0f, 12.0f);
         }
 
@@ -86,7 +121,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsHorizontal(A) + B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 3.0f, 6.0f, 7.0f, 10.0f);
         }
 
@@ -96,7 +131,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsVertical(A) + B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 3.0f, 5.0f, 8.0f, 10.0f);
         }
 
@@ -106,7 +141,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B + AsHorizontal(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 3.0f, 6.0f, 7.0f, 10.0f);
         }
 
@@ -116,7 +151,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B + AsVertical(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 3.0f, 5.0f, 8.0f, 10.0f);
         }
 
@@ -126,7 +161,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsHorizontal(A) * B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2.0f, 8.0f, 6.0f, 16.0f);
         }
 
@@ -136,7 +171,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsVertical(A) * B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2.0f, 4.0f, 12.0f, 16.0f);
         }
 
@@ -146,7 +181,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B * AsHorizontal(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2.0f, 8.0f, 6.0f, 16.0f);
         }
 
@@ -156,7 +191,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B * AsVertical(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2.0f, 4.0f, 12.0f, 16.0f);
         }
 
@@ -166,7 +201,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsHorizontal(A) / B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 0.5f, 0.5f, 1.0f / 6.0f, 0.25f);
         }
 
@@ -176,7 +211,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsVertical(A) / B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 0.5f, 0.25f, 2.0f / 6.0f, 0.25f);
         }
 
@@ -186,7 +221,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B / AsHorizontal(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2.0f, 2.0f, 6.0f, 4.0f);
         }
 
@@ -196,7 +231,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B / AsVertical(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2.0f, 4.0f, 3.0f, 4.0f);
         }
 
@@ -206,7 +241,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsHorizontal(A) - B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, -1.0f, -2.0f, -5.0f, -6.0f);
         }
 
@@ -216,7 +251,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsVertical(A) - B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, -1.0f, -3.0f, -4.0f, -6.0f);
         }
 
@@ -226,7 +261,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B - AsHorizontal(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 1.0f, 2.0f, 5.0f, 6.0f);
         }
 
@@ -236,7 +271,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B - AsVertical(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 1.0f, 3.0f, 4.0f, 6.0f);
         }
 
@@ -246,7 +281,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsHorizontal(A) == 1 & B == 1", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 1, 1)
+                CreateMatrixData("B", 1, 0, 1, 1)
             }, 1.0f, 0.0f, 1.0f, 0.0f);
         }
 
@@ -256,7 +291,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsVertical(A) == 1 & B == 1", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 1, 1)
+                CreateMatrixData("B", 1, 0, 1, 1)
             }, 1.0f, 0.0f, 0.0f, 0.0f);
         }
 
@@ -266,7 +301,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B == 1 & AsHorizontal(A) == 1", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 1, 1)
+                CreateMatrixData("B", 1, 0, 1, 1)
             }, 1.0f, 0.0f, 1.0f, 0.0f);
         }
 
@@ -276,7 +311,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B == 1 & AsVertical(A) == 1", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 1, 1)
+                CreateMatrixData("B", 1, 0, 1, 1)
             }, 1.0f, 0.0f, 0.0f, 0.0f);
         }
 
@@ -286,7 +321,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsHorizontal(A) == 1 | B == 1", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 0.0f, 1.0f, 1.0f);
         }
 
@@ -296,7 +331,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsVertical(A) == 1 | B == 1", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 1.0f, 0.0f, 1.0f);
         }
 
@@ -306,7 +341,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B == 1 | AsHorizontal(A) == 1", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 0.0f, 1.0f, 1.0f);
         }
 
@@ -316,7 +351,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B == 1 | AsVertical(A) == 1", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 1.0f, 0.0f, 1.0f);
         }
 
@@ -326,7 +361,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(AsHorizontal(A) == 1) < (B == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 0.0f, 0.0f, 0.0f, 1.0f);
         }
 
@@ -336,7 +371,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(AsVertical(A) == 1) < (B == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 0.0f, 0.0f, 0.0f, 1.0f);
         }
 
@@ -346,7 +381,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(B == 1) < (AsHorizontal(A) == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 0.0f, 0.0f, 1.0f, 0.0f);
         }
 
@@ -356,7 +391,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(B == 1) < (AsVertical(A) == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 0.0f, 1.0f, 0.0f, 0.0f);
         }
 
@@ -366,7 +401,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(AsHorizontal(A) == 1) <= (B == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 1.0f, 0.0f, 1.0f);
         }
 
@@ -376,7 +411,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(AsVertical(A) == 1) <= (B == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 0.0f, 1.0f, 1.0f);
         }
 
@@ -386,7 +421,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(B == 1) <= (AsHorizontal(A) == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 1.0f, 1.0f, 0.0f);
         }
 
@@ -396,7 +431,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(B == 1) <= (AsVertical(A) == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 1.0f, 1.0f, 0.0f);
         }
 
@@ -406,7 +441,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(AsHorizontal(A) == 1) == (B == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 1.0f, 0.0f, 0.0f);
         }
 
@@ -416,7 +451,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(AsVertical(A) == 1) == (B == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 0.0f, 1.0f, 0.0f);
         }
 
@@ -426,7 +461,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(B == 1) == (AsHorizontal(A) == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 1.0f, 0.0f, 0.0f);
         }
 
@@ -436,7 +471,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(B == 1) == (AsVertical(A) == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 1.0f, 0.0f, 1.0f, 0.0f);
         }
 
@@ -446,7 +481,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(AsHorizontal(A) == 1) != (B == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 0.0f, 0.0f, 1.0f, 1.0f);
         }
 
@@ -456,7 +491,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(AsVertical(A) == 1) != (B == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 0.0f, 1.0f, 0.0f, 1.0f);
         }
 
@@ -466,7 +501,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(B == 1) != (AsHorizontal(A) == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 0.0f, 0.0f, 1.0f, 1.0f);
         }
 
@@ -476,7 +511,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("(B == 1) != (AsVertical(A) == 1)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 0, 1)
+                CreateMatrixData("B", 1, 0, 0, 1)
             }, 0.0f, 1.0f, 0.0f, 1.0f);
         }
 
@@ -486,7 +521,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsHorizontal(A) ^ B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 1.0f, 16.0f, 1.0f, 256.0f);
         }
 
@@ -496,7 +531,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("AsVertical(A) ^ B", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 1.0f, 1.0f, 64.0f, 256.0f);
         }
 
@@ -506,7 +541,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B ^ AsHorizontal(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2.0f, 16.0f, 6.0f, 64.0f);
         }
 
@@ -516,7 +551,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("B ^ AsVertical(A)", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2.0f, 4.0f, 36.0f, 64.0f);
         }
 
@@ -525,8 +560,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A - B", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, -1.0f, -2.0f, -3.0f, -4.0f);
         }
         [TestMethod]
@@ -534,8 +569,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A - SumColumns(B)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, -7.0f, -10.0f, -5.0f, -8.0f);
         }
 
@@ -544,8 +579,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A - SumRows(B)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, -5.0f, -4.0f, -11.0f, -10.0f);
         }
 
@@ -554,8 +589,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("(A) + (B)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 3.0f, 6.0f, 9.0f, 12.0f);
         }
 
@@ -564,8 +599,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("((A)) + ((B))", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 3.0f, 6.0f, 9.0f, 12.0f);
         }
 
@@ -574,8 +609,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("(((A)) + ((B)))", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 3.0f, 6.0f, 9.0f, 12.0f);
         }
 
@@ -586,8 +621,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("SumRows(A + B)", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
             Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Vertical);
@@ -603,8 +638,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("SumColumns(A + B)", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
             Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Horizontal);
@@ -620,8 +655,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("AsHorizontal(SumRows(A + B))", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
             Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Horizontal);
@@ -637,8 +672,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("Sum(A + B)", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(30.0f, result.LiteralValue, 0.00001f);
@@ -651,8 +686,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("Sum(SumRows(A + B))", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(30.0f, result.LiteralValue, 0.00001f);
@@ -663,8 +698,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("Transpose(A + B)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 3.0f, 9.0f, 6.0f, 12.0f);
         }
 
@@ -673,8 +708,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("Abs(A - B)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 1.0f, 2.0f, 3.0f, 4.0f);
         }
 
@@ -685,8 +720,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("Abs(SumRows(A) - SumRows(B))", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
             var flat = result.VectorData.Data;
@@ -701,8 +736,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("Abs(Sum(A) - Sum(B))", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(10.0f, result.LiteralValue, 0.00001f);
@@ -715,8 +750,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("Avg(A - B)", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(-2.5f, result.LiteralValue, 0.00001f);
@@ -729,8 +764,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("Avg(SumRows(A) - SumRows(B))", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(-5.0f, result.LiteralValue, 0.00001f);
@@ -743,8 +778,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("AvgRows(A)", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
             Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Vertical);
@@ -760,8 +795,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("AvgColumns(A)", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
             Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Horizontal);
@@ -795,8 +830,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A ^ B", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 1.0f, 16.0f, 729.0f, 65536.0f);
         }
 
@@ -805,8 +840,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("(A + 1) ^ (B - 1)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2.0f, 27.0f, 1024.0f, 78125.0f);
         }
 
@@ -815,8 +850,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A == B", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 1.0f, 1.0f, 0.0f, 0.0f);
         }
 
@@ -825,8 +860,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A != B", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 0.0f, 0.0f, 1.0f, 1.0f);
         }
 
@@ -835,8 +870,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A < B", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 0.0f, 0.0f, 1.0f, 0.0f);
         }
 
@@ -845,8 +880,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A > B", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 0.0f, 0.0f, 0.0f, 1.0f);
         }
 
@@ -855,8 +890,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A <= B", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 1.0f, 1.0f, 1.0f, 0.0f);
         }
 
@@ -865,8 +900,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A >= B", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 1.0f, 1.0f, 0.0f, 1.0f);
         }
 
@@ -875,8 +910,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("(A == B) + (A != B)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 1.0f, 1.0f, 1.0f, 1.0f);
         }
 
@@ -885,8 +920,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("(A == B) & (A != B)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 0.0f, 0.0f, 0.0f, 0.0f);
         }
 
@@ -895,8 +930,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("(A == B) | (A != B)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 1.0f, 1.0f, 1.0f, 1.0f);
         }
 
@@ -907,8 +942,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("Length(A + 1) + Length(B - 1)", out Expression ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(8.0f, result.LiteralValue, 0.00001f);
@@ -928,7 +963,7 @@ namespace XTMF.Testing.TMG.Data
         {
             var data = new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
+                CreateMatrixData("A", 1, 2, 3, 4),
                 CreateData("E", 9, 10)
             };
             CompareMatrix("identityMatrix(E)", data, 1.0f, 0.0f, 0.0f, 1.0f);
@@ -955,8 +990,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("A * B + A", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             }, 2.0f, 6.0f, 15.0f, 16.0f);
         }
 
@@ -967,8 +1002,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("1 + 2", out Expression ex, ref error), $"Unable to compile '1 + 2'\r\n{error}");
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(3.0f, result.LiteralValue);
@@ -983,8 +1018,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("1 - 2", out Expression ex, ref error), $"Unable to compile '1 - 2'\r\n{error}");
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(-1.0f, result.LiteralValue);
@@ -999,8 +1034,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("1 * 2", out Expression ex, ref error), $"Unable to compile '1 * 2'\r\n{error}");
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(2.0f, result.LiteralValue);
@@ -1015,8 +1050,8 @@ namespace XTMF.Testing.TMG.Data
             Assert.IsTrue(Compiler.Compile("1 / 2", out Expression ex, ref error), $"Unable to compile '1 / 2'\r\n{error}");
             var result = ex.Evaluate(new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             });
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(0.5f, result.LiteralValue);
@@ -1029,8 +1064,8 @@ namespace XTMF.Testing.TMG.Data
         {
             var data = new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("B", 1, 2, 4, 3)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("B", 1, 2, 4, 3)
             };
             Assert.IsInstanceOfType(CompareMatrix("A / 2", data, 0.5f, 1.0f, 1.5f, 2.0f), typeof(Multiply));
         }
@@ -1038,13 +1073,13 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestIfValueValue()
         {
-            CompareMatrix("ZeroMatrix(B) + if(1, 2, 3)", new []
+            CompareMatrix("ZeroMatrix(B) + if(1, 2, 3)", new[]
             {
-                CreateData("B", 1, 0, 1, 1)
+                CreateMatrixData("B", 1, 0, 1, 1)
             }, 2.0f, 2.0f, 2.0f, 2.0f);
-            CompareMatrix("ZeroMatrix(B) + if(0, 2, 3)", new []
+            CompareMatrix("ZeroMatrix(B) + if(0, 2, 3)", new[]
             {
-                CreateData("B", 1, 0, 1, 1)
+                CreateMatrixData("B", 1, 0, 1, 1)
             }, 3.0f, 3.0f, 3.0f, 3.0f);
         }
 
@@ -1054,13 +1089,13 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("ZeroMatrix(B) + asHorizontal(if(1, A, C))", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 1, 0, 1, 1),
+                CreateMatrixData("B", 1, 0, 1, 1),
                 CreateData("C", -1, -2)
             }, 1.0f, 2.0f, 1.0f, 2.0f);
             CompareMatrix("ZeroMatrix(B) + AsHorizontal(if(0, A, C))", new IModule[]
             {
                 CreateData("A", 1, 2),
-                CreateData("B", 1, 0, 1, 1),
+                CreateMatrixData("B", 1, 0, 1, 1),
                 CreateData("C", -1, -2)
             }, -1.0f, -2.0f, -1.0f, -2.0f);
         }
@@ -1070,13 +1105,13 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("if(1, A, C)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("C", -1, -2, -3, -4)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("C", -1, -2, -3, -4)
             }, 1.0f, 2.0f, 3.0f, 4.0f);
             CompareMatrix("if(0, A, C)", new IModule[]
             {
-                CreateData("A", 1, 2, 3, 4),
-                CreateData("C", -1, -2, -3, -4)
+                CreateMatrixData("A", 1, 2, 3, 4),
+                CreateMatrixData("C", -1, -2, -3, -4)
             }, -1.0f, -2.0f, -3.0f, -4.0f);
         }
 
@@ -1086,7 +1121,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("ZeroMatrix(B) + asHorizontal(if(A, 4, 5))", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 1, 1),
+                CreateMatrixData("B", 1, 0, 1, 1),
             }, 4.0f, 5.0f, 4.0f, 5.0f);
         }
 
@@ -1096,7 +1131,7 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("ZeroMatrix(B) + asHorizontal(if(A, C, D))", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("B", 1, 0, 1, 1),
+                CreateMatrixData("B", 1, 0, 1, 1),
                 CreateData("C", 4, 5),
                 CreateData("D", -4, -5),
             }, 4.0f, -5.0f, 4.0f, -5.0f);
@@ -1108,8 +1143,8 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("if(asHorizontal(A), C, D)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("C", 4, 5, 6, 7),
-                CreateData("D", -4, -5, -6, -7),
+                CreateMatrixData("C", 4, 5, 6, 7),
+                CreateMatrixData("D", -4, -5, -6, -7),
             }, 4.0f, -5.0f, 6.0f, -7.0f);
         }
 
@@ -1119,8 +1154,8 @@ namespace XTMF.Testing.TMG.Data
             CompareMatrix("if(asVertical(A), C, D)", new IModule[]
             {
                 CreateData("A", 1, 0),
-                CreateData("C", 4, 5, 6, 7),
-                CreateData("D", -4, -5, -6, -7),
+                CreateMatrixData("C", 4, 5, 6, 7),
+                CreateMatrixData("D", -4, -5, -6, -7),
             }, 4.0f, 5.0f, -6.0f, -7.0f);
         }
 
@@ -1129,7 +1164,7 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("if(B, ZeroMatrix(B)+2, ZeroMatrix(B) + (0-2))", new IModule[]
             {
-                CreateData("B", 1, 0, 1, 1)
+                CreateMatrixData("B", 1, 0, 1, 1)
             }, 2.0f, -2.0f, 2.0f, 2.0f);
         }
 
@@ -1138,8 +1173,35 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("Log(B)", new IModule[]
             {
-                CreateData("B", 1, 0.5f, 0.25f, 0.125f)
+                CreateMatrixData("B", 1, 0.5f, 0.25f, 0.125f)
             }, (float)Math.Log(1), (float)Math.Log(0.5f), (float)Math.Log(0.25f), (float)Math.Log(0.125f));
+        }
+
+        [TestMethod]
+        public void TestSqrtMatrix()
+        {
+            CompareMatrix("sqrt(B)", new IModule[]
+            {
+                CreateMatrixData("B", 1, 0.5f, 0.25f, 0.125f)
+            }, (float)Math.Sqrt(1), (float)Math.Sqrt(0.5f), (float)Math.Sqrt(0.25f), (float)Math.Sqrt(0.125f));
+        }
+
+        [TestMethod]
+        public void TestSqrtVector()
+        {
+            CompareVector("sqrt(B)", new IModule[]
+            {
+                CreateVectorData("B", 1, 0.5f, 0.25f, 0.125f)
+            }, (float)Math.Sqrt(1), (float)Math.Sqrt(0.5f), (float)Math.Sqrt(0.25f), (float)Math.Sqrt(0.125f));
+        }
+
+        [TestMethod]
+        public void TestSqrtScalar()
+        {
+            CompareScalar("sqrt(B)", new IModule[]
+            {
+                CreateScalarData("B", 0.5f)
+            }, (float)Math.Sqrt(0.5f));
         }
 
         [TestMethod]
@@ -1147,8 +1209,8 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("IfNaN(B, C)", new IModule[]
             {
-                CreateData("B", 1, float.NaN, float.NaN, 0.125f),
-                CreateData("C", 1, 2, 3, 4)
+                CreateMatrixData("B", 1, float.NaN, float.NaN, 0.125f),
+                CreateMatrixData("C", 1, 2, 3, 4)
             }, 1, 2, 3, 0.125f);
         }
 
@@ -1157,7 +1219,7 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("-B", new IModule[]
             {
-                CreateData("B", 1, 0.5f, 0.25f, 0.125f)
+                CreateMatrixData("B", 1, 0.5f, 0.25f, 0.125f)
             }, -1, -0.5f, -0.25f, -0.125f);
         }
 
@@ -1166,7 +1228,7 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("-10 + B", new IModule[]
             {
-                CreateData("B", 1, 2, 3, 4)
+                CreateMatrixData("B", 1, 2, 3, 4)
             }, -9, -8, -7, -6);
         }
 
@@ -1175,7 +1237,7 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("-B^-1", new IModule[]
             {
-                CreateData("B", 1, 2, 4, 8)
+                CreateMatrixData("B", 1, 2, 4, 8)
             }, -1, -0.5f, -0.25f, -0.125f);
         }
 
@@ -1184,7 +1246,7 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("B*-1", new IModule[]
             {
-                CreateData("B", 1, 2, 4, 8)
+                CreateMatrixData("B", 1, 2, 4, 8)
             }, -1, -2, -4, -8);
         }
 
@@ -1193,7 +1255,7 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("normalize(B)", new IModule[]
             {
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 0.1f, 0.2f, 0.3f, 0.4f);
         }
 
@@ -1202,7 +1264,7 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("normalizeColumns(B)", new IModule[]
             {
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2f / 8f, 4f / 12f, 6f / 8f, 8f / 12f);
         }
 
@@ -1211,7 +1273,7 @@ namespace XTMF.Testing.TMG.Data
         {
             CompareMatrix("normalizeRows(B)", new IModule[]
             {
-                CreateData("B", 2, 4, 6, 8)
+                CreateMatrixData("B", 2, 4, 6, 8)
             }, 2f / 6f, 4f / 6f, 6f / 14f, 8f / 14f);
         }
 
@@ -1230,6 +1292,59 @@ namespace XTMF.Testing.TMG.Data
             Assert.AreEqual(m21, flat[2], 0.00001f);
             Assert.AreEqual(m22, flat[3], 0.00001f);
             return ex;
+        }
+
+        /// <summary>
+        /// Assert results
+        /// </summary>
+        private static Expression CompareVector(string equation, IModule[] data, float m11, float m12, float m21, float m22)
+        {
+            string error = null;
+            Assert.IsTrue(Compiler.Compile(equation, out Expression ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
+            var result = ex.Evaluate(data);
+            if (result.Error)
+            {
+                Assert.Fail(result.ErrorMessage);
+            }
+            Assert.IsTrue(result.IsVectorResult);
+            var flat = result.VectorData.Data;
+            Assert.AreEqual(m11, flat[0], 0.00001f);
+            Assert.AreEqual(m12, flat[1], 0.00001f);
+            Assert.AreEqual(m21, flat[2], 0.00001f);
+            Assert.AreEqual(m22, flat[3], 0.00001f);
+            return ex;
+        }
+
+        /// <summary>
+        /// Assert results
+        /// </summary>
+        private static Expression CompareScalar(string equation, IModule[] data, float m11)
+        {
+            string error = null;
+            Assert.IsTrue(Compiler.Compile(equation, out Expression ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
+            var result = ex.Evaluate(data);
+            if (result.Error)
+            {
+                Assert.Fail(result.ErrorMessage);
+            }
+            Assert.IsTrue(result.IsValue);
+            Assert.AreEqual(m11, result.LiteralValue, 0.00001f);
+            return ex;
+        }
+
+        class ScalarSource : BaseFunction<float>
+        {
+            readonly float _data;
+
+            public ScalarSource(float data)
+            {
+                _data = data;
+            }
+
+            public override float Invoke()
+            {
+                return _data;
+            }
         }
 
         class VectorSource : BaseFunction<Vector>
