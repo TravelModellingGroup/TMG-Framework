@@ -91,7 +91,7 @@ namespace TMG.Test.Processing
         }
 
         /// <summary>
-        /// This test just wants to make sure that a simple already integer matrix doesn't change.
+        /// Test that we can actually integerize a real matrix.
         /// </summary>
         [TestMethod]
         public void IntegerizeRealMatrix()
@@ -122,9 +122,15 @@ namespace TMG.Test.Processing
 
             // Check the individual zones
             Assert.AreEqual(inputMatrix.Data[0], integerMatrix.Data[0], 1.000001f);
-            Assert.AreEqual(inputMatrix.Data[0], integerMatrix.Data[1], 1.0000001f);
-            Assert.AreEqual(inputMatrix.Data[0], integerMatrix.Data[2], 1.0000001f);
-            Assert.AreEqual(inputMatrix.Data[0], integerMatrix.Data[3], 1.0000001f);
+            Assert.AreEqual(inputMatrix.Data[1], integerMatrix.Data[1], 1.0000001f);
+            Assert.AreEqual(inputMatrix.Data[2], integerMatrix.Data[2], 1.0000001f);
+            Assert.AreEqual(inputMatrix.Data[3], integerMatrix.Data[3], 1.0000001f);
+
+            // Make sure they are close to integers
+            Assert.AreEqual(Math.Truncate(integerMatrix.Data[0]), (double)integerMatrix.Data[0], 0.000001f);
+            Assert.AreEqual(Math.Truncate(integerMatrix.Data[1]), (double)integerMatrix.Data[1], 0.0000001f);
+            Assert.AreEqual(Math.Truncate(integerMatrix.Data[2]), (double)integerMatrix.Data[2], 0.0000001f);
+            Assert.AreEqual(Math.Truncate(integerMatrix.Data[3]), (double)integerMatrix.Data[3], 0.0000001f);
 
             // Make sure the totals are don't drift at the PD level
             Assert.AreEqual(inputMatrix.Data[0] + inputMatrix.Data[1], integerMatrix.Data[0] + integerMatrix.Data[1], 1.0f);
