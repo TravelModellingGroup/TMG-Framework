@@ -18,6 +18,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using XTMF2;
 using XTMF2.RuntimeModules;
@@ -46,7 +47,7 @@ namespace TMG.Test.Utilities
         {
             private Func<T, K> _inner;
 
-            public CustomizableModule(Func<T,K> inner)
+            public CustomizableModule(Func<T, K> inner)
             {
                 _inner = inner;
             }
@@ -64,7 +65,7 @@ namespace TMG.Test.Utilities
         /// <typeparam name="K">OutputType</typeparam>
         /// <param name="innerFunction">Processing logic</param>
         /// <returns>A module that executes the function passed in.</returns>
-        internal static IFunction<T,K> CreateModule<T,K>(Func<T,K> innerFunction, string moduleName = null)
+        internal static IFunction<T, K> CreateModule<T, K>(Func<T, K> innerFunction, string moduleName = null)
         {
             return new CustomizableModule<T, K>(innerFunction)
             {
