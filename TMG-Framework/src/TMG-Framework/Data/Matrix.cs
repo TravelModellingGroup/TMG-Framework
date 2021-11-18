@@ -172,6 +172,16 @@ namespace TMG
             return ref Data[GetFlatIndex(o,d)];
         }
 
+        /// <summary>
+        /// Create a copy of this matrix.
+        /// </summary>
+        /// <returns>Creates a deep copy of the matrix.</returns>
+        public Matrix Clone()
+        {
+            var ret = new Matrix(this);
+            Array.Copy(Data, ret.Data, Data.Length);
+            return ret;
+        }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void InvalidColumns(int columnIndex)

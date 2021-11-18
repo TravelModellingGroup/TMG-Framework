@@ -19,8 +19,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using XTMF2;
 using TMG;
+using System.Threading.Tasks;
 
 namespace TMG.Processing
 {
@@ -32,15 +34,140 @@ namespace TMG.Processing
         public IFunction<Matrix> InputMatrix;
 
         [Parameter(Index = 1, Name = "Random Seed", Description = "The number used to initialize the random number generator.")]
-        public int RandomSeed;
+        public IFunction<int> RandomSeed;
 
         [SubModule(Required = true, Index = 2, Name = "Zone To PD Map", Description = "A mapping between zone numbers and")]
         public IFunction<CategoryMap> ZoneToPDMap;
 
+        /// <summary>
+        /// Computes an integer matrix given the input matrix, randomly assigning the remainders within
+        /// the planning district for the zones.
+        /// </summary>
+        /// <returns>The integerized matrix.</returns>
         public override Matrix Invoke()
         {
             var baseMatrix = InputMatrix!.Invoke();
-            throw new NotImplementedException();
+            var pdMap = ZoneToPDMap!.Invoke();
+            var zoneToPD = pdMap.CreateIndex();
+            var remainders = SplitIntegerAndRemainderMatrix(baseMatrix, pdMap, zoneToPD, out var pdRemainders);
+            AssignIntegerRemainders(baseMatrix, remainders, pdRemainders, zoneToPD);
+            return baseMatrix;
+        }
+
+        /// <summary>
+        /// Splits the integer portion of the matrix from the remainders.
+        /// The rawMatrix will be integerized.
+        /// </summary>
+        /// <param name="rawMatrix">The matrix containing both the integer and remainder data</param>
+        /// <param name="pdMap">The mapping between zone indexes and pd indexes</param>
+        /// <param name="pdRemainderTotals">The </param>
+        /// <returns>A new matrix containing the remainders</returns>
+        private static Matrix SplitIntegerAndRemainderMatrix(Matrix rawMatrix, CategoryMap pdMap, Dictionary<CategoryIndex, CategoryIndex> zoneToPd, out Matrix pdRemainderTotals)
+        {
+            var remainders = new Matrix(rawMatrix.RowCategories, rawMatrix.ColumnCategories);
+            var pdMatrix = new Matrix(pdMap.Destination, pdMap.Destination);
+
+            // Split the integer and remainders while also accumulating the remainders into a PDxPD matrix
+            Parallel.For(0, rawMatrix.RowCategories.Count,
+                () =>
+                {
+                    return new Matrix(pdMap.Destination, pdMap.Destination);
+                }
+                , (int i, ParallelLoopState _, Matrix pdRemainders) =>
+                {
+                    int pdI = zoneToPd[i];
+                    var iData = rawMatrix.GetRow(i);
+                    var rData = remainders.GetRow(i);
+                    var pdRow = pdRemainders.GetRow(pdI);
+                    for (int j = 0; j < rawMatrix.ColumnCategories.Count; j++)
+                    {
+                        int pdJ = zoneToPd[j];
+                        var original = iData[j];
+                        iData[j] = (float)Math.Truncate(original);
+                        rData[j] = original - iData[j];
+                        pdRow[pdJ] += rData[j];
+                    }
+                    return pdRemainders;
+                }, (pdRemainders) =>
+                {
+                    lock (pdMatrix)
+                    {
+                        Utilities.VectorHelper.Add(pdMatrix.Data, pdMatrix.Data, pdRemainders.Data);
+                    }
+                });
+            pdRemainderTotals = pdMatrix;
+            return remainders;
+        }
+
+        private void AssignIntegerRemainders(Matrix integers, Matrix remainders, Matrix pdRemainders, Dictionary<CategoryIndex, CategoryIndex> zoneToPD)
+        {
+            var flatZones = integers.RowCategories;
+            var pdIndexes = flatZones.Select((z, i) => zoneToPD[i]).ToArray();
+            var numberOfPDs = pdRemainders.RowCategories.Count;
+            // Create indexes to look for each PDxPD
+            var pairs = new List<ODPair>[numberOfPDs * numberOfPDs];
+            for (int i = 0; i < flatZones.Count; i++)
+            {
+                var row = new Span<List<ODPair>>(pairs, pdIndexes[i] * numberOfPDs, numberOfPDs);
+                for (int j = 0; j < flatZones.Count; j++)
+                {
+                    var list = row[pdIndexes[j]];
+                    if (list == null)
+                    {
+                        list = row[pdIndexes[j]] = new List<ODPair>(100);
+                    }
+                    list.Add(new ODPair() { Origin = i, Destination = j });
+                }
+            }
+
+            var random = new Random(RandomSeed!.Invoke());
+
+            // Method to assign an additional trip to the integer matrix based on the remainders for the given pd of origin and destination
+            void Assign(List<ODPair> zoneList, double pop, ref float pdTotal)
+            {
+                for (int z = 0; z < zoneList.Count; z++)
+                {
+                    int i = zoneList[z].Origin;
+                    int j = zoneList[z].Destination;
+                    var index = i * flatZones.Count + j;
+                    pop -= remainders.Data[index];
+                    if (pop <= 0)
+                    {
+                        integers.Data[index] += 1.0f;
+                        pdTotal -= remainders.Data[index];
+                        remainders.Data[index] = 0.0f;
+                        return;
+                    }
+                }
+            }
+
+            // Create the random seeds to work with for each PDxPD            
+            var seeds = new int[pairs.Length];
+            for (int i = 0; i < seeds.Length; i++)
+            {
+                seeds[i] = random.Next(int.MinValue, int.MaxValue);
+            }
+
+            // Solve for each PDxPD
+            Parallel.For(0, pairs.Length, (int index) =>
+            {
+                int i = index / numberOfPDs;
+                int j = index % numberOfPDs;
+                var r = new Random(seeds[i * numberOfPDs + j]);
+                int toAssign = (int)Math.Round(pdRemainders.Data[i * numberOfPDs + j]);
+                var zoneList = pairs[i * numberOfPDs + j];
+                for (int k = 0; k < toAssign; k++)
+                {
+                    double pop = r.NextDouble() * pdRemainders.Data[i * numberOfPDs + j];
+                    Assign(zoneList, pop, ref pdRemainders.Data[i * numberOfPDs + j]);
+                }
+            });
+        }
+
+        struct ODPair
+        {
+            internal int Origin;
+            internal int Destination;
         }
     }
 }
