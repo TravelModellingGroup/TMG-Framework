@@ -18,6 +18,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace TMG
@@ -25,7 +26,7 @@ namespace TMG
     /// <summary>
     /// Represents an index into an object of Categories.
     /// </summary>
-    public readonly struct CategoryIndex
+    public readonly struct CategoryIndex : IEquatable<CategoryIndex>, IComparable<CategoryIndex>, IEqualityComparer<CategoryIndex>
     {
         private readonly int _Value;
 
@@ -41,7 +42,7 @@ namespace TMG
 
         public static implicit operator int(CategoryIndex index) => index._Value;
 
-        public static implicit operator CategoryIndex(int index) => new CategoryIndex(index);
+        public static implicit operator CategoryIndex(int index) => new(index);
 
         public static bool TryParse(string s, out CategoryIndex result)
         {
@@ -52,6 +53,70 @@ namespace TMG
             }
             result = -1;
             return false;
+        }
+
+        public bool Equals(CategoryIndex x, CategoryIndex y)
+        {
+            return x._Value == y._Value;
+        }
+
+        public int GetHashCode([DisallowNull] CategoryIndex obj)
+        {
+            return obj._Value.GetHashCode();
+        }
+
+        public int CompareTo(CategoryIndex other)
+        {
+            return _Value.CompareTo(other._Value);
+        }
+
+        public bool Equals(CategoryIndex other)
+        {
+            return _Value == other._Value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is CategoryIndex other)
+            {
+                return Equals(other);
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return _Value.GetHashCode();
+        }
+
+        public static bool operator ==(CategoryIndex left, CategoryIndex right)
+        {
+            return left._Value == right._Value;
+        }
+
+        public static bool operator !=(CategoryIndex left, CategoryIndex right)
+        {
+            return left._Value != right._Value;
+        }
+
+        public static bool operator <(CategoryIndex left, CategoryIndex right)
+        {
+            return left._Value < right._Value;
+        }
+
+        public static bool operator <=(CategoryIndex left, CategoryIndex right)
+        {
+            return left._Value <= right._Value;
+        }
+
+        public static bool operator >(CategoryIndex left, CategoryIndex right)
+        {
+            return left._Value > right._Value;
+        }
+
+        public static bool operator >=(CategoryIndex left, CategoryIndex right)
+        {
+            return left._Value >= right._Value;
         }
     }
 }

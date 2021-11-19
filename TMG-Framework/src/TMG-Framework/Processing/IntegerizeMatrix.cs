@@ -151,15 +151,13 @@ namespace TMG.Processing
             // Solve for each PDxPD
             Parallel.For(0, pairs.Length, (int index) =>
             {
-                int i = index / numberOfPDs;
-                int j = index % numberOfPDs;
-                var r = new Random(seeds[i * numberOfPDs + j]);
-                int toAssign = (int)Math.Round(pdRemainders.Data[i * numberOfPDs + j]);
-                var zoneList = pairs[i * numberOfPDs + j];
+                var r = new Random(seeds[index]);
+                int toAssign = (int)Math.Round(pdRemainders.Data[index]);
+                var zoneList = pairs[index];
                 for (int k = 0; k < toAssign; k++)
                 {
-                    double pop = r.NextDouble() * pdRemainders.Data[i * numberOfPDs + j];
-                    Assign(zoneList, pop, ref pdRemainders.Data[i * numberOfPDs + j]);
+                    double pop = r.NextDouble() * pdRemainders.Data[index];
+                    Assign(zoneList, pop, ref pdRemainders.Data[index]);
                 }
             });
         }

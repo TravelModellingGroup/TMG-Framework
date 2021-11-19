@@ -106,11 +106,12 @@ namespace TMG.Test.Processing
                 new (2, 1),
                 new (3, 1)
             }, out var map, ref error));
+            var random = new Random(12345);
             var inputMatrix = new Matrix(zones, zones);
-            inputMatrix.Data[0] = 1.99f;
-            inputMatrix.Data[1] = 0.99f;
-            inputMatrix.Data[2] = 0.9f;
-            inputMatrix.Data[3] = 1.5f;
+            for (int i = 0; i < inputMatrix.Data.Length; i++)
+            {
+                inputMatrix.Data[i] = (float)random.NextDouble();
+            }
             var module = new IntegerizeMatrix()
             {
                 RandomSeed = Helper.CreateParameter(12345),
@@ -120,21 +121,12 @@ namespace TMG.Test.Processing
             var integerMatrix = module.Invoke();
             Assert.IsNotNull(integerMatrix);
 
-            // Check the individual zones
-            Assert.AreEqual(inputMatrix.Data[0], integerMatrix.Data[0], 1.000001f);
-            Assert.AreEqual(inputMatrix.Data[1], integerMatrix.Data[1], 1.0000001f);
-            Assert.AreEqual(inputMatrix.Data[2], integerMatrix.Data[2], 1.0000001f);
-            Assert.AreEqual(inputMatrix.Data[3], integerMatrix.Data[3], 1.0000001f);
-
-            // Make sure they are close to integers
-            Assert.AreEqual(Math.Truncate(integerMatrix.Data[0]), (double)integerMatrix.Data[0], 0.000001f);
-            Assert.AreEqual(Math.Truncate(integerMatrix.Data[1]), (double)integerMatrix.Data[1], 0.0000001f);
-            Assert.AreEqual(Math.Truncate(integerMatrix.Data[2]), (double)integerMatrix.Data[2], 0.0000001f);
-            Assert.AreEqual(Math.Truncate(integerMatrix.Data[3]), (double)integerMatrix.Data[3], 0.0000001f);
-
-            // Make sure the totals are don't drift at the PD level
-            Assert.AreEqual(inputMatrix.Data[0] + inputMatrix.Data[1], integerMatrix.Data[0] + integerMatrix.Data[1], 1.0f);
-            Assert.AreEqual(inputMatrix.Data[2] + inputMatrix.Data[3], integerMatrix.Data[2] + integerMatrix.Data[3], 1.0f);
+            // Make sure they are close to integers and only +- 1 from the original values
+            for (int i = 0; i < integerMatrix.Data.Length; i++)
+            {
+                Assert.AreEqual(inputMatrix.Data[i], integerMatrix.Data[i], 1.000001f);
+                Assert.AreEqual(Math.Truncate(integerMatrix.Data[i]), (double)integerMatrix.Data[0], 1.000001f);
+            }
         }
     }
 }
