@@ -18,6 +18,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using static TMG.Utilities.ExceptionHelper;
 
@@ -30,15 +31,18 @@ namespace TMG
     public sealed class CategoryMap
     {
         /// <summary>
-        /// 
+        /// The categories to start with.
         /// </summary>
         public Categories Base { get; }
 
         /// <summary>
-        /// 
+        /// The categories to converge the base into.
         /// </summary>
         public Categories Destination { get; }
 
+        /// <summary>
+        /// The mapping between the two category types.
+        /// </summary>
         private readonly List<(int originFlatIndex, int destinationFlatIndex)> _baseToDestination;
 
         public static bool CreateCategoryMap(Categories baseCategories, Categories destinationCategories,
@@ -66,23 +70,23 @@ namespace TMG
         }
 
         /// <summary>
-        /// 
+        /// Given two categories create the mapping between the two.
         /// </summary>
-        /// <param name="baseCategories"></param>
-        /// <param name="destinationCategories"></param>
-        /// <param name="baseToDestination"></param>
-        private CategoryMap(Categories baseCategories, Categories destinationCategories, 
+        /// <param name="baseCategories">The larger set of categories.</param>
+        /// <param name="destinationCategories">The different set of categories the base will be mapped to.</param>
+        /// <param name="baseToDestination">The individual linking records from base to destination categories.</param>
+        private CategoryMap(Categories baseCategories, Categories destinationCategories,
             List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination)
         {
-            if(baseCategories == null)
+            if (baseCategories == null)
             {
                 ThrowParameterNull(nameof(baseCategories));
             }
-            if(destinationCategories == null)
+            if (destinationCategories == null)
             {
                 ThrowParameterNull(nameof(destinationCategories));
             }
-            if(baseToDestination == null)
+            if (baseToDestination == null)
             {
                 ThrowParameterNull(nameof(baseToDestination));
             }
@@ -101,7 +105,7 @@ namespace TMG
         /// Ensure that all of the indexes exist in the base and destination categories.
         /// </summary>
         /// <param name="baseToDestination"></param>
-        private static bool ValidateMapping(Categories baseCategories, Categories destinationCategories, 
+        private static bool ValidateMapping(Categories baseCategories, Categories destinationCategories,
             List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination, ref string error)
         {
             if (baseCategories == null)
@@ -141,18 +145,39 @@ namespace TMG
             {
                 return FailWith(ref error, "baseVector was null!");
             }
-            if(baseVector.Categories != Base)
+            if (baseVector.Categories != Base)
             {
                 return FailWith(ref error, "Invalid Base Categories");
             }
             ret = new Vector(Destination);
             var b = baseVector.Data;
             var r = ret.Data;
-            foreach(var (originFlatIndex, destinationFlatIndex) in _baseToDestination)
+            foreach (var (originFlatIndex, destinationFlatIndex) in _baseToDestination)
             {
                 r[destinationFlatIndex] += b[originFlatIndex];
             }
             return true;
+        }
+
+        /// <summary>
+        /// Creates a reverse index of destination category indexes relating them to the list of Base category indexes that they map.
+        /// </summary>
+        /// <returns>A reverse index dictionary mapping Destination elements to a list of base category indexes that represent them.</returns>
+        public Dictionary<CategoryIndex, List<CategoryIndex>> CreateReverseIndex()
+        {
+            return _baseToDestination
+                .GroupBy(record => record.destinationFlatIndex)
+                .ToDictionary(group => (CategoryIndex)group.Key, group => group.Select(record => (CategoryIndex)record.originFlatIndex).ToList());
+        }
+
+        /// <summary>
+        /// Creates an index of base category to destination category indexes.
+        /// </summary>
+        /// <returns>A dictionary containing the mapping between base CategoryIndex to destination CategoryIndex.</returns>
+        public Dictionary<CategoryIndex, CategoryIndex> CreateIndex()
+        {
+            return _baseToDestination
+                .ToDictionary(record => (CategoryIndex)record.originFlatIndex, record => (CategoryIndex)record.destinationFlatIndex);
         }
     }
 }

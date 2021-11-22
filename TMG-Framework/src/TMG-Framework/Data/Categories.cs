@@ -21,13 +21,14 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using static TMG.Utilities.ExceptionHelper;
+using System.Collections;
 
 namespace TMG
 {
     /// <summary>
     /// 
     /// </summary>
-    public sealed class Categories
+    public sealed class Categories : IEnumerable<int>
     {
         /// <summary>
         /// Get the number of elements in the categories.
@@ -95,6 +96,18 @@ namespace TMG
                 ThrowOutOfRangeException(nameof(flatIndex));
             }
             return _elements[flatIndex];
+        }
+
+        /// <inheritdoc/>
+        public IEnumerator<int> GetEnumerator()
+        {
+            return _elements.GetEnumerator();
+        }
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)_elements).GetEnumerator();
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2018 University of Toronto
+    Copyright 2018-2021 University of Toronto
 
     This file is part of TMG-Framework for XTMF2.
 
@@ -52,6 +52,57 @@ namespace TMG.Test.Data
             Assert.AreSame(b, result.Categories);
             Assert.AreEqual(10, result.Data[0]);
             Assert.AreEqual(6, result.Data[1]);
+        }
+
+        [TestMethod]
+        public void CreateIndex()
+        {
+            string error = null;
+            Categories a = Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, ref error);
+            Assert.IsNotNull(a, error);
+            Categories b = Categories.CreateCategories(new List<int> { 2, 4 }, ref error);
+            Assert.IsNotNull(b, error);
+            Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
+                new List<(int originFlatIndex, int destinationFlatIndex)>()
+                {
+                    (0, 0),
+                    (1, 0),
+                    (2, 1),
+                    (3, 1)
+                }, out var map, ref error), error);
+            var index = map.CreateIndex();
+            Assert.AreEqual(0, (int)index[0]);
+            Assert.AreEqual(0, (int)index[1]);
+            Assert.AreEqual(1, (int)index[2]);
+            Assert.AreEqual(1, (int)index[3]);
+        }
+
+        [TestMethod]
+        public void CreateReverseIndex()
+        {
+            string error = null;
+            Categories a = Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, ref error);
+            Assert.IsNotNull(a, error);
+            Categories b = Categories.CreateCategories(new List<int> { 2, 4 }, ref error);
+            Assert.IsNotNull(b, error);
+            Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
+                new List<(int originFlatIndex, int destinationFlatIndex)>()
+                {
+                    (0, 0),
+                    (1, 0),
+                    (2, 1),
+                    (3, 1)
+                }, out var map, ref error), error);
+            var index = map.CreateReverseIndex();
+            var list = index[0];
+            Assert.AreEqual(2, list.Count);
+            Assert.AreEqual(0, (int)list[0]);
+            Assert.AreEqual(1, (int)list[1]);
+
+            list = index[1];
+            Assert.AreEqual(2, list.Count);
+            Assert.AreEqual(2, (int)list[0]);
+            Assert.AreEqual(3, (int)list[1]);
         }
     }
 }
