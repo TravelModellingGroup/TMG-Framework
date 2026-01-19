@@ -58,36 +58,34 @@ namespace TMG.Saving
 
         private void WriteCSVMatrix((Matrix Matrix, WriteStream Stream) context)
         {
-            using (StreamWriter writer = new StreamWriter(context.Stream))
+            using var writer = new StreamWriter(context.Stream);
+            var matrix = context.Matrix;
+            var rowCategories = matrix.RowCategories;
+            var columnCategories = matrix.ColumnCategories;
+            var rowLength = rowCategories.Count;
+            var columnLength = columnCategories.Count;
+            writer.Write('"');
+            writer.Write(FirstIndexHeader.Invoke().Replace('"', '\''));
+            writer.Write('\\');
+            writer.Write(SecondIndexHeader.Invoke().Replace('"', '\''));
+            writer.Write('"');
+            for (int i = 0; i < columnLength; i++)
             {
-                var matrix = context.Matrix;
-                var rowCategories = matrix.RowCategories;
-                var columnCategories = matrix.ColumnCategories;
-                var rowLength = rowCategories.Count;
-                var columnLength = columnCategories.Count;
-                writer.Write('"');
-                writer.Write(FirstIndexHeader.Invoke().Replace('"', '\''));
-                writer.Write('\\');
-                writer.Write(SecondIndexHeader.Invoke().Replace('"', '\''));
-                writer.Write('"');
-                for (int i = 0; i < columnLength; i++)
+                writer.Write(',');
+                writer.Write(columnCategories.GetSparseIndex(i));
+            }
+            writer.WriteLine();
+            var data = matrix.Data;
+            int pos = 0;
+            for (int i = 0; i < rowLength; i++)
+            {
+                writer.Write(rowCategories.GetSparseIndex(i));
+                for (int j = 0; j < columnLength; j++)
                 {
                     writer.Write(',');
-                    writer.Write(columnCategories.GetSparseIndex(i));
+                    writer.Write(data[pos]);
                 }
                 writer.WriteLine();
-                var data = matrix.Data;
-                int pos = 0;
-                for (int i = 0; i < rowLength; i++)
-                {
-                    writer.Write(rowCategories.GetSparseIndex(i));
-                    for (int j = 0; j < columnLength; j++)
-                    {
-                        writer.Write(',');
-                        writer.Write(data[pos]);
-                    }
-                    writer.WriteLine();
-                }
             }
         }
 

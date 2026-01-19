@@ -248,6 +248,7 @@ namespace TMG.Utilities
                                 ExpandDataSections();
                             }
                             Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
+                            addOne = false;
                         }
                         break;
                     }
@@ -334,6 +335,7 @@ namespace TMG.Utilities
                                 ExpandDataSections();
                             }
                             Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
+                            addOne = false;
                         }
                         break;
                     }

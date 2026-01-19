@@ -48,7 +48,7 @@ namespace TMG.Test.Data
             va.Data[2] = 2;
             va.Data[3] = 4;
             Assert.IsTrue(map.AggregateToDestination(va, out var result, ref error), error);
-            Assert.AreEqual(2, result.Data.Length);
+            Assert.HasCount(2, result.Data);
             Assert.AreSame(b, result.Categories);
             Assert.AreEqual(10, result.Data[0]);
             Assert.AreEqual(6, result.Data[1]);
@@ -95,12 +95,12 @@ namespace TMG.Test.Data
                 }, out var map, ref error), error);
             var index = map.CreateReverseIndex();
             var list = index[0];
-            Assert.AreEqual(2, list.Count);
+            Assert.HasCount(2, list);
             Assert.AreEqual(0, (int)list[0]);
             Assert.AreEqual(1, (int)list[1]);
 
             list = index[1];
-            Assert.AreEqual(2, list.Count);
+            Assert.HasCount(2, list);
             Assert.AreEqual(2, (int)list[0]);
             Assert.AreEqual(3, (int)list[1]);
         }

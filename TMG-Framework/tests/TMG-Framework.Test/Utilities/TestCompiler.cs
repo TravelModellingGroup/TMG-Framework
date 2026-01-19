@@ -625,7 +625,7 @@ namespace XTMF.Testing.TMG.Data
                 CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
-            Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Vertical);
+            Assert.AreEqual(ComputationResult.VectorDirection.Vertical, result.Direction);
             var flat = result.VectorData.Data;
             Assert.AreEqual(9.0f, flat[0], 0.00001f);
             Assert.AreEqual(21.0f, flat[1], 0.00001f);
@@ -642,7 +642,7 @@ namespace XTMF.Testing.TMG.Data
                 CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
-            Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Horizontal);
+            Assert.AreEqual(ComputationResult.VectorDirection.Horizontal, result.Direction);
             var flat = result.VectorData.Data;
             Assert.AreEqual(12.0f, flat[0], 0.00001f);
             Assert.AreEqual(18.0f, flat[1], 0.00001f);
@@ -659,7 +659,7 @@ namespace XTMF.Testing.TMG.Data
                 CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
-            Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Horizontal);
+            Assert.AreEqual(ComputationResult.VectorDirection.Horizontal, result.Direction);
             var flat = result.VectorData.Data;
             Assert.AreEqual(9.0f, flat[0], 0.00001f);
             Assert.AreEqual(21.0f, flat[1], 0.00001f);
@@ -782,7 +782,7 @@ namespace XTMF.Testing.TMG.Data
                 CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
-            Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Vertical);
+            Assert.AreEqual(ComputationResult.VectorDirection.Vertical, result.Direction);
             var flat = result.VectorData.Data;
             Assert.AreEqual(1.5f, flat[0], 0.00001f);
             Assert.AreEqual(3.5f, flat[1], 0.00001f);
@@ -799,7 +799,7 @@ namespace XTMF.Testing.TMG.Data
                 CreateMatrixData("B", 2, 4, 6, 8)
             });
             Assert.IsTrue(result.IsVectorResult);
-            Assert.IsTrue(result.Direction == ComputationResult.VectorDirection.Horizontal);
+            Assert.AreEqual(ComputationResult.VectorDirection.Horizontal, result.Direction);
             var flat = result.VectorData.Data;
             Assert.AreEqual(2.0f, flat[0], 0.00001f);
             Assert.AreEqual(3.0f, flat[1], 0.00001f);

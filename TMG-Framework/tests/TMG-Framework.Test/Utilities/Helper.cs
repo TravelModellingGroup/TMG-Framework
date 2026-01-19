@@ -22,6 +22,10 @@ using System.IO;
 using System.Text;
 using XTMF2;
 using XTMF2.RuntimeModules;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
+
+[assembly: Parallelize]
 
 namespace TMG.Test.Utilities
 {
@@ -98,6 +102,51 @@ namespace TMG.Test.Utilities
             {
                 FilePath = CreateParameter(fileName)
             }).Invoke();
+        }
+
+        /// <summary>
+        /// Assert that the given action throws an exception of the given type.
+        /// Leave the exception type null to allow any exception.
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="expectedExceptionType"></param>
+        public static void ThrowsException(Action action, Type expectedExceptionType = null)
+        {
+            try
+            {
+                action();
+                Assert.Fail("Expected exception of type " + expectedExceptionType.FullName);
+            }
+            catch (Exception ex)
+            {
+                if (expectedExceptionType is not null && ex.GetType() != expectedExceptionType)
+                {
+                    Assert.Fail("Expected exception of type " + expectedExceptionType.FullName + " but got " + ex.GetType().FullName);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Assert that the given action throws an exception of the given type.
+        /// Leave the exception type null to allow any exception.
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="expectedExceptionType"></param>
+        public static void ThrowsException<T>(Action action)
+            where T : Exception
+        {
+            try
+            {
+                action();
+                Assert.Fail("Expected exception of type " + typeof(T).FullName);
+            }
+            catch (Exception ex)
+            {
+                if (ex.GetType() != typeof(T))
+                {
+                    Assert.Fail("Expected exception of type " + typeof(T).FullName + " but got " + ex.GetType().FullName);
+                }
+            }
         }
     }
 }

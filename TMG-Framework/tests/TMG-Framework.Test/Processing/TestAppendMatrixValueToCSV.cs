@@ -81,7 +81,7 @@ namespace TMG.Test.Processing
                     Assert.AreEqual("2,5,DEF,11", reader.ReadLine());
                     Assert.AreEqual("10,4,GHI,12", reader.ReadLine());
                     Assert.AreEqual("4,10,GHI,13", reader.ReadLine());
-                    Assert.AreEqual(null, reader.ReadLine());
+                    Assert.IsNull(reader.ReadLine());
                 }
             }
             finally

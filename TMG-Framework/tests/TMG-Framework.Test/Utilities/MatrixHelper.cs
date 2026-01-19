@@ -29,7 +29,7 @@ namespace TMG.Test.Utilities
     {
         internal static string WriteMatrixToCSVMatrix(Categories categories, float[][] data)
         {
-            Assert.AreEqual(categories.Count, data.Length);
+            Assert.HasCount(categories.Count, data);
             var fileName = Path.GetTempFileName();
             try
             {
@@ -60,7 +60,7 @@ namespace TMG.Test.Utilities
 
         internal static string WriteMatrixToCSVThirdNormalized(Categories categories, float[][] data)
         {
-            Assert.AreEqual(categories.Count, data.Length);
+            Assert.HasCount(categories.Count, data);
             var fileName = Path.GetTempFileName();
             try
             {
@@ -118,7 +118,7 @@ namespace TMG.Test.Utilities
 
         internal static string WriteMatrixToMTX(Categories categories, float[][] data)
         {
-            Assert.AreEqual(categories.Count, data.Length);
+            Assert.HasCount(categories.Count, data);
             var fileName = Path.GetTempFileName();
             try
             {

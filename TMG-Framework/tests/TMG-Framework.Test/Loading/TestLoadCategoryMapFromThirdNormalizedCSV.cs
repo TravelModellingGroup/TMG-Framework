@@ -111,7 +111,7 @@ namespace TMG.Test.Loading
         [TestMethod]
         public void LoadMapWithBadDestinations()
         {
-            Assert.ThrowsException<XTMFRuntimeException>(() =>
+            Helper.ThrowsException<XTMFRuntimeException>(() =>
             {
                 string error = null;
                 var baseCategories = Categories.CreateCategories(new List<int> { 1, 2, 3, 4 }, ref error);
@@ -144,7 +144,7 @@ namespace TMG.Test.Loading
         [TestMethod]
         public void LoadMapWithBadBase()
         {
-            Assert.ThrowsException<XTMFRuntimeException>(() =>
+            Helper.ThrowsException<XTMFRuntimeException>(() =>
             {
                 string error = null;
                 var baseCategories = Categories.CreateCategories(new List<int> { 1, 2, 4 }, ref error);
