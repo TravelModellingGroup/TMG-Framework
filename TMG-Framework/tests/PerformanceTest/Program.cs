@@ -22,6 +22,9 @@ using System.Diagnostics;
 using System.Linq;
 using TMG;
 using TMG.Processing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+[assembly: DoNotParallelize]
 
 namespace PerformanceTest
 {

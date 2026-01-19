@@ -36,7 +36,7 @@ namespace TMG.Data.Testing
         {
             List<RangeSet> tempRange = GenerateTempRange();
             RangeSetSet target = new RangeSetSet(tempRange);
-            Assert.AreEqual(target.Count, 2);
+            Assert.AreEqual(2, target.Count);
         }
 
         /// <summary>
@@ -62,8 +62,8 @@ namespace TMG.Data.Testing
             string rangeString = "{1-2,4-5},{11-12,14-15";
             bool actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet output);
             Assert.IsNotNull(error);
-            Assert.AreEqual(null, output);
-            Assert.AreEqual(false, actual);
+            Assert.IsNull(output);
+            Assert.IsFalse(actual);
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace TMG.Data.Testing
             RangeSetSet outputExpected = new RangeSetSet(GenerateTempRange());
             var actual = RangeSetSet.TryParse(rangeString, out RangeSetSet output);
             Assert.AreEqual(outputExpected, output);
-            Assert.AreEqual(true, actual);
+            Assert.IsTrue(actual);
         }
 
         /// <summary>
@@ -89,9 +89,9 @@ namespace TMG.Data.Testing
             string rangeString = "{1-2,4-5},{11-12,14-15}";
             RangeSetSet outputExpected = new RangeSetSet(GenerateTempRange());
             var actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet output);
-            Assert.AreEqual(null, error);
+            Assert.IsNull(error);
             Assert.AreEqual(outputExpected, output);
-            Assert.AreEqual(true, actual);
+            Assert.IsTrue(actual);
         }
 
         private static List<RangeSet> GenerateTempRange()

@@ -886,10 +886,6 @@ namespace TMG.Utilities
         /// <param name="value">The value to set it to.</param>
         internal static void Memset(Span<float> dest, float value)
         {
-            if (dest == null)
-            {
-                throw new ArgumentNullException(nameof(dest));
-            }
             var remainder = (dest.Length) % Vector<float>.Count;
             var destSpan = dest.Slice(0, dest.Length - remainder).NonPortableCast<float, Vector<float>>();
             var vValue = new Vector<float>(value);
