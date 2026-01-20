@@ -79,8 +79,8 @@ namespace TMG.Processing
 
         private bool Balance(float[] flatAttractions, float[] flatAttractionStar, float epsilon, float[] columnTotals)
         {
-            VectorHelper.Divide(columnTotals, 0, flatAttractions, 0, columnTotals, 0, columnTotals.Length);
-            VectorHelper.Multiply(flatAttractionStar, 0, flatAttractionStar, 0, columnTotals, 0, flatAttractionStar.Length);
+            VectorHelper.Divide(columnTotals, flatAttractions, columnTotals);
+            VectorHelper.Multiply(flatAttractionStar, flatAttractionStar, columnTotals);
             VectorHelper.ReplaceIfNotFinite(flatAttractionStar, 0, 1.0f, flatAttractionStar.Length);
             return VectorHelper.AreBoundedBy(columnTotals, 0, 1.0f, epsilon, columnTotals.Length);
         }

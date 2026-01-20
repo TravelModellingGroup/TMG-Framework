@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2015-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2015-2026 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF.
 
@@ -20,176 +20,356 @@
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 
-namespace TMG.Utilities
+namespace TMG.Utilities;
+
+public static partial class VectorHelper
 {
-    public static partial class VectorHelper
+    /// <summary>
+    /// Dest[i] = lhs[i] * rhs[i]
+    /// </summary>
+    /// <param name="dest">The location to store the values into.</param>
+    /// <param name="left">The first value that is being multiplied.</param>
+    /// <param name="right">The second value that is being multiplied.</param>
+    public static void Multiply(Span<float> dest,
+        ReadOnlySpan<float> left, ReadOnlySpan<float> right)
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
+        EnsureSameSize(dest, left, right);
+        nuint i = 0;
+        var end = (nuint)dest.Length - 16;
+        ref float destRef = ref MemoryMarshal.GetReference(dest);
+        ref float leftRef = ref MemoryMarshal.GetReference(left);
+        ref float rightRef = ref MemoryMarshal.GetReference(right);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
         {
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(destination, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var firstSpan = (new Span<float>(first, firstIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var secondSpan = (new Span<float>(second, secondIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
             {
-                destSpan[i] = firstSpan[i] * secondSpan[i];
-                destSpan[i + 1] = firstSpan[i + 1] * secondSpan[i + 1];
+                var vLeft = Vector512.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector512.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft * vRight;
+                vResult.StoreUnsafe(ref destRef, i);
             }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
+            // Check to see if we can perform a final 256-bit operation
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
             {
-                destination[destIndex + i] = first[firstIndex + i] * second[secondIndex + i];
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft * vRight;
+                vResult.StoreUnsafe(ref destRef, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft * vRight;
+                vResult.StoreUnsafe(ref destRef, i);
             }
         }
 
-        public static void Multiply(float[] dest, float[] source, float scalar)
+        for (; i < (nuint)dest.Length; i++)
         {
-            var length = dest.Length;
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, 0, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var firstSpan = (new Span<float>(source, 0, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vScalar = new Vector<float>(scalar);
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
-            {
-                destSpan[i] = firstSpan[i] * vScalar;
-                destSpan[i + 1] = firstSpan[i + 1] * vScalar;
-            }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
-            {
-                dest[i] = source[i] * scalar;
-            }
-        }
-
-        public static void Multiply(float[][] destination, float lhs, float[][] rhs)
-        {
-            Parallel.For(0, destination.Length, row =>
-            {
-                Multiply(destination[row], rhs[row], lhs);
-            });
-        }
-
-        public static void Multiply(float[][] destination, float[][] lhs, float rhs)
-        {
-            Parallel.For(0, destination.Length, row =>
-            {
-                Multiply(destination[row], lhs[row], rhs);
-            });
-        }
-
-        public static void Multiply(float[][] destination, float[][] lhs, float[][] rhs)
-        {
-            Parallel.For(0, destination.Length, row =>
-            {
-                Multiply(destination[row], 0, lhs[row], 0, rhs[row], 0, destination[row].Length);
-            });
-        }
-
-        /// <summary>
-        /// Multiply an array by a scalar and store it in another array.
-        /// </summary>
-        /// <param name="destination">Where to store the results</param>
-        /// <param name="destIndex">The offset to start at</param>
-        /// <param name="first">The array to multiply</param>
-        /// <param name="firstIndex">The first index to multiply</param>
-        /// <param name="scalar">The value to multiply against</param>
-        /// <param name="length">The number of elements to multiply</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float scalar, int length)
-        {
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(destination, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var firstSpan = (new Span<float>(first, firstIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var scalarV = new Vector<float>(scalar);
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
-            {
-                destSpan[i] = firstSpan[i] * scalarV;
-                destSpan[i + 1] = firstSpan[i + 1] * scalarV;
-            }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
-            {
-                destination[destIndex + i] = first[firstIndex + i] * scalar;
-            }
-        }
-
-        /// <summary>
-        /// Multiply first, second, and the scalar and save into the destination vector
-        /// </summary>
-        /// <param name="destination"></param>
-        /// <param name="destIndex"></param>
-        /// <param name="first"></param>
-        /// <param name="firstIndex"></param>
-        /// <param name="second"></param>
-        /// <param name="secondIndex"></param>
-        /// <param name="scalar"></param>
-        /// <param name="length"></param>
-        internal static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, float scalar, int length)
-        {
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(destination, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var firstSpan = (new Span<float>(first, firstIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var secondSpan = (new Span<float>(second, secondIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var scalarV = new Vector<float>(scalar);
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
-            {
-                destSpan[i] = firstSpan[i] * secondSpan[i] * scalarV;
-                destSpan[i + 1] = firstSpan[i + 1] * secondSpan[i + 1] * scalarV;
-            }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
-            {
-                destination[destIndex + i] = first[firstIndex + i] * second[secondIndex + i] * scalar;
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="destination"></param>
-        /// <param name="destIndex"></param>
-        /// <param name="first"></param>
-        /// <param name="firstIndex"></param>
-        /// <param name="second"></param>
-        /// <param name="secondIndex"></param>
-        /// <param name="third"></param>
-        /// <param name="thirdIndex"></param>
-        /// <param name="fourth"></param>
-        /// <param name="fourthIndex"></param>
-        /// <param name="length"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Multiply(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex,
-            float[] third, int thirdIndex, float[] fourth, int fourthIndex, int length)
-        {
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(destination, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var firstSpan = (new Span<float>(first, firstIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var secondSpan = (new Span<float>(second, secondIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var thirdSpan = (new Span<float>(third, thirdIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var fourthSpan = (new Span<float>(fourth, fourthIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
-            {
-                destSpan[i] = firstSpan[i] * secondSpan[i] * thirdSpan[i] * fourthSpan[i];
-                destSpan[i + 1] = firstSpan[i + 1] * secondSpan[i + 1] * thirdSpan[i + 1] * fourthSpan[i + 1];
-            }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
-            {
-                destination[destIndex + i] = first[firstIndex + i] * second[secondIndex + i] * third[thirdIndex + i] * fourth[fourthIndex + i];
-            }
+            Unsafe.Add(ref destRef, i) = Unsafe.Add(ref leftRef, i) 
+                * Unsafe.Add(ref rightRef, i);
         }
     }
+
+    /// <summary>
+    /// Dest[i] = lhs[i] * rhs[i] * third[i]
+    /// </summary>
+    /// <param name="dest">The location to store the values into.</param>
+    /// <param name="left">The first value that is being multiplied.</param>
+    /// <param name="right">The second value that is being multiplied.</param>
+    /// <param name="third">The third value that is being multiplied.</param>
+    public static void Multiply(Span<float> dest,
+        ReadOnlySpan<float> left, ReadOnlySpan<float> right, ReadOnlySpan<float> third)
+    {
+        EnsureSameSize(dest, left, right, third);
+        nuint i = 0;
+        var end = (nuint)dest.Length - 16;
+        ref float destRef = ref MemoryMarshal.GetReference(dest);
+        ref float leftRef = ref MemoryMarshal.GetReference(left);
+        ref float rightRef = ref MemoryMarshal.GetReference(right);
+        ref float thirdRef = ref MemoryMarshal.GetReference(third);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
+        {
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var vLeft = Vector512.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector512.LoadUnsafe(ref rightRef, i);
+                var vThird = Vector512.LoadUnsafe(ref thirdRef, i);
+                var vResult = vLeft * vRight * vThird;
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+            // Check to see if we can perform a final 256-bit operation
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vThird = Vector256.LoadUnsafe(ref thirdRef, i);
+                var vResult = vLeft * vRight * vThird;
+                vResult.StoreUnsafe(ref destRef, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vThird = Vector256.LoadUnsafe(ref thirdRef, i);
+                var vResult = vLeft * vRight * vThird;
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+        }
+
+        for (; i < (nuint)dest.Length; i++)
+        {
+            Unsafe.Add(ref destRef, i) = Unsafe.Add(ref leftRef, i) 
+                * Unsafe.Add(ref rightRef, i) * Unsafe.Add(ref thirdRef, i);
+        }
+    }
+
+    /// <summary>
+    /// Dest[i] = lhs[i] * rhs[i] * third[i] * fourth[i]
+    /// </summary>
+    /// <param name="dest">The location to store the values into.</param>
+    /// <param name="left">The first value that is being multiplied.</param>
+    /// <param name="right">The second value that is being multiplied.</param>
+    /// <param name="third">The third value that is being multiplied.</param>
+    /// <param name="fourth">The fourth value that is being multiplied.</param>
+    public static void Multiply(Span<float> dest,
+        ReadOnlySpan<float> left, ReadOnlySpan<float> right, ReadOnlySpan<float> third,
+        ReadOnlySpan<float> fourth)
+    {
+        EnsureSameSize(dest, left, right, third, fourth);
+        nuint i = 0;
+        var end = (nuint)dest.Length - 16;
+        ref float destRef = ref MemoryMarshal.GetReference(dest);
+        ref float leftRef = ref MemoryMarshal.GetReference(left);
+        ref float rightRef = ref MemoryMarshal.GetReference(right);
+        ref float thirdRef = ref MemoryMarshal.GetReference(third);
+        ref float fourthRef = ref MemoryMarshal.GetReference(fourth);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
+        {
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var vLeft = Vector512.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector512.LoadUnsafe(ref rightRef, i);
+                var vThird = Vector512.LoadUnsafe(ref thirdRef, i);
+                var vFourth = Vector512.LoadUnsafe(ref fourthRef, i);
+                var vResult = (vLeft * vRight) * (vThird * vFourth);
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+            // Check to see if we can perform a final 256-bit operation
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vThird = Vector256.LoadUnsafe(ref thirdRef, i);
+                var vFourth = Vector256.LoadUnsafe(ref fourthRef, i);
+                var vResult = (vLeft * vRight) * (vThird * vFourth);
+                vResult.StoreUnsafe(ref destRef, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vThird = Vector256.LoadUnsafe(ref thirdRef, i);
+                var vFourth = Vector256.LoadUnsafe(ref fourthRef, i);
+                var vResult = (vLeft * vRight) * (vThird * vFourth);
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+        }
+
+        for (; i < (nuint)dest.Length; i++)
+        {
+            Unsafe.Add(ref destRef, i) = (Unsafe.Add(ref leftRef, i) 
+                * Unsafe.Add(ref rightRef, i)) * (Unsafe.Add(ref thirdRef, i) 
+                * Unsafe.Add(ref fourthRef, i));
+        }
+    }
+
+    /// <summary>
+    /// Dest[i] = lhs[i] * rhs
+    /// </summary>
+    /// <param name="dest">The location to store the values into.</param>
+    /// <param name="left">The first value that is being multiplied.</param>
+    /// <param name="right">The second value that is being multiplied.</param>
+    public static void Multiply(Span<float> dest,
+        ReadOnlySpan<float> left, float right)
+    {
+        EnsureSameSize(dest, left);
+        nuint i = 0;
+        var end = (nuint)dest.Length - 16;
+        ref float destRef = ref MemoryMarshal.GetReference(dest);
+        ref float leftRef = ref MemoryMarshal.GetReference(left);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
+        {
+            var vRight = Vector512.Create(right);
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var vLeft = Vector512.LoadUnsafe(ref leftRef, i);
+                var vResult = vLeft * vRight;
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+            // Check to see if we can perform a final 256-bit operation
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight256 = Vector256.Create(right);
+                var vResult = vLeft * vRight256;
+                vResult.StoreUnsafe(ref destRef, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            var vRight = Vector256.Create(right);
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vResult = vLeft * vRight;
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+        }
+
+        for (; i < (nuint)dest.Length; i++)
+        {
+            Unsafe.Add(ref destRef, i) = Unsafe.Add(ref leftRef, i) 
+                * right;
+        }
+    }
+
+    /// <summary>
+    /// Dest[i] = lhs[i] * rhs[i] * third
+    /// </summary>
+    /// <param name="dest">The location to store the values into.</param>
+    /// <param name="left">The first value that is being multiplied.</param>
+    /// <param name="right">The second value that is being multiplied.</param>
+    /// <param name="third">The third value that is being multiplied.</param>
+    public static void Multiply(Span<float> dest,
+        ReadOnlySpan<float> left, ReadOnlySpan<float> right, float third)
+    {
+        EnsureSameSize(dest, left, right);
+        nuint i = 0;
+        var end = (nuint)dest.Length - 16;
+        ref float destRef = ref MemoryMarshal.GetReference(dest);
+        ref float leftRef = ref MemoryMarshal.GetReference(left);
+        ref float rightRef = ref MemoryMarshal.GetReference(right);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
+        {
+            var vThird = Vector512.Create(third);
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var vLeft = Vector512.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector512.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft * vRight * vThird;
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+            // Check to see if we can perform a final 256-bit operation
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vThird256 = Vector256.Create(third);
+                var vResult = vLeft * vRight * vThird256;
+                vResult.StoreUnsafe(ref destRef, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            var vThird = Vector256.Create(third);
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft * vRight * third;
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+        }
+
+        for (; i < (nuint)dest.Length; i++)
+        {
+            Unsafe.Add(ref destRef, i) = Unsafe.Add(ref leftRef, i) 
+                * Unsafe.Add(ref rightRef, i) * third;
+        }
+    }
+
+    /// <summary>
+    /// Dest[i] = lhs[i] * rhs[i] * third[i] * forth
+    /// </summary>
+    /// <param name="dest">The location to store the values into.</param>
+    /// <param name="left">The first value that is being multiplied.</param>
+    /// <param name="right">The second value that is being multiplied.</param>
+    /// <param name="third">The third value that is being multiplied.</param>
+    /// <param name="fourth">The fourth value that is being multiplied.</param>
+    public static void Multiply(Span<float> dest,
+        ReadOnlySpan<float> left, ReadOnlySpan<float> right, ReadOnlySpan<float> third, float fourth)
+    {
+        EnsureSameSize(dest, left, right, third);
+        nuint i = 0;
+        var end = (nuint)dest.Length - 16;
+        ref float destRef = ref MemoryMarshal.GetReference(dest);
+        ref float leftRef = ref MemoryMarshal.GetReference(left);
+        ref float rightRef = ref MemoryMarshal.GetReference(right);
+        ref float thirdRef = ref MemoryMarshal.GetReference(third);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
+        {
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var vLeft = Vector512.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector512.LoadUnsafe(ref rightRef, i);
+                var vThird = Vector512.LoadUnsafe(ref thirdRef, i);
+                var vResult = (vLeft * vRight) * (vThird * fourth);
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+            // Check to see if we can perform a final 256-bit operation
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vThird = Vector256.LoadUnsafe(ref thirdRef, i);
+                var vResult = (vLeft * vRight) * (vThird * fourth);
+                vResult.StoreUnsafe(ref destRef, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vThird = Vector256.LoadUnsafe(ref thirdRef, i);
+                var vResult = (vLeft * vRight) * (vThird * fourth);
+                vResult.StoreUnsafe(ref destRef, i);
+            }
+        }
+
+        for (; i < (nuint)dest.Length; i++)
+        {
+            Unsafe.Add(ref destRef, i) = (Unsafe.Add(ref leftRef, i) 
+                * Unsafe.Add(ref rightRef, i)) * (Unsafe.Add(ref thirdRef, i) * fourth);
+        }
+    }
+
 }
+

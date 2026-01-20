@@ -102,28 +102,30 @@ namespace TMG.Frameworks.Data.Processing.AST
                     if (lhs.IsVectorResult && rhs.IsVectorResult)
                     {
                         var retMatrix = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new Vector(lhs.VectorData));
-                        VectorHelper.Divide(retMatrix.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, retMatrix.Data.Length);
+                        VectorHelper.Divide(retMatrix.Data.AsSpan(), lhs.VectorData.Data.AsSpan(), rhs.VectorData.Data.AsSpan());
                         return new ComputationResult(retMatrix, true, lhs.Direction);
                     }
                     else if (lhs.IsVectorResult)
                     {
                         var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData);
-                        var flatRet = retMatrix.Data;
-                        var flatRhs = rhs.OdData.Data;
                         var flatLhs = lhs.VectorData.Data;
                         var rowSize = flatLhs.Length;
                         if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                         { 
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.Divide(retMatrix.Data, i * rowSize, flatLhs[i], flatRhs, i * rowSize, rowSize);
+                                var retRow = retMatrix.GetRow(i);
+                                var retRight = rhs.OdData.GetRow(i);
+                                VectorHelper.Divide(retRow, flatLhs[i], retRight);
                             }
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.Divide(retMatrix.Data, i * rowSize, flatLhs, 0, flatRhs, i * rowSize, rowSize);
+                                var retRow = retMatrix.GetRow(i);
+                                var retRight = rhs.OdData.GetRow(i);
+                                VectorHelper.Divide(retRow, flatLhs, retRight);
                             }
                         }
                         else
@@ -143,14 +145,18 @@ namespace TMG.Frameworks.Data.Processing.AST
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.Divide(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs[i], rowSize);
+                                var retRow = retMatrix.GetRow(i);
+                                var retLeft = lhs.OdData.GetRow(i);
+                                VectorHelper.Divide(retRow, retLeft, flatRhs[i]);
                             }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.Divide(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, rowSize);
+                                var retRow = retMatrix.GetRow(i);
+                                var retLeft = lhs.OdData.GetRow(i);
+                                VectorHelper.Divide(retRow, retLeft, flatRhs);
                             }
                         }
                         else
@@ -163,7 +169,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else
                 {
                     var retMatrix = lhs.Accumulator ? lhs.OdData : (rhs.Accumulator ? rhs.OdData : new Matrix(lhs.OdData));
-                    VectorHelper.Divide(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.OdData.Data, 0, lhs.OdData.Data.Length);
+                    VectorHelper.Divide(retMatrix.Data, lhs.OdData.Data, rhs.OdData.Data);
                     return new ComputationResult(retMatrix, true);
                 }
             }

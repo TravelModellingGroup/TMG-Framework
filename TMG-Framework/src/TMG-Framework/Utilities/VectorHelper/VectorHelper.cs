@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2015-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2015-2026 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF.
 
@@ -17,888 +17,1537 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 
-namespace TMG.Utilities
+namespace TMG.Utilities;
+
+/// <summary>
+/// This class is designed to help facilitate the use of the SIMD instructions available in
+/// modern .Net.
+/// </summary>
+public static partial class VectorHelper
 {
+
     /// <summary>
-    /// This class is designed to help facilitate the use of the SIMD instructions available in
-    /// modern .Net.
+    /// A vector containing the maximum value of a float
     /// </summary>
-    public static partial class VectorHelper
+    private static Vector<float> MaxFloat;
+
+    private static Vector256<float> MaxFloat256;
+
+    private static Vector512<float> MaxFloat512;
+
+    static VectorHelper()
     {
-        /// <summary>
-        /// A vector containing the maximum value of a float
-        /// </summary>
-        private static Vector<float> MaxFloat;
+        MaxFloat = new Vector<float>(float.MaxValue);
+        MaxFloat256 = Vector256.Create(float.MaxValue);
+        MaxFloat512 = Vector512.Create(float.MaxValue);
+    }
 
-        /// <summary>
-        /// Add up the elements in the vector
-        /// </summary>
-        /// <param name="v">The vector to sum</param>
-        /// <returns>The sum of the elements in the vector</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float Sum(ref Vector<float> v)
+    /// <summary>
+    /// Sum an array
+    /// </summary>
+    /// <param name="array">The array to Sum</param>
+    /// <param name="startIndex">The index to start summing from</param>
+    /// <param name="length">The number of elements to add</param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float Sum(float[] array, int startIndex, int length)
+    {
+        return Sum(new Span<float>(array, startIndex, length));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float Sum(Span<float> array)
+    {
+        var length = array.Length;
+        ref var rf = ref MemoryMarshal.GetReference(array);
+        nuint i = 0;
+        float acc = 0.0f;
+        // 16 floats per Vector512, we hard code this here just in case Vector512 is not supported
+
+        if (Vector512.IsHardwareAccelerated && length >= Vector512<float>.Count)
         {
-            // shockingly to myself this is actually faster than doing a copy to an array
-            // and manually computing the sum
-            return System.Numerics.Vector.Dot(v, Vector<float>.One);
-        }
-
-
-        /// <summary>
-        /// Sum an array
-        /// </summary>
-        /// <param name="array">The array to Sum</param>
-        /// <param name="startIndex">The index to start summing from</param>
-        /// <param name="length">The number of elements to add</param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Sum(float[] array, int startIndex, int length)
-        {
-            return Sum(new Span<float>(array, startIndex, length));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Sum(Span<float> array)
-        {
-            var remainder = array.Length % Vector<float>.Count;
-            var vectorSpan = (array.Slice(0, array.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            Vector<float> acc1 = Vector<float>.Zero;
-            Vector<float> acc2 = Vector<float>.Zero;
-            for (; i < vectorSpan.Length - 1; i += 2)
+            var end = (nuint)(length - 16);
+            Vector512<float> acc1 = Vector512<float>.Zero;
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
             {
-                acc1 += vectorSpan[i];
-                acc2 += vectorSpan[i + 1];
+                var f = Vector512.LoadUnsafe(ref rf, i);
+                acc1 += f;
             }
-            i *= Vector<float>.Count;
-            float sum = 0.0f;
-            acc1 += acc2;
-            for (; i < array.Length; i++)
+            acc += Vector512.Sum(acc1);
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
             {
-                sum += array[i];
-            }
-            return Sum(ref acc1) + sum;
-        }
-
-        /// <summary>
-        /// Take the average of the absolute values
-        /// </summary>
-        /// <param name="first">The first vector</param>
-        /// <param name="firstIndex">Where to start in the first vector</param>
-        /// <param name="second">The second vector</param>
-        /// <param name="secondIndex">Where to start in the second vector</param>
-        /// <param name="length">The number of elements to read</param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float AbsDiffAverage(float[] first, int firstIndex, float[] second, int secondIndex, int length)
-        {
-            return AbsDiffAverage(new Span<float>(first, firstIndex, length), new Span<float>(second, secondIndex, length));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float AbsDiffAverage(Span<float> first, Span<float> second)
-        {
-            if (first.Length == second.Length)
-            {
-                throw new ArgumentException("The length of the parameters are not the same!", nameof(second));
-            }
-            var remainder = first.Length % Vector<float>.Count;
-            var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var acc1 = Vector<float>.Zero;
-            var acc2 = Vector<float>.Zero;
-            int i = 0;
-            for (; i < vectorFirst.Length - 1; i += 2)
-            {
-                acc1 += System.Numerics.Vector.Abs(vectorFirst[i] - vectorSecond[i]);
-                acc2 += System.Numerics.Vector.Abs(vectorFirst[i + 1] - vectorSecond[i + 1]);
-            }
-            i *= Vector<float>.Count;
-            acc1 += acc2;
-            float acc = 0.0f;
-            for (; i < first.Length; i++)
-            {
-                acc += Math.Abs(first[i] - second[i]);
-            }
-            return (Sum(ref acc1) + acc) / first.Length;
-        }
-
-        /// <summary>
-        /// Get the maximum difference from two arrays.
-        /// </summary>
-        /// <param name="first">The first vector</param>
-        /// <param name="firstIndex">Where to start in the first vector</param>
-        /// <param name="second">The second vector</param>
-        /// <param name="secondIndex">Where to start in the second vector</param>
-        /// <param name="length">The number of elements to read</param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float AbsDiffMax(float[] first, int firstIndex, float[] second, int secondIndex, int length)
-        {
-            return AbsDiffMax(new Span<float>(first, firstIndex, length), new Span<float>(second, secondIndex, length));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float AbsDiffMax(Span<float> first, Span<float> second)
-        {
-            if (first.Length == second.Length)
-            {
-                throw new ArgumentException("The length of the parameters are not the same!", nameof(second));
-            }
-            var remainder = first.Length % Vector<float>.Count;
-            var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            var acc1 = Vector<float>.Zero;
-            var acc2 = Vector<float>.Zero;
-            for (; i < vectorFirst.Length - 1; i += 2)
-            {
-                acc1 = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(vectorFirst[i] - vectorSecond[i]), acc1);
-                acc2 = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(vectorFirst[i + 1] - vectorSecond[i + 1]), acc2);
-            }
-            i *= Vector<float>.Count;
-            float maxAbsDiff = 0.0f;
-            for (; i < first.Length; i++)
-            {
-                maxAbsDiff = Math.Max(Math.Abs(first[i] - second[i]), maxAbsDiff);
-            }
-            acc1 = System.Numerics.Vector.Max(acc1, acc2);
-            float[] temp = new float[Vector<float>.Count];
-            acc1.CopyTo(temp);
-            for (int j = 0; j < temp.Length; j++)
-            {
-                maxAbsDiff = Math.Max(temp[j], maxAbsDiff);
-            }
-            return maxAbsDiff;
-        }
-
-        /// <summary>
-        /// Sum the square differences of two arrays
-        /// </summary>
-        /// <param name="first">The array to Sum</param>
-        /// <param name="firstIndex">The index to start summing from</param>
-        /// <param name="second">The array to Sum</param>
-        /// <param name="secondIndex">The index to start summing from</param>
-        /// <param name="length">The number of elements to add</param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float SquareDiff(float[] first, int firstIndex, float[] second, int secondIndex, int length)
-        {
-            return SquareDiff(new Span<float>(first, firstIndex, length), new Span<float>(second, secondIndex, length));
-        }
-
-        public static float SquareDiff(Span<float> first, Span<float> second)
-        {
-            if (first.Length == second.Length)
-            {
-                throw new ArgumentException("The length of the parameters are not the same!", nameof(second));
-            }
-            var remainder = first.Length % Vector<float>.Count;
-            var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var acc1 = Vector<float>.Zero;
-            var acc2 = Vector<float>.Zero;
-            int i = 0;
-            for (; i < vectorFirst.Length - 1; i += 2)
-            {
-                var diff1 = vectorFirst[i] - vectorSecond[i];
-                var diff2 = vectorFirst[i + 1] - vectorSecond[i + 1];
-                acc1 += diff1 * diff1;
-                acc2 += diff2 * diff2;
-            }
-            acc1 += acc2;
-            i *= Vector<float>.Count;
-            var acc = 0.0f;
-            for (; i < first.Length; i++)
-            {
-                var diff = first[i] - second[i];
-                acc += diff * diff;
-            }
-            return Sum(ref acc1) + acc;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Set(Span<float> dest, float value)
-        {
-            var remainder = dest.Length % Vector<float>.Count;
-            var vectorFirst = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vValue = new Vector<float>(value);
-            int i = 0;
-            for (; i < vectorFirst.Length - 1; i += 2)
-            {
-                vectorFirst[i] = vValue;
-                vectorFirst[i + 1] = vValue;
-            }
-            i *= Vector<float>.Count;
-            for (; i < dest.Length; i++)
-            {
-                dest[i] = value;
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                acc += Vector256.Sum(f);
+                i += (nuint)Vector256<float>.Count;
             }
         }
-
-        /// <summary>
-        /// Assign the given value to the whole array
-        /// </summary>
-        /// <param name="dest">The array to set</param>
-        /// <param name="value">The value to set it to</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Set(float[] dest, float value)
+        else if (Vector256.IsHardwareAccelerated && length >= Vector256<float>.Count * 2)
         {
-            Set(new Span<float>(dest), value);
-        }
-
-        /// <summary>
-        /// Assign the given value to the whole array
-        /// </summary>
-        /// <param name="dest">The array to set</param>
-        /// <param name="offset">The offset into the destination to start</param>
-        /// <param name="value">The value to assign to it</param>
-        /// <param name="length">The number of elements to assign</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Set(float[] dest, int offset, float value, int length)
-        {
-            Set(new Span<float>(dest, offset, length), value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Abs(Span<float> dest, Span<float> source)
-        {
-            if (dest.Length != source.Length)
+            var end = (nuint)(length - Vector256<float>.Count * 2);
+            // Vector256 needs to be doubled to match the same results as Vector512
+            Vector256<float> acc1 = Vector256<float>.Zero;
+            Vector256<float> acc2 = Vector256<float>.Zero;
+            for (; i <= end; i += (nuint)(Vector256<float>.Count * 2))
             {
-                throw new ArgumentException("The length of the parameters are not the same!", nameof(source));
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var f2 = Vector256.LoadUnsafe(ref rf, i + (nuint)Vector256<float>.Count);
+                acc1 += f;
+                acc2 += f2;
             }
-            var remainder = dest.Length % Vector<float>.Count;
-            var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSource = (source.Slice(0, source.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorDest.Length - 1; i += 2)
+            acc += Vector256.Sum(acc1 + acc2);
+            // If there is one more Vector256 left, add it in
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
             {
-                vectorDest[i] = System.Numerics.Vector.Abs(vectorSource[i]);
-                vectorDest[i + 1] = System.Numerics.Vector.Abs(vectorSource[i + 1]);
-            }
-            i *= Vector<float>.Count;
-            for (; i < dest.Length; i++)
-            {
-                dest[i] = Math.Abs(source[i]);
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                acc += Vector256.Sum(f);
+                i += (nuint)Vector256<float>.Count;
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Abs(float[] dest, float[] source)
+        // Add the remainder
+        for (; i < (nuint)length; i++)
         {
-            Abs(new Span<float>(dest), new Span<float>(source));
+            acc += Unsafe.Add(ref rf, i);
         }
+        return acc;
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Abs(float[][] dest, float[][] source)
+    /// <summary>
+    /// Take the average of the absolute values
+    /// </summary>
+    /// <param name="first">The first vector</param>
+    /// <param name="firstIndex">Where to start in the first vector</param>
+    /// <param name="second">The second vector</param>
+    /// <param name="secondIndex">Where to start in the second vector</param>
+    /// <param name="length">The number of elements to read</param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float AbsDiffAverage(float[] first, int firstIndex, float[] second, int secondIndex, int length)
+    {
+        return AbsDiffAverage(new Span<float>(first, firstIndex, length), new Span<float>(second, secondIndex, length));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float AbsDiffAverage(Span<float> first, Span<float> second)
+    {
+        EnsureSameSize(first, second);
+        var length = first.Length;
+        ref var rf = ref MemoryMarshal.GetReference(first);
+        ref var rs = ref MemoryMarshal.GetReference(second);
+        nuint i = 0;
+        float acc = 0.0f;
+        // 16 floats per Vector512, we hard code this here just in case Vector512 is not supported
+        var end = (nuint)(length - 16);
+        if (Vector512.IsHardwareAccelerated && length >= 16)
         {
-            for (int row = 0; row < dest.Length; row++)
+            Vector512<float> acc1 = Vector512<float>.Zero;
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
             {
-                Abs(dest[row], source[row]);
+                var f = Vector512.LoadUnsafe(ref rf, i);
+                var s = Vector512.LoadUnsafe(ref rs, i);
+                var result = Vector512.Abs(f - s);
+                acc1 += result;
+            }
+            acc += Vector512.Sum(acc1);
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var result = Vector256.Abs(f - s);
+                acc += Vector256.Sum(result);
+                i += (nuint)Vector256<float>.Count;
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float MultiplyAndSum(Span<float> dest, Span<float> first, Span<float> second)
+        else if (Vector256.IsHardwareAccelerated && length >= 16)
         {
-            var remainder = dest.Length % Vector<float>.Count;
-            var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var acc1 = Vector<float>.Zero;
-            var acc2 = Vector<float>.Zero;
-            int i = 0;
-            for (; i < vectorFirst.Length - 1; i += 2)
+            // Vector256 needs to be doubled to match the same results as Vector512
+            Vector256<float> acc1 = Vector256<float>.Zero;
+            Vector256<float> acc2 = Vector256<float>.Zero;
+            for (; i <= end; i += (nuint)(Vector256<float>.Count * 2))
             {
-                acc1 += (vectorDest[i] = vectorFirst[i] * vectorSecond[i]);
-                acc2 += (vectorDest[i + 1] = vectorFirst[i + 1] * vectorSecond[i + 1]);
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var f2 = Vector256.LoadUnsafe(ref rf, i + (nuint)Vector256<float>.Count);
+                var s2 = Vector256.LoadUnsafe(ref rs, i + (nuint)Vector256<float>.Count);
+                var result1 = Vector256.Abs(f - s);
+                var result2 = Vector256.Abs(f2 - s2);
+                acc1 += result1;
+                acc2 += result2;
             }
-            acc1 += acc2;
-            float acc = 0.0f;
-            for (; i < dest.Length; i++)
+            acc += Vector256.Sum(acc1 + acc2);
+            // If there is one more Vector256 left, add it in
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
             {
-                acc += (dest[i] = first[i] * second[i]);
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var result = Vector256.Abs(f - s);
+                acc += Vector256.Sum(result);
+                i += (nuint)Vector256<float>.Count;
             }
-            return Sum(ref acc1) + acc;
         }
-
-        /// <summary>
-        /// Multiply the two vectors and store the results in the destination.  Return a running sum.
-        /// </summary>
-        /// <param name="destination">Where to save the data</param>
-        /// <param name="destIndex">What index to start at</param>
-        /// <param name="first">The first array to multiply</param>
-        /// <param name="firstIndex">The index to start at</param>
-        /// <param name="second">The second array to multiply</param>
-        /// <param name="secondIndex">The index to start at for the second array</param>
-        /// <param name="length">The amount of data to multiply</param>
-        /// <returns>The sum of all of the multiplies</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float MultiplyAndSum(float[] destination, int destIndex, float[] first, int firstIndex,
-            float[] second, int secondIndex, int length)
+        // Add the remainder
+        for (; i < (nuint)length; i++)
         {
-            return MultiplyAndSum(new Span<float>(destination, destIndex, length),
-                new Span<float>(first, firstIndex, length),
-                new Span<float>(second, secondIndex, length));
+            var result = MathF.Abs(Unsafe.Add(ref rf, i) - Unsafe.Add(ref rs, i));
+            acc += result;
         }
+        return acc / length;
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float MultiplyAndSum(Span<float> first, Span<float> second)
+    /// <summary>
+    /// Get the maximum difference from two arrays.
+    /// </summary>
+    /// <param name="first">The first vector</param>
+    /// <param name="firstIndex">Where to start in the first vector</param>
+    /// <param name="second">The second vector</param>
+    /// <param name="secondIndex">Where to start in the second vector</param>
+    /// <param name="length">The number of elements to read</param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float AbsDiffMax(float[] first, int firstIndex, float[] second, int secondIndex, int length)
+    {
+        return AbsDiffMax(new Span<float>(first, firstIndex, length), new Span<float>(second, secondIndex, length));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float AbsDiffMax(Span<float> first, Span<float> second)
+    {
+        EnsureSameSize(first, second);
+        var remainder = first.Length % Vector<float>.Count;
+        var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
+        var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
+        int i = 0;
+        var acc1 = Vector<float>.Zero;
+        var acc2 = Vector<float>.Zero;
+        for (; i < vectorFirst.Length - 1; i += 2)
         {
-            var remainder = first.Length % Vector<float>.Count;
-            var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var acc1 = Vector<float>.Zero;
-            var acc2 = Vector<float>.Zero;
-            int i = 0;
-            for (; i < vectorFirst.Length - 1; i += 2)
-            {
-                acc1 += vectorFirst[i] * vectorSecond[i];
-                acc2 += vectorFirst[i + 1] * vectorSecond[i + 1];
-            }
-            acc1 += acc2;
-            float acc = 0.0f;
-            for (; i < first.Length; i++)
-            {
-                acc += first[i] * second[i];
-            }
-            return Sum(ref acc1) + acc;
+            acc1 = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(vectorFirst[i] - vectorSecond[i]), acc1);
+            acc2 = System.Numerics.Vector.Max(System.Numerics.Vector.Abs(vectorFirst[i + 1] - vectorSecond[i + 1]), acc2);
         }
-
-        /// <summary>
-        /// Multiply the two vectors without storing the results but returning the total.
-        /// </summary>
-        /// <param name="first">The first array to multiply</param>
-        /// <param name="firstIndex">The index to start at</param>
-        /// <param name="second">The second array to multiply</param>
-        /// <param name="secondIndex">The index to start at for the second array</param>
-        /// <param name="length">The amount of data to multiply</param>
-        /// <returns>The sum of all of the multiplies</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float MultiplyAndSum(float[] first, int firstIndex, float[] second, int secondIndex, int length)
+        i *= Vector<float>.Count;
+        float maxAbsDiff = 0.0f;
+        for (; i < first.Length; i++)
         {
-            return MultiplyAndSum(new Span<float>(first, firstIndex, length),
-                new Span<float>(second, secondIndex, length));
+            maxAbsDiff = Math.Max(Math.Abs(first[i] - second[i]), maxAbsDiff);
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Multiply3AndSum(Span<float> first, Span<float> second, Span<float> third)
+        acc1 = System.Numerics.Vector.Max(acc1, acc2);
+        float[] temp = new float[Vector<float>.Count];
+        acc1.CopyTo(temp);
+        for (int j = 0; j < temp.Length; j++)
         {
-            var remainder = first.Length % Vector<float>.Count;
-            var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorThird = (third.Slice(0, third.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var acc1 = Vector<float>.Zero;
-            var acc2 = Vector<float>.Zero;
-            int i = 0;
-            for (; i < vectorFirst.Length - 1; i += 2)
-            {
-                acc1 += vectorFirst[i] * vectorSecond[i] * vectorThird[i];
-                acc2 += vectorFirst[i + 1] * vectorSecond[i + 1] * vectorThird[i + 1];
-            }
-            acc1 += acc2;
-            float acc = 0.0f;
-            for (; i < first.Length; i++)
-            {
-                acc += first[i] * second[i] * third[i];
-            }
-            return Sum(ref acc1) + acc;
+            maxAbsDiff = Math.Max(temp[j], maxAbsDiff);
         }
+        return maxAbsDiff;
+    }
 
-        /// <summary>
-        /// Multiply the two vectors without storing the results but returning the total.
-        /// </summary>
-        /// <param name="first">The first array to multiply</param>
-        /// <param name="firstIndex">The index to start at</param>
-        /// <param name="second">The second array to multiply</param>
-        /// <param name="secondIndex">The index to start at for the second array</param>
-        /// <param name="thirdIndex"></param>
-        /// <param name="length">The amount of data to multiply</param>
-        /// <param name="third"></param>
-        /// <returns>The sum of all of the multiplies</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Multiply3AndSum(float[] first, int firstIndex, float[] second, int secondIndex,
-            float[] third, int thirdIndex, int length)
-        {
-            return Multiply3AndSum(new Span<float>(first, firstIndex, length),
-                        new Span<float>(second, secondIndex, length),
-                        new Span<float>(third, thirdIndex, length));
-        }
+    /// <summary>
+    /// Sum the square differences of two arrays
+    /// </summary>
+    /// <param name="first">The array to Sum</param>
+    /// <param name="firstIndex">The index to start summing from</param>
+    /// <param name="second">The array to Sum</param>
+    /// <param name="secondIndex">The index to start summing from</param>
+    /// <param name="length">The number of elements to add</param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float SquareDiff(float[] first, int firstIndex, float[] second, int secondIndex, int length)
+    {
+        return SquareDiff(new Span<float>(first, firstIndex, length), new Span<float>(second, secondIndex, length));
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Multiply2Scalar1AndColumnSum(Span<float> dest, Span<float> first,
-            Span<float> second, float scalar, Span<float> columnSum)
+    public static float SquareDiff(Span<float> first, Span<float> second)
+    {
+        EnsureSameSize(first, second);
+        var length = first.Length;
+        ref var rf = ref MemoryMarshal.GetReference(first);
+        ref var rs = ref MemoryMarshal.GetReference(second);
+        nuint i = 0;
+        float acc = 0.0f;
+        // 16 floats per Vector512, we hard code this here just in case Vector512 is not supported
+        var end = (nuint)(length - 16);
+        if (Vector512.IsHardwareAccelerated && length >= 16)
         {
-            Vector<float> scalarV = new Vector<float>(scalar);
-            var remainder = first.Length % Vector<float>.Count;
-            var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorColumnSum = (columnSum.Slice(0, columnSum.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for(; i < vectorDest.Length - 1; i += 2)
+            Vector512<float> acc1 = Vector512<float>.Zero;
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
             {
-                vectorColumnSum[i] += (vectorDest[i] = vectorFirst[i] * vectorSecond[i] * scalarV);
-                vectorColumnSum[i + 1] += (vectorDest[i + 1] = vectorFirst[i + 1] * vectorSecond[i + 1] * scalarV);
+                var f = Vector512.LoadUnsafe(ref rf, i);
+                var s = Vector512.LoadUnsafe(ref rs, i);
+                var result = f - s;
+                acc1 += result * result;
             }
-            i *= Vector<float>.Count;
-            for (; i < dest.Length; i++)
+            acc += Vector512.Sum(acc1);
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
             {
-                columnSum[i] += (dest[i] = first[i] * second[i] * scalar);
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var result = f * s;
+                acc += Vector256.Sum(result * result);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= 16)
+        {
+            // Vector256 needs to be doubled to match the same results as Vector512
+            Vector256<float> acc1 = Vector256<float>.Zero;
+            Vector256<float> acc2 = Vector256<float>.Zero;
+            for (; i <= end; i += (nuint)(Vector256<float>.Count * 2))
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var f2 = Vector256.LoadUnsafe(ref rf, i + (nuint)Vector256<float>.Count);
+                var s2 = Vector256.LoadUnsafe(ref rs, i + (nuint)Vector256<float>.Count);
+                var result1 = f - s;
+                var result2 = f2 - s2;
+                acc1 += result1 * result1;
+                acc2 += result2 * result2;
+            }
+            acc += Vector256.Sum(acc1 + acc2);
+            // If there is one more Vector256 left, add it in
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var result = f - s;
+                acc += Vector256.Sum(result * result);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        // Add the remainder
+        for (; i < (nuint)length; i++)
+        {
+            var result = MathF.Abs(Unsafe.Add(ref rf, i) - Unsafe.Add(ref rs, i));
+            acc += result * result;
+        }
+        return acc;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Set(Span<float> dest, float value)
+    {
+        dest.Fill(value);
+    }
+
+    /// <summary>
+    /// Assign the given value to the whole array
+    /// </summary>
+    /// <param name="dest">The array to set</param>
+    /// <param name="value">The value to set it to</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Set(float[] dest, float value)
+    {
+        Array.Fill(dest, value);
+    }
+
+    /// <summary>
+    /// Assign the given value to the whole array
+    /// </summary>
+    /// <param name="dest">The array to set</param>
+    /// <param name="offset">The offset into the destination to start</param>
+    /// <param name="value">The value to assign to it</param>
+    /// <param name="length">The number of elements to assign</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Set(float[] dest, int offset, float value, int length)
+    {
+        Set(new Span<float>(dest, offset, length), value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Abs(Span<float> dest, Span<float> source)
+    {
+        EnsureSameSize(dest, source);
+        nuint i = 0;
+        ref var pDest = ref MemoryMarshal.GetReference(dest);
+        ref var pSource = ref MemoryMarshal.GetReference(source);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
+        {
+            // copy everything we can do inside of a vector
+            for (; i <= (nuint)(dest.Length - Vector512<float>.Count); i += (nuint)Vector512<float>.Count)
+            {
+                var x = Vector512.LoadUnsafe(ref pSource, i);
+                var local = Vector512.Abs(x);
+                Vector512.StoreUnsafe(local, ref pDest, i);
+            }
+
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
+            {
+                var x = Vector256.LoadUnsafe(ref pSource, i);
+                var local = Vector256.Abs(x);
+                Vector256.StoreUnsafe(local, ref pDest, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            for (; i <= (nuint)(dest.Length - Vector256<float>.Count); i += (nuint)Vector256<float>.Count)
+            {
+                var x = Vector256.LoadUnsafe(ref pSource, i);
+                var local = Vector256.Abs(x);
+                Vector256.StoreUnsafe(local, ref pDest, i);
             }
         }
 
-        /// <summary>
-        /// Multiply the two vectors and store the results in the destination.  Return a running sum.
-        /// </summary>
-        /// <param name="destination">Where to save the data</param>
-        /// <param name="destIndex">What index to start at</param>
-        /// <param name="first">The first array to multiply</param>
-        /// <param name="firstIndex">The index to start at</param>
-        /// <param name="second">The second array to multiply</param>
-        /// <param name="secondIndex">The index to start at for the second array</param>
-        /// <param name="columnIndex"></param>
-        /// <param name="length">The amount of data to multiply</param>
-        /// <param name="scalar"></param>
-        /// <param name="columnSum"></param>
-        /// <returns>The sum of all of the multiplies</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Multiply2Scalar1AndColumnSum(float[] destination, int destIndex, float[] first, int firstIndex,
-            float[] second, int secondIndex, float scalar, float[] columnSum, int columnIndex, int length)
+        for (; i < (nuint)dest.Length; i++)
         {
-            Multiply2Scalar1AndColumnSum(new Span<float>(destination, destIndex, length),
-                new Span<float>(first, firstIndex, length),
-                new Span<float>(second, secondIndex, length),
-                scalar,
-                new Span<float>(columnSum, columnIndex, length));
+            Unsafe.Add(ref pDest, i) = MathF.Abs(Unsafe.Add(ref pSource, i));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Multiply3Scalar1AndColumnSum(Span<float> dest, Span<float> first,
-            Span<float> second, Span<float> third, float scalar, Span<float> columnSum)
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Abs(float[] dest, float[] source)
+    {
+        Abs(new Span<float>(dest), new Span<float>(source));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Abs(float[][] dest, float[][] source)
+    {
+        for (int row = 0; row < dest.Length; row++)
         {
-            Vector<float> scalarV = new Vector<float>(scalar);
-            var remainder = first.Length % Vector<float>.Count;
-            var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorThird = (third.Slice(0, third.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorColumnSum = (columnSum.Slice(0, columnSum.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorDest.Length - 1; i += 2)
+            Abs(dest[row], source[row]);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float MultiplyAndSum(Span<float> dest, Span<float> first, Span<float> second)
+    {
+        EnsureSameSize(dest, first, second);
+        var length = dest.Length;
+        ref var rd = ref MemoryMarshal.GetReference(dest);
+        ref var rf = ref MemoryMarshal.GetReference(first);
+        ref var rs = ref MemoryMarshal.GetReference(second);
+        nuint i = 0;
+        float acc = 0.0f;
+        // 16 floats per Vector512, we hard code this here just in case Vector512 is not supported
+        var end = (nuint)(length - 16);
+        if (Vector512.IsHardwareAccelerated && length >= 16)
+        {
+            Vector512<float> acc1 = Vector512<float>.Zero;
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
             {
-                vectorColumnSum[i] += (vectorDest[i] = vectorFirst[i] * vectorSecond[i] * vectorThird[i] * scalarV);
-                vectorColumnSum[i + 1] += (vectorDest[i + 1] = vectorFirst[i + 1] * vectorSecond[i + 1] * vectorThird[i + 1] * scalarV);
+                var f = Vector512.LoadUnsafe(ref rf, i);
+                var s = Vector512.LoadUnsafe(ref rs, i);
+                var result = (f * s);
+                Vector512.StoreUnsafe(result, ref rd, i);
+                acc1 += result;
             }
-            i *= Vector<float>.Count;
-            for (; i < dest.Length; i++)
+            acc += Vector512.Sum(acc1);
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
             {
-                columnSum[i] += (dest[i] = first[i] * second[i] * third[i] * scalar);
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var result = f * s;
+                Vector256.StoreUnsafe(result, ref rd, i);
+                acc += Vector256.Sum(result);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= 16)
+        {
+            // Vector256 needs to be doubled to match the same results as Vector512
+            Vector256<float> acc1 = Vector256<float>.Zero;
+            Vector256<float> acc2 = Vector256<float>.Zero;
+            for (; i <= end; i += (nuint)(Vector256<float>.Count * 2))
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var f2 = Vector256.LoadUnsafe(ref rf, i + (nuint)Vector256<float>.Count);
+                var s2 = Vector256.LoadUnsafe(ref rs, i + (nuint)Vector256<float>.Count);
+                var result1 = f * s;
+                var result2 = f2 * s2;
+                acc1 += result1;
+                acc2 += result2;
+                Vector256.StoreUnsafe(result1, ref rd, i);
+                Vector256.StoreUnsafe(result2, ref rd, i + (nuint)Vector256<float>.Count);
+            }
+            acc += Vector256.Sum(acc1 + acc2);
+            // If there is one more Vector256 left, add it in
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var result = f * s;
+                acc += Vector256.Sum(result);
+                Vector256.StoreUnsafe(result, ref rd, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        // Add the remainder
+        for (; i < (nuint)length; i++)
+        {
+            var result = Unsafe.Add(ref rf, i) * Unsafe.Add(ref rs, i);
+            Unsafe.Add(ref rd, i) = result;
+            acc += result;
+        }
+        return acc;
+    }
+
+    /// <summary>
+    /// Multiply the two vectors and store the results in the destination.  Return a running sum.
+    /// </summary>
+    /// <param name="destination">Where to save the data</param>
+    /// <param name="destIndex">What index to start at</param>
+    /// <param name="first">The first array to multiply</param>
+    /// <param name="firstIndex">The index to start at</param>
+    /// <param name="second">The second array to multiply</param>
+    /// <param name="secondIndex">The index to start at for the second array</param>
+    /// <param name="length">The amount of data to multiply</param>
+    /// <returns>The sum of all of the multiplies</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float MultiplyAndSum(float[] destination, int destIndex, float[] first, int firstIndex,
+        float[] second, int secondIndex, int length)
+    {
+        return MultiplyAndSum(new Span<float>(destination, destIndex, length),
+            new Span<float>(first, firstIndex, length),
+            new Span<float>(second, secondIndex, length));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float MultiplyAndSum(Span<float> first, Span<float> second)
+    {
+        EnsureSameSize(first, second);
+        var length = first.Length;
+        ref var rf = ref MemoryMarshal.GetReference(first);
+        ref var rs = ref MemoryMarshal.GetReference(second);
+        nuint i = 0;
+        float acc = 0.0f;
+        // 16 floats per Vector512, we hard code this here just in case Vector512 is not supported
+        var end = (nuint)(length - 16);
+        if (Vector512.IsHardwareAccelerated && length >= 16)
+        {
+            Vector512<float> acc1 = Vector512<float>.Zero;
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var f = Vector512.LoadUnsafe(ref rf, i);
+                var s = Vector512.LoadUnsafe(ref rs, i);
+                var result = (f * s);
+                acc1 += result;
+            }
+            acc += Vector512.Sum(acc1);
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var result = f * s;
+                acc += Vector256.Sum(result);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= 16)
+        {
+            // Vector256 needs to be doubled to match the same results as Vector512
+            Vector256<float> acc1 = Vector256<float>.Zero;
+            Vector256<float> acc2 = Vector256<float>.Zero;
+            for (; i <= end; i += (nuint)(Vector256<float>.Count * 2))
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var f2 = Vector256.LoadUnsafe(ref rf, i + (nuint)Vector256<float>.Count);
+                var s2 = Vector256.LoadUnsafe(ref rs, i + (nuint)Vector256<float>.Count);
+                var result1 = f * s;
+                var result2 = f2 * s2;
+                acc1 += result1;
+                acc2 += result2;
+            }
+            acc += Vector256.Sum(acc1 + acc2);
+            // If there is one more Vector256 left, add it in
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var result = f * s;
+                acc += Vector256.Sum(result);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        // Add the remainder
+        for (; i < (nuint)length; i++)
+        {
+            var result = Unsafe.Add(ref rf, i) * Unsafe.Add(ref rs, i);
+            acc += result;
+        }
+        return acc;
+    }
+
+    /// <summary>
+    /// Multiply the two vectors without storing the results but returning the total.
+    /// </summary>
+    /// <param name="first">The first array to multiply</param>
+    /// <param name="firstIndex">The index to start at</param>
+    /// <param name="second">The second array to multiply</param>
+    /// <param name="secondIndex">The index to start at for the second array</param>
+    /// <param name="length">The amount of data to multiply</param>
+    /// <returns>The sum of all of the multiplies</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float MultiplyAndSum(float[] first, int firstIndex, float[] second, int secondIndex, int length)
+    {
+        return MultiplyAndSum(new Span<float>(first, firstIndex, length),
+            new Span<float>(second, secondIndex, length));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float Multiply3AndSum(Span<float> first, Span<float> second, Span<float> third)
+    {
+        EnsureSameSize(first, second, third);
+        var length = first.Length;
+        ref var rf = ref MemoryMarshal.GetReference(first);
+        ref var rs = ref MemoryMarshal.GetReference(second);
+        ref var rt = ref MemoryMarshal.GetReference(third);
+        nuint i = 0;
+        float acc = 0.0f;
+        // 16 floats per Vector512, we hard code this here just in case Vector512 is not supported
+        var end = (nuint)(length - 16);
+        if (Vector512.IsHardwareAccelerated && length >= 16)
+        {
+            Vector512<float> acc1 = Vector512<float>.Zero;
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var f = Vector512.LoadUnsafe(ref rf, i);
+                var s = Vector512.LoadUnsafe(ref rs, i);
+                var t = Vector512.LoadUnsafe(ref rt, i);
+                acc1 += (f * s * t);
+            }
+            acc += Vector512.Sum(acc1);
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var t = Vector256.LoadUnsafe(ref rt, i);
+                acc += Vector256.Sum(f * s * t);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= 16)
+        {
+            // Vector256 needs to be doubled to match the same results as Vector512
+            Vector256<float> acc1 = Vector256<float>.Zero;
+            Vector256<float> acc2 = Vector256<float>.Zero;
+            for (; i <= end; i += (nuint)(Vector256<float>.Count * 2))
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var t = Vector256.LoadUnsafe(ref rt, i);
+                var f2 = Vector256.LoadUnsafe(ref rf, i + (nuint)Vector256<float>.Count);
+                var s2 = Vector256.LoadUnsafe(ref rs, i + (nuint)Vector256<float>.Count);
+                var t2 = Vector256.LoadUnsafe(ref rt, i + (nuint)Vector256<float>.Count);
+                acc1 += (f * s * t);
+                acc2 += (f2 * s2 * t2);
+            }
+            acc += Vector256.Sum(acc1 + acc2);
+            // If there is one more Vector256 left, add it in
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var t = Vector256.LoadUnsafe(ref rt, i);
+                acc += Vector256.Sum(f * s * t);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        // Add the remainder
+        for (; i < (nuint)length; i++)
+        {
+            acc += Unsafe.Add(ref rf, i) * Unsafe.Add(ref rs, i) * Unsafe.Add(ref rt, i);
+        }
+        return acc;
+    }
+
+    /// <summary>
+    /// Multiply the two vectors without storing the results but returning the total.
+    /// </summary>
+    /// <param name="first">The first array to multiply</param>
+    /// <param name="firstIndex">The index to start at</param>
+    /// <param name="second">The second array to multiply</param>
+    /// <param name="secondIndex">The index to start at for the second array</param>
+    /// <param name="thirdIndex"></param>
+    /// <param name="length">The amount of data to multiply</param>
+    /// <param name="third"></param>
+    /// <returns>The sum of all of the multiplies</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float Multiply3AndSum(float[] first, int firstIndex, float[] second, int secondIndex,
+        float[] third, int thirdIndex, int length)
+    {
+        return Multiply3AndSum(new Span<float>(first, firstIndex, length),
+                    new Span<float>(second, secondIndex, length),
+                    new Span<float>(third, thirdIndex, length));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Multiply2Scalar1AndColumnSum(Span<float> dest, Span<float> first,
+        Span<float> second, float scalar, Span<float> columnSum)
+    {
+        EnsureSameSize(dest, first, second, columnSum);
+        var length = dest.Length;
+        ref var rd = ref MemoryMarshal.GetReference(dest);
+        ref var rf = ref MemoryMarshal.GetReference(first);
+        ref var rs = ref MemoryMarshal.GetReference(second);
+        ref var rc = ref MemoryMarshal.GetReference(columnSum);
+        nuint i = 0;
+        // 16 floats per Vector512, we hard code this here just in case Vector512 is not supported
+        var end = (nuint)(length - 16);
+        if (Vector512.IsHardwareAccelerated && length >= 16)
+        {
+            Vector512<float> t = Vector512.Create(scalar);
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var f = Vector512.LoadUnsafe(ref rf, i);
+                var s = Vector512.LoadUnsafe(ref rs, i);
+                var c = Vector512.LoadUnsafe(ref rc, i);
+                Vector512<float> result = (f * s * t);
+                Vector512.StoreUnsafe(result, ref rd, i);
+                Vector512.StoreUnsafe(c + result, ref rc, i);
+            }
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var c = Vector256.LoadUnsafe(ref rc, i);
+                var result = f * s * t.GetLower();
+                Vector256.StoreUnsafe(result, ref rd, i);
+                Vector256.StoreUnsafe(c + result, ref rc, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= 16)
+        {
+            // Vector256 needs to be doubled to match the same results as Vector512
+            Vector256<float> t = Vector256.Create(scalar);
+            for (; i <= end; i += (nuint)(Vector256<float>.Count * 2))
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var f2 = Vector256.LoadUnsafe(ref rf, i + (nuint)Vector256<float>.Count);
+                var s2 = Vector256.LoadUnsafe(ref rs, i + (nuint)Vector256<float>.Count);
+                var c = Vector256.LoadUnsafe(ref rc, i);
+                var c2 = Vector256.LoadUnsafe(ref rc, i + (nuint)Vector256<float>.Count);
+                var result1 = f * s * t;
+                var result2 = f2 * s2 * t;
+                Vector256.StoreUnsafe(result1, ref rd, i);
+                Vector256.StoreUnsafe(result2, ref rd, i + (nuint)Vector256<float>.Count);
+                Vector256.StoreUnsafe(c + result1, ref rc, i);
+                Vector256.StoreUnsafe(c2 + result2, ref rc, i + (nuint)Vector256<float>.Count);
+            }
+            // If there is one more Vector256 left, add it in
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var c = Vector256.LoadUnsafe(ref rc, i);
+                var result = f * s * t;
+                Vector256.StoreUnsafe(result, ref rd, i);
+                Vector256.StoreUnsafe(c + result, ref rc, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        // Add the remainder
+        for (; i < (nuint)length; i++)
+        {
+            var result = Unsafe.Add(ref rf, i) * Unsafe.Add(ref rs, i) * scalar;
+            Unsafe.Add(ref rd, i) = result;
+            Unsafe.Add(ref rc, i) += result;
+        }
+    }
+
+    /// <summary>
+    /// Multiply the two vectors and store the results in the destination.  Return a running sum.
+    /// </summary>
+    /// <param name="destination">Where to save the data</param>
+    /// <param name="destIndex">What index to start at</param>
+    /// <param name="first">The first array to multiply</param>
+    /// <param name="firstIndex">The index to start at</param>
+    /// <param name="second">The second array to multiply</param>
+    /// <param name="secondIndex">The index to start at for the second array</param>
+    /// <param name="columnIndex"></param>
+    /// <param name="length">The amount of data to multiply</param>
+    /// <param name="scalar"></param>
+    /// <param name="columnSum"></param>
+    /// <returns>The sum of all of the multiplies</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Multiply2Scalar1AndColumnSum(float[] destination, int destIndex, float[] first, int firstIndex,
+        float[] second, int secondIndex, float scalar, float[] columnSum, int columnIndex, int length)
+    {
+        Multiply2Scalar1AndColumnSum(new Span<float>(destination, destIndex, length),
+            new Span<float>(first, firstIndex, length),
+            new Span<float>(second, secondIndex, length),
+            scalar,
+            new Span<float>(columnSum, columnIndex, length));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Multiply3Scalar1AndColumnSum(Span<float> dest, Span<float> first,
+        Span<float> second, Span<float> third, float scalar, Span<float> columnSum)
+    {
+        EnsureSameSize(dest, first, second, third, columnSum);
+        var length = dest.Length;
+        ref var rd = ref MemoryMarshal.GetReference(dest);
+        ref var rf = ref MemoryMarshal.GetReference(first);
+        ref var rs = ref MemoryMarshal.GetReference(second);
+        ref var rt = ref MemoryMarshal.GetReference(third);
+        ref var rc = ref MemoryMarshal.GetReference(columnSum);
+        nuint i = 0;
+        // 16 floats per Vector512, we hard code this here just in case Vector512 is not supported
+        var end = (nuint)(length - 16);
+        if (Vector512.IsHardwareAccelerated && length >= 16)
+        {
+            Vector512<float> vScalar = Vector512.Create(scalar);
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var f = Vector512.LoadUnsafe(ref rf, i);
+                var s = Vector512.LoadUnsafe(ref rs, i);
+                var t = Vector512.LoadUnsafe(ref rt, i);
+                var c = Vector512.LoadUnsafe(ref rc, i);
+                Vector512<float> result = (f * s) * (t * vScalar);
+                Vector512.StoreUnsafe(result, ref rd, i);
+                Vector512.StoreUnsafe(c + result, ref rc, i);
+            }
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var t = Vector256.LoadUnsafe(ref rt, i);
+                var c = Vector256.LoadUnsafe(ref rc, i);
+                var result = (f * s) * (t * vScalar.GetLower());
+                Vector256.StoreUnsafe(result, ref rd, i);
+                Vector256.StoreUnsafe(c + result, ref rc, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= 16)
+        {
+            // Vector256 needs to be doubled to match the same results as Vector512
+            Vector256<float> vScalar = Vector256.Create(scalar);
+            for (; i <= end; i += (nuint)(Vector256<float>.Count * 2))
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var t = Vector256.LoadUnsafe(ref rt, i);
+                var f2 = Vector256.LoadUnsafe(ref rf, i + (nuint)Vector256<float>.Count);
+                var s2 = Vector256.LoadUnsafe(ref rs, i + (nuint)Vector256<float>.Count);
+                var t2 = Vector256.LoadUnsafe(ref rt, i + (nuint)Vector256<float>.Count);
+                var c = Vector256.LoadUnsafe(ref rc, i);
+                var c2 = Vector256.LoadUnsafe(ref rc, i + (nuint)Vector256<float>.Count);
+                var result1 = (f * s) * (t * vScalar);
+                var result2 = (f2 * s2) * (t2 * vScalar);
+                Vector256.StoreUnsafe(result1, ref rd, i);
+                Vector256.StoreUnsafe(result2, ref rd, i + (nuint)Vector256<float>.Count);
+                Vector256.StoreUnsafe(c + result1, ref rc, i);
+                Vector256.StoreUnsafe(c2 + result2, ref rc, i + (nuint)Vector256<float>.Count);
+            }
+            // If there is one more Vector256 left, add it in
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var t = Vector256.LoadUnsafe(ref rt, i);
+                var c = Vector256.LoadUnsafe(ref rc, i);
+                var result = (f * s) * (t * vScalar);
+                Vector256.StoreUnsafe(result, ref rd, i);
+                Vector256.StoreUnsafe(c + result, ref rc, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        // Add the remainder
+        for (; i < (nuint)length; i++)
+        {
+            var result = Unsafe.Add(ref rf, i) * Unsafe.Add(ref rs, i) * Unsafe.Add(ref rt, i) * scalar;
+            Unsafe.Add(ref rd, i) = result;
+            Unsafe.Add(ref rc, i) += result;
+        }
+    }
+
+    /// <summary>
+    /// Multiply the two vectors and store the results in the destination.  Return a running sum.
+    /// </summary>
+    /// <param name="destination">Where to save the data</param>
+    /// <param name="destIndex">What index to start at</param>
+    /// <param name="first">The first array to multiply</param>
+    /// <param name="firstIndex">The index to start at</param>
+    /// <param name="second">The second array to multiply</param>
+    /// <param name="secondIndex">The index to start at for the second array</param>
+    /// <param name="columnIndex"></param>
+    /// <param name="length">The amount of data to multiply</param>
+    /// <param name="third"></param>
+    /// <param name="thirdIndex"></param>
+    /// <param name="scalar"></param>
+    /// <param name="columnSum"></param>
+    /// <returns>The sum of all of the multiplies</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Multiply3Scalar1AndColumnSum(float[] destination, int destIndex, float[] first, int firstIndex,
+        float[] second, int secondIndex, float[] third, int thirdIndex, float scalar, float[] columnSum, int columnIndex, int length)
+    {
+        Multiply3Scalar1AndColumnSum(new Span<float>(destination, destIndex, length),
+            new Span<float>(first, firstIndex, length),
+            new Span<float>(second, secondIndex, length),
+            new Span<float>(third, thirdIndex, length),
+            scalar,
+            new Span<float>(columnSum, columnIndex, length));
+    }
+
+    public static void Average(Span<float> dest, Span<float> first, Span<float> second)
+    {
+        EnsureSameSize(dest, first, second);
+        var length = dest.Length;
+        ref var rd = ref MemoryMarshal.GetReference(dest);
+        ref var rf = ref MemoryMarshal.GetReference(first);
+        ref var rs = ref MemoryMarshal.GetReference(second);
+        nuint i = 0;
+        // 16 floats per Vector512, we hard code this here just in case Vector512 is not supported
+        var end = (nuint)(length - 16);
+        if (Vector512.IsHardwareAccelerated && length >= 16)
+        {
+            Vector512<float> half = Vector512.Create(0.5f);
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var f = Vector512.LoadUnsafe(ref rf, i);
+                var s = Vector512.LoadUnsafe(ref rs, i);
+                Vector512<float> result = (f * half) + (s * half);
+                Vector512.StoreUnsafe(result, ref rd, i);
+            }
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var half256 = Vector256.Create(0.5f);
+                var result = (f * half256) + (s * half256);
+                Vector256.StoreUnsafe(result, ref rd, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= 16)
+        {
+            // Vector256 needs to be doubled to match the same results as Vector512
+            Vector256<float> half = Vector256.Create(0.5f);
+            for (; i <= end; i += (nuint)(Vector256<float>.Count * 2))
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var f2 = Vector256.LoadUnsafe(ref rf, i + (nuint)Vector256<float>.Count);
+                var s2 = Vector256.LoadUnsafe(ref rs, i + (nuint)Vector256<float>.Count);
+                var result1 = (f * half) + (s * half);
+                var result2 = (f2 * half) + (s2 * half);
+                Vector256.StoreUnsafe(result1, ref rd, i);
+                Vector256.StoreUnsafe(result2, ref rd, i + (nuint)Vector256<float>.Count);
+            }
+            // If there is one more Vector256 left, add it in
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var f = Vector256.LoadUnsafe(ref rf, i);
+                var s = Vector256.LoadUnsafe(ref rs, i);
+                var result = (f * half) + (s * half);
+                Vector256.StoreUnsafe(result, ref rd, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        // Add the remainder
+        for (; i < (nuint)length; i++)
+        {
+            var result = (Unsafe.Add(ref rf, i) * 0.5f) + (Unsafe.Add(ref rs, i) * 0.5f);
+            Unsafe.Add(ref rd, i) = result;
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="destination"></param>
+    /// <param name="destIndex"></param>
+    /// <param name="first"></param>
+    /// <param name="firstIndex"></param>
+    /// <param name="second"></param>
+    /// <param name="secondIndex"></param>
+    /// <param name="length"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Average(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
+    {
+        Average(new Span<float>(destination, destIndex, length),
+            new Span<float>(first, firstIndex, length),
+            new Span<float>(second, secondIndex, length));
+    }
+
+    /// <summary>
+    /// Produce a new vector selecting the original value if it is finite.  If it is not,
+    /// select the alternative value.
+    /// </summary>
+    /// <param name="baseValues">The values to test for their finite property</param>
+    /// <param name="alternateValues">The values to replace if the base value is not finite</param>
+    /// <returns>A new vector containing the proper mix of the base and alternate values</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector512<float> SelectIfFinite(Vector512<float> baseValues, Vector512<float> alternateValues)
+    {
+        //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
+        return Vector512.ConditionalSelect(
+            Vector512.BitwiseAnd(Vector512.LessThanOrEqual(Vector512.Abs(baseValues), MaxFloat512), Vector512.GreaterThanOrEqual(baseValues, baseValues)),
+            baseValues, alternateValues
+            );
+    }
+
+    /// <summary>
+    /// Produce a new vector selecting the original value if it is finite.  If it is not,
+    /// select the alternative value.
+    /// </summary>
+    /// <param name="baseValues">The values to test for their finite property</param>
+    /// <param name="alternateValues">The values to replace if the base value is not finite</param>
+    /// <returns>A new vector containing the proper mix of the base and alternate values</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector256<float> SelectIfFinite(Vector256<float> baseValues, Vector256<float> alternateValues)
+    {
+        //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
+        return Vector256.ConditionalSelect(
+            Vector256.BitwiseAnd(Vector256.LessThanOrEqual(Vector256.Abs(baseValues), MaxFloat256), Vector256.GreaterThanOrEqual(baseValues, baseValues)),
+            baseValues, alternateValues
+            );
+    }
+
+    /// <summary>
+    /// Produce a new vector selecting the original value if it is finite.  If it is not,
+    /// select the alternative value.
+    /// </summary>
+    /// <param name="baseValues">The values to test for their finite property</param>
+    /// <param name="alternateValues">The values to replace if the base value is not finite</param>
+    /// <returns>A new vector containing the proper mix of the base and alternate values</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector<float> SelectIfFinite(Vector<float> baseValues, Vector<float> alternateValues)
+    {
+        //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
+        return System.Numerics.Vector.ConditionalSelect(
+            System.Numerics.Vector.BitwiseAnd(System.Numerics.Vector.LessThanOrEqual(System.Numerics.Vector.Abs(baseValues), MaxFloat), System.Numerics.Vector.GreaterThanOrEqual(baseValues, baseValues)),
+            baseValues, alternateValues
+            );
+    }
+
+    /// <summary>
+    /// Produce a new vector selecting the original value if it is finite.  If it is not,
+    /// select the alternative value.
+    /// </summary>
+    /// <param name="baseValues">The values to test for their finite property</param>
+    /// <param name="alternateValues">The values to replace if the base value is not finite</param>
+    /// <param name="minimumV"></param>
+    /// <returns>A new vector containing the proper mix of the base and alternate values</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector512<float> SelectIfFiniteAndLessThan(Vector512<float> baseValues, Vector512<float> alternateValues, Vector512<float> minimumV)
+    {
+        //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
+        return Vector512.ConditionalSelect(
+            Vector512.BitwiseAnd(Vector512.BitwiseAnd(Vector512.LessThanOrEqual(Vector512.Abs(baseValues), MaxFloat512),
+            Vector512.GreaterThanOrEqual(baseValues, baseValues)), Vector512.GreaterThanOrEqual(baseValues, minimumV)),
+            baseValues, alternateValues
+            );
+    }
+
+    /// <summary>
+    /// Produce a new vector selecting the original value if it is finite.  If it is not,
+    /// select the alternative value.
+    /// </summary>
+    /// <param name="baseValues">The values to test for their finite property</param>
+    /// <param name="alternateValues">The values to replace if the base value is not finite</param>
+    /// <param name="minimumV"></param>
+    /// <returns>A new vector containing the proper mix of the base and alternate values</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector256<float> SelectIfFiniteAndLessThan(Vector256<float> baseValues, Vector256<float> alternateValues, Vector256<float> minimumV)
+    {
+        //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
+        return Vector256.ConditionalSelect(
+            Vector256.BitwiseAnd(Vector256.BitwiseAnd(Vector256.LessThanOrEqual(Vector256.Abs(baseValues), MaxFloat256),
+            Vector256.GreaterThanOrEqual(baseValues, baseValues)), Vector256.GreaterThanOrEqual(baseValues, minimumV)),
+            baseValues, alternateValues
+            );
+    }
+
+    /// <summary>
+    /// Produce a new vector selecting the original value if it is finite.  If it is not,
+    /// select the alternative value.
+    /// </summary>
+    /// <param name="baseValues">The values to test for their finite property</param>
+    /// <param name="alternateValues">The values to replace if the base value is not finite</param>
+    /// <param name="minimumV"></param>
+    /// <returns>A new vector containing the proper mix of the base and alternate values</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector<float> SelectIfFiniteAndLessThan(Vector<float> baseValues, Vector<float> alternateValues, Vector<float> minimumV)
+    {
+        //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
+        return System.Numerics.Vector.ConditionalSelect(
+            System.Numerics.Vector.BitwiseAnd(System.Numerics.Vector.BitwiseAnd(System.Numerics.Vector.LessThanOrEqual(System.Numerics.Vector.Abs(baseValues), MaxFloat),
+            System.Numerics.Vector.GreaterThanOrEqual(baseValues, baseValues)), System.Numerics.Vector.GreaterThanOrEqual(baseValues, minimumV)),
+            baseValues, alternateValues
+            );
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReplaceIfNotFinite(Span<float> dest, float alternateValue)
+    {
+        var length = dest.Length;
+        ref var destination = ref MemoryMarshal.GetReference(dest);
+        nuint i = 0;
+        if (Vector512.IsHardwareAccelerated && length >= Vector512<float>.Count)
+        {
+            var altV = Vector512.Create(alternateValue);
+            for (; i <= (nuint)(length - Vector512<float>.Count); i += (nuint)Vector512<float>.Count)
+            {
+                Vector512.StoreUnsafe(SelectIfFinite(Vector512.LoadUnsafe(ref destination, i), altV), ref destination, i);
+            }
+
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var current = Vector256.LoadUnsafe(ref destination, i);
+                Vector256.StoreUnsafe(SelectIfFinite(current, altV.GetLower()), ref destination, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= Vector256<float>.Count)
+        {
+            var altV = Vector256.Create(alternateValue);
+            for (; i <= (nuint)(length - Vector256<float>.Count); i += (nuint)Vector256<float>.Count)
+            {
+                var current = Vector256.LoadUnsafe(ref destination, i);
+                Vector256.StoreUnsafe(SelectIfFinite(current, altV), ref destination, i);
             }
         }
 
-        /// <summary>
-        /// Multiply the two vectors and store the results in the destination.  Return a running sum.
-        /// </summary>
-        /// <param name="destination">Where to save the data</param>
-        /// <param name="destIndex">What index to start at</param>
-        /// <param name="first">The first array to multiply</param>
-        /// <param name="firstIndex">The index to start at</param>
-        /// <param name="second">The second array to multiply</param>
-        /// <param name="secondIndex">The index to start at for the second array</param>
-        /// <param name="columnIndex"></param>
-        /// <param name="length">The amount of data to multiply</param>
-        /// <param name="third"></param>
-        /// <param name="thirdIndex"></param>
-        /// <param name="scalar"></param>
-        /// <param name="columnSum"></param>
-        /// <returns>The sum of all of the multiplies</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Multiply3Scalar1AndColumnSum(float[] destination, int destIndex, float[] first, int firstIndex,
-            float[] second, int secondIndex, float[] third, int thirdIndex, float scalar, float[] columnSum, int columnIndex, int length)
+        for (; i < (nuint)length; i++)
         {
-            Multiply3Scalar1AndColumnSum(new Span<float>(destination, destIndex, length),
-                new Span<float>(first, firstIndex, length),
-                new Span<float>(second, secondIndex, length),
-                new Span<float>(third, thirdIndex, length),
-                scalar,
-                new Span<float>(columnSum, columnIndex, length));
-        }
-
-        public static void Average(Span<float> dest, Span<float> first, Span<float> second)
-        {
-            Vector<float> half = new Vector<float>(0.5f);
-            var remainder = first.Length % Vector<float>.Count;
-            var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorFirst = (first.Slice(0, first.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorSecond = (second.Slice(0, second.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorDest.Length - 1; i += 2)
+            var value = Unsafe.Add(ref destination, i);
+            if (!float.IsFinite(value))
             {
-                vectorDest[i] = (vectorFirst[i] + vectorSecond[i]) * half;
-                vectorDest[i + 1] = (vectorFirst[i + 1] + vectorSecond[i + 1]) * half;
-            }
-            i *= Vector<float>.Count;
-            for (; i < dest.Length; i++)
-            {
-                dest[i] = (first[i] + second[i]) * 0.5f;
+                Unsafe.Add(ref destination, i) = alternateValue;
             }
         }
+    }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="destination"></param>
-        /// <param name="destIndex"></param>
-        /// <param name="first"></param>
-        /// <param name="firstIndex"></param>
-        /// <param name="second"></param>
-        /// <param name="secondIndex"></param>
-        /// <param name="length"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Average(float[] destination, int destIndex, float[] first, int firstIndex, float[] second, int secondIndex, int length)
-        {
-            Average(new Span<float>(destination, destIndex, length),
-                new Span<float>(first, firstIndex, length),
-                new Span<float>(second, secondIndex, length));
-        }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="destination"></param>
+    /// <param name="destIndex"></param>
+    /// <param name="alternateValue"></param>
+    /// <param name="length"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReplaceIfNotFinite(float[] destination, int destIndex, float alternateValue, int length)
+    {
+        ReplaceIfNotFinite(new Span<float>(destination, destIndex, length), alternateValue);
+    }
 
-        /// <summary>
-        /// Produce a new vector selecting the original value if it is finite.  If it is not,
-        /// select the alternative value.
-        /// </summary>
-        /// <param name="baseValues">The values to test for their finite property</param>
-        /// <param name="alternateValues">The values to replace if the base value is not finite</param>
-        /// <returns>A new vector containing the proper mix of the base and alternate values</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector<float> SelectIfFinite(Vector<float> baseValues, Vector<float> alternateValues)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReplaceIfLessThanOrNotFinite(Span<float> dest, float alternateValue, float minimum)
+    {
+        var length = dest.Length;
+        ref var destination = ref MemoryMarshal.GetReference(dest);
+        nuint i = 0;
+        if (Vector512.IsHardwareAccelerated && length >= Vector512<float>.Count)
         {
-            //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
-            return System.Numerics.Vector.ConditionalSelect(
-                System.Numerics.Vector.BitwiseAnd(System.Numerics.Vector.LessThanOrEqual(System.Numerics.Vector.Abs(baseValues), MaxFloat), System.Numerics.Vector.GreaterThanOrEqual(baseValues, baseValues)),
-                baseValues, alternateValues
-                );
-        }
-
-        /// <summary>
-        /// Produce a new vector selecting the original value if it is finite.  If it is not,
-        /// select the alternative value.
-        /// </summary>
-        /// <param name="baseValues">The values to test for their finite property</param>
-        /// <param name="alternateValues">The values to replace if the base value is not finite</param>
-        /// <param name="minimumV"></param>
-        /// <returns>A new vector containing the proper mix of the base and alternate values</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector<float> SelectIfFiniteAndLessThan(Vector<float> baseValues, Vector<float> alternateValues, Vector<float> minimumV)
-        {
-            //If it is greater than the maximum value it is infinite, if it is not equal to itself it is NaN
-            return System.Numerics.Vector.ConditionalSelect(
-                System.Numerics.Vector.BitwiseAnd(System.Numerics.Vector.BitwiseAnd(System.Numerics.Vector.LessThanOrEqual(System.Numerics.Vector.Abs(baseValues), MaxFloat),
-                System.Numerics.Vector.GreaterThanOrEqual(baseValues, baseValues)), System.Numerics.Vector.GreaterThanOrEqual(baseValues, minimumV)),
-                baseValues, alternateValues
-                );
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReplaceIfNotFinite(Span<float> dest, float alternateValue)
-        {
-            Vector<float> altV = new Vector<float>(alternateValue);
-            var remainder = dest.Length % Vector<float>.Count;
-            var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorDest.Length - 1; i += 2)
+            var altV = Vector512.Create(alternateValue);
+            var minV = Vector512.Create(minimum);
+            for (; i <= (nuint)(length - Vector512<float>.Count); i += (nuint)Vector512<float>.Count)
             {
-                vectorDest[i] = SelectIfFinite(vectorDest[i], altV);
-                vectorDest[i + 1] = SelectIfFinite(vectorDest[i + 1], altV);
+                Vector512.StoreUnsafe(SelectIfFiniteAndLessThan(Vector512.LoadUnsafe(ref destination, i), altV, minV), ref destination, i);
             }
-            i *= Vector<float>.Count;
-            for (; i < dest.Length; i++)
+
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
             {
-                if (float.IsNaN(dest[i]) || float.IsInfinity(dest[i]))
-                {
-                    dest[i] = alternateValue;
-                }
+                var current = Vector256.LoadUnsafe(ref destination, i);
+                Vector256.StoreUnsafe(SelectIfFiniteAndLessThan(current, altV.GetLower(), minV.GetLower()), ref destination, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= Vector256<float>.Count)
+        {
+            var altV = Vector256.Create(alternateValue);
+            var minV = Vector256.Create(minimum);
+            for (; i <= (nuint)(length - Vector256<float>.Count); i += (nuint)Vector256<float>.Count)
+            {
+                var current = Vector256.LoadUnsafe(ref destination, i);
+                Vector256.StoreUnsafe(SelectIfFiniteAndLessThan(current, altV, minV), ref destination, i);
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="destination"></param>
-        /// <param name="destIndex"></param>
-        /// <param name="alternateValue"></param>
-        /// <param name="length"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReplaceIfNotFinite(float[] destination, int destIndex, float alternateValue, int length)
+        for (; i < (nuint)length; i++)
         {
-            ReplaceIfNotFinite(new Span<float>(destination, destIndex, length), alternateValue);
+            var value = Unsafe.Add(ref destination, i);
+            if (!float.IsFinite(value) || value < minimum)
+            {
+                Unsafe.Add(ref destination, i) = alternateValue;
+            }
         }
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReplaceIfLessThanOrNotFinite(Span<float> dest, float alternateValue, float minimum)
-        {
-            Vector<float> altV = new Vector<float>(alternateValue);
-            Vector<float> minV = new Vector<float>(minimum);
-            var remainder = dest.Length % Vector<float>.Count;
-            var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorDest.Length - 1; i += 2)
-            {
-                vectorDest[i] = SelectIfFiniteAndLessThan(vectorDest[i], altV, minV);
-                vectorDest[i + 1] = SelectIfFiniteAndLessThan(vectorDest[i + 1], altV, minV);
-            }
-            i *= Vector<float>.Count;
-            for (; i < dest.Length; i++)
-            {
-                if (float.IsInfinity(dest[i]) || !(dest[i] >= minimum))
-                {
-                    dest[i] = alternateValue;
-                }
-            }
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReplaceIfLessThanOrNotFinite(float[] destination, int destIndex, float alternateValue, float minimum, int length)
+    {
+        ReplaceIfLessThanOrNotFinite(new Span<float>(destination, destIndex, length), alternateValue, minimum);
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReplaceIfLessThanOrNotFinite(float[] destination, int destIndex, float alternateValue, float minimum, int length)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool AnyGreaterThan(Span<float> data, float rhs)
+    {
+        var rhsV = new Vector<float>(rhs);
+        var remainder = data.Length % Vector<float>.Count;
+        var vectorData = (data.Slice(0, data.Length - remainder)).NonPortableCast<float, Vector<float>>();
+        int i = 0;
+        for (; i < vectorData.Length - 1; i += 2)
         {
-            ReplaceIfLessThanOrNotFinite(new Span<float>(destination, destIndex, length), alternateValue, minimum);
+            if (System.Numerics.Vector.GreaterThanAny(vectorData[i], rhsV)
+                | System.Numerics.Vector.GreaterThanAny(vectorData[i + 1], rhsV))
+            {
+                return true;
+            }
         }
+        i *= Vector<float>.Count;
+        for (; i < data.Length; i++)
+        {
+            if (data[i] > rhs)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AnyGreaterThan(Span<float> data, float rhs)
-        {
-            var rhsV = new Vector<float>(rhs);
-            var remainder = data.Length % Vector<float>.Count;
-            var vectorData = (data.Slice(0, data.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorData.Length - 1; i += 2)
-            {
-                if(System.Numerics.Vector.GreaterThanAny(vectorData[i], rhsV)
-                    | System.Numerics.Vector.GreaterThanAny(vectorData[i + 1], rhsV))
-                {
-                    return true;
-                }
-            }
-            i *= Vector<float>.Count;
-            for (; i < data.Length; i++)
-            {
-                if(data[i] > rhs)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool AnyGreaterThan(float[] data, int dataIndex, float rhs, int length)
+    {
+        return AnyGreaterThan(new Span<float>(data, dataIndex, length), rhs);
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AnyGreaterThan(float[] data, int dataIndex, float rhs, int length)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool AreBoundedBy(Span<float> data, float baseNumber, float maxVarriation)
+    {
+        var baseV = new Vector<float>(baseNumber);
+        var maxmumVariationV = new Vector<float>(maxVarriation);
+        var remainder = data.Length % Vector<float>.Count;
+        var vectorData = (data.Slice(0, data.Length - remainder)).NonPortableCast<float, Vector<float>>();
+        int i = 0;
+        for (; i < vectorData.Length - 1; i += 2)
         {
-            return AnyGreaterThan(new Span<float>(data, dataIndex, length), rhs);
+            if (System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(vectorData[i] - baseV), maxmumVariationV)
+                | System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(vectorData[i + 1] - baseV), maxmumVariationV))
+            {
+                return true;
+            }
         }
+        i *= Vector<float>.Count;
+        for (; i < data.Length; i++)
+        {
+            if (Math.Abs(data[i] - baseNumber) > maxVarriation)
+            {
+                return true;
+            }
+        }
+        return true;
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AreBoundedBy(Span<float> data, float baseNumber, float maxVarriation)
-        {
-            var baseV = new Vector<float>(baseNumber);
-            var maxmumVariationV = new Vector<float>(maxVarriation);
-            var remainder = data.Length % Vector<float>.Count;
-            var vectorData = (data.Slice(0, data.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorData.Length - 1; i += 2)
-            {
-                if (System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(vectorData[i] - baseV), maxmumVariationV)
-                    | System.Numerics.Vector.GreaterThanAny(System.Numerics.Vector.Abs(vectorData[i + 1] - baseV), maxmumVariationV))
-                {
-                    return true;
-                }
-            }
-            i *= Vector<float>.Count;
-            for (; i < data.Length; i++)
-            {
-                if (Math.Abs(data[i] - baseNumber) > maxVarriation)
-                {
-                    return true;
-                }
-            }
-            return true;
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool AreBoundedBy(float[] data, int dataIndex, float baseNumber, float maxVarriation, int length)
+    {
+        return AreBoundedBy(new Span<float>(data, dataIndex, length), baseNumber, maxVarriation);
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AreBoundedBy(float[] data, int dataIndex, float baseNumber, float maxVarriation, int length)
+    internal static void ReplaceIfNaN(float[] dest, float[] source, float[] replacement, int offset, int length)
+    {
+        if (dest == null || source == null || replacement == null)
         {
-            return AreBoundedBy(new Span<float>(data, dataIndex, length), baseNumber, maxVarriation);
+            throw new ArgumentNullException();
         }
+        var remainder = length % Vector<float>.Count;
+        var destSpan = (new Span<float>(dest, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+        var sourceSpan = (new Span<float>(source, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+        var replacementSpan = (new Span<float>(replacement, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+        int i = 0;
+        for (; i < destSpan.Length - 1; i += 2)
+        {
+            destSpan[i] = System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.GreaterThanOrEqual(sourceSpan[i], sourceSpan[i]), sourceSpan[i], replacementSpan[i]);
+            destSpan[i + 1] = System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.GreaterThanOrEqual(sourceSpan[i + 1], sourceSpan[i + 1]), sourceSpan[i + 1], replacementSpan[i + 1]);
+        }
+        i *= Vector<float>.Count;
+        for (; i < length; i++)
+        {
+            dest[offset + i] = !float.IsNaN(source[offset + i]) ? source[offset + i] : replacement[offset + i];
+        }
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Exp(Span<float> dest, Span<float> x)
+    public static void Negate(float[] dest, float[] source, int offset, int length)
+    {
+        if (dest == null || source == null)
         {
-            for (int i = 0; i < dest.Length; i++)
-            {
-                dest[i] = (float)Math.Exp(x[i]);
-            }
+            throw new ArgumentNullException();
         }
+        var remainder = length % Vector<float>.Count;
+        var destSpan = (new Span<float>(dest, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+        var sourceSpan = (new Span<float>(source, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
+        int i = 0;
+        for (; i < destSpan.Length - 1; i += 2)
+        {
+            destSpan[i] = System.Numerics.Vector.Negate(sourceSpan[i]);
+            destSpan[i + 1] = System.Numerics.Vector.Negate(sourceSpan[i + 1]);
+        }
+        i *= Vector<float>.Count;
+        for (; i < length; i++)
+        {
+            dest[offset + i] = -source[offset + i];
+        }
+    }
 
-        /// <summary>
-        /// Applies exp(x) for each element in the array
-        /// </summary>
-        /// <param name="destination">Where to save the results.</param>
-        /// <param name="destIndex">An offset into the array to start saving.</param>
-        /// <param name="x">The vector to use as the exponent.</param>
-        /// <param name="xIndex">The offset into the exponent vector to start from.</param>
-        /// <param name="length">The number of elements to convert.</param>
-        /// <remarks>The series is unrolled 30 times which approximates the .Net implementation from System.Math.Exp</remarks>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Exp(float[] destination, int destIndex, float[] x, int xIndex, int length)
+    /// <summary>
+    /// Is the mask is 1, then the RHS is selected LHS if 0.
+    /// </summary>
+    /// <param name="lhs">The values to select if the LHS was selected.</param>
+    /// <param name="rhs">The values to select if the RHS was selected.</param>
+    /// <param name="mask">0 to select the LHS, 1 to select the RHS.</param>
+    /// <returns>A new vector with the selected elements.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector512<float> Blend(Vector512<float> lhs, Vector512<float> rhs, Vector512<float> mask)
+    {
+        if (Avx512F.IsSupported)
         {
-            Exp(new Span<float>(destination, destIndex, length), new Span<float>(x, xIndex, length));
+            return Avx512F.BlendVariable(lhs, rhs, mask);
         }
+        else
+        {
+            var invMask = Vector512.OnesComplement(mask);
+            return Vector512.BitwiseOr(Vector512.BitwiseAnd(lhs, invMask),
+                Vector512.BitwiseAnd(rhs, mask));
+        }
+    }
 
-        /// <summary>
-        /// Computes the Arithmetic Geometric mean for the given values.
-        /// </summary>
-        /// <param name="x">The first parameter vector. This parameter must be non negative!</param>
-        /// <param name="y">The second parameter vector. This parameter must be non negative!</param>
-        /// <seealso>
-        ///     <cref>https://en.wikipedia.org/wiki/Arithmetic–geometric_mean</cref>
-        /// </seealso>
-        /// <returns>The AGM for each element in the parameters</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector<float> ArithmeticGeometricMean(Vector<float> x, Vector<float> y)
+    /// <summary>
+    /// Is the mask is 1, then the RHS is selected LHS if 0.
+    /// </summary>
+    /// <param name="lhs">The values to select if the LHS was selected.</param>
+    /// <param name="rhs">The values to select if the RHS was selected.</param>
+    /// <param name="mask">0 to select the LHS, 1 to select the RHS.</param>
+    /// <returns>A new vector with the selected elements.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector512<double> Blend(Vector512<double> lhs, Vector512<double> rhs, Vector512<double> mask)
+    {
+        if (Avx512F.IsSupported)
         {
-            var half = new Vector<float>(0.5f);
-            var a = half * (x + y);
-            var g = System.Numerics.Vector.SquareRoot(x * y);
-            // 5 expansions seems to be sufficient for 32-bit floating point numbers
-            for (int i = 0; i < 5; i++)
-            {
-                var tempA = half * (a + g);
-                g = System.Numerics.Vector.SquareRoot(a * g);
-                a = tempA;
-            }
-            return a;
+            return Avx512F.BlendVariable(lhs, rhs, mask);
         }
+        else
+        {
+            var invMask = Vector512.OnesComplement(mask);
+            return Vector512.BitwiseOr(Vector512.BitwiseAnd(lhs, invMask),
+                Vector512.BitwiseAnd(rhs, mask));
+        }
+    }
 
-        /// <summary>
-        /// Computes the natural logarithm for each element in x
-        /// </summary>
-        /// <param name="x">The values to compute the logarithms of</param>
-        /// <returns>The vector of logarithms</returns>
-        /// <see>
-        ///     <cref>https://en.wikipedia.org/wiki/Natural_logarithm</cref>
-        /// </see>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector<float> Log(Vector<float> x)
+    /// <summary>
+    /// Is the mask is 1, then the RHS is selected LHS if 0.
+    /// </summary>
+    /// <param name="lhs">The values to select if the LHS was selected.</param>
+    /// <param name="rhs">The values to select if the RHS was selected.</param>
+    /// <param name="mask">0 to select the LHS, 1 to select the RHS.</param>
+    /// <returns>A new vector with the selected elements.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector256<float> Blend(Vector256<float> lhs, Vector256<float> rhs, Vector256<float> mask)
+    {
+        if (Avx.IsSupported)
         {
-            var two = new Vector<float>(2.0f);
-            var pi = new Vector<float>((float)Math.PI);
-            var mTimesln2 = new Vector<float>(0.693147181f * 16.0f);
-            var denom = new Vector<float>(4.0f) / (x * new Vector<float>(65536.0f));
-            return (pi / (two * ArithmeticGeometricMean(Vector<float>.One, denom))) - mTimesln2;
+            return Avx.BlendVariable(lhs, rhs, mask);
         }
+        else
+        {
+            var invMask = Vector256.OnesComplement(mask);
+            return Vector256.BitwiseOr(Vector256.BitwiseAnd(lhs, invMask),
+                Vector256.BitwiseAnd(rhs, mask));
+        }
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Log(Span<float> dest, Span<float> x)
+    /// <summary>
+    /// Is the mask is 1, then the RHS is selected LHS if 0.
+    /// </summary>
+    /// <param name="lhs">The values to select if the LHS was selected.</param>
+    /// <param name="rhs">The values to select if the RHS was selected.</param>
+    /// <param name="mask">0 to select the LHS, 1 to select the RHS.</param>
+    /// <returns>A new vector with the selected elements.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector256<double> Blend(Vector256<double> lhs, Vector256<double> rhs, Vector256<double> mask)
+    {
+        if (Avx.IsSupported)
         {
-            var remainder = dest.Length % Vector<float>.Count;
-            var vectorDest = (dest.Slice(0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var vectorX = (x.Slice(0, x.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            /*
-            The following code will be reintroduced when the Log has been validated.
-            for (; i < vectorDest.Length - 1; i += 2)
-            {
-                vectorDest[i] = Log(vectorX[i]);
-                vectorDest[i + 1] = Log(vectorX[i + 1]);
-            }
-            i *= Vector<float>.Count;*/
-            for (; i < dest.Length; i++)
-            {
-                dest[i] = (float)Math.Log(x[i]);
-            }
+            return Avx.BlendVariable(lhs, rhs, mask);
         }
+        else
+        {
+            var invMask = Vector256.OnesComplement(mask);
+            return Vector256.BitwiseOr(Vector256.BitwiseAnd(lhs, invMask),
+                Vector256.BitwiseAnd(rhs, mask));
+        }
+    }
 
-        /// <summary>
-        /// Applies log(x) for each element in the array and saves it into the destination.
-        /// </summary>
-        /// <param name="destination">Where to save the results.</param>
-        /// <param name="destIndex">An offset into the array to start saving.</param>
-        /// <param name="x">The vector to take the log of.</param>
-        /// <param name="xIndex">The offset into the array to start from.</param>
-        /// <param name="length">The number of elements to convert.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Log(float[] destination, int destIndex, float[] x, int xIndex, int length)
+    /// <summary>
+    /// Convert a single precision vector into two double precision vectors
+    /// </summary>
+    /// <param name="x">The single precision vector to convert</param>
+    /// <returns>The low and high positioned double precision vectors</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static (Vector512<double> low, Vector512<double> high) ConvertToDouble(Vector512<float> x)
+    {
+        Vector256<float> low = x.GetLower();
+        Vector256<float> high = x.GetUpper();
+        Vector512<double> lowD;
+        Vector512<double> highD;
+        if (Avx512F.IsSupported)
         {
-            Log(new Span<float>(destination, destIndex, length),
-                new Span<float>(x, xIndex, length));
+            lowD = Avx512F.ConvertToVector512Double(low);
+            highD = Avx512F.ConvertToVector512Double(high);
         }
+        else
+        {
+            lowD = Vector512.Create((double)low.GetElement(0), (double)low.GetElement(1), (double)low.GetElement(2), (double)low.GetElement(3),
+                (double)low.GetElement(4), (double)low.GetElement(5), (double)low.GetElement(6), (double)low.GetElement(7));
+            highD = Vector512.Create((double)high.GetElement(0), (double)high.GetElement(1), (double)high.GetElement(2), (double)high.GetElement(3),
+                (double)high.GetElement(4), (double)high.GetElement(5), (double)high.GetElement(6), (double)high.GetElement(7));
+        }
+        return (lowD, highD);
+    }
 
-        internal static void ReplaceIfNaN(float[] dest, float[] source, float[] replacement, int offset, int length)
+    /// <summary>
+    /// Convert a single precision vector into two double precision vectors
+    /// </summary>
+    /// <param name="x">The single precision vector to convert</param>
+    /// <returns>The low and high positioned double precision vectors</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static (Vector256<double> low, Vector256<double> high) ConvertToDouble(Vector256<float> x)
+    {
+        Vector128<float> low = x.GetLower();
+        Vector128<float> high = x.GetUpper();
+        Vector256<double> lowD;
+        Vector256<double> highD;
+        if (Avx512F.IsSupported)
         {
-            if (dest == null || source == null || replacement == null)
-            {
-                throw new ArgumentNullException();
-            }
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var sourceSpan = (new Span<float>(source, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var replacementSpan = (new Span<float>(replacement, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < destSpan.Length - 1; i += 2)
-            {
-                destSpan[i] = System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.GreaterThanOrEqual(sourceSpan[i], sourceSpan[i]), sourceSpan[i], replacementSpan[i]);
-                destSpan[i + 1] = System.Numerics.Vector.ConditionalSelect(System.Numerics.Vector.GreaterThanOrEqual(sourceSpan[i + 1], sourceSpan[i + 1]), sourceSpan[i + 1], replacementSpan[i + 1]);
-            }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
-            {
-                dest[offset + i] = !float.IsNaN(source[offset + i]) ? source[offset + i] : replacement[offset + i];
-            }
+            lowD = Avx512F.ConvertToVector256Double(low);
+            highD = Avx512F.ConvertToVector256Double(high);
         }
+        else
+        {
+            lowD = Vector256.Create((double)low.GetElement(0), (double)low.GetElement(1), (double)low.GetElement(2), (double)low.GetElement(3));
 
-        public static void Negate(float[] dest, float[] source, int offset, int length)
-        {
-            if (dest == null || source == null)
-            {
-                throw new ArgumentNullException();
-            }
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var sourceSpan = (new Span<float>(source, offset, length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < destSpan.Length - 1; i += 2)
-            {
-                destSpan[i] = System.Numerics.Vector.Negate(sourceSpan[i]);
-                destSpan[i + 1] = System.Numerics.Vector.Negate(sourceSpan[i + 1]);
-            }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
-            {
-                dest[offset + i] = -source[offset + i];
-            }
+            highD = Vector256.Create((double)high.GetElement(0), (double)high.GetElement(1), (double)high.GetElement(2), (double)high.GetElement(3));
         }
+        return (lowD, highD);
+    }
 
-        /// <summary>
-        /// Set all of the values in the given span to the given value.
-        /// </summary>
-        /// <param name="dest">The destination to set.</param>
-        /// <param name="value">The value to set it to.</param>
-        internal static void Memset(Span<float> dest, float value)
+    /// <summary>
+    /// Converts two double precision vectors into a single precision vector
+    /// </summary>
+    /// <param name="lowD">The lower half of the double precision vector</param>
+    /// <param name="highD">The upper half of the double precision vector</param>
+    /// <returns>A single precision vector with the combined lower and upper halves</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector512<float> ConvertToFloat(Vector512<double> lowD, Vector512<double> highD)
+    {
+        Vector512<float> result;
+        if (Avx512F.IsSupported)
         {
-            var remainder = (dest.Length) % Vector<float>.Count;
-            var destSpan = dest.Slice(0, dest.Length - remainder).NonPortableCast<float, Vector<float>>();
-            var vValue = new Vector<float>(value);
-            int i = 0;
-            for (; i < destSpan.Length; i++)
-            {
-                destSpan[i] = vValue;
-            }
-            i *= Vector<float>.Count;
-            for(;i<dest.Length;i++)
-            {
-                dest[i] = value;
-            }
+            result = Vector512.Create(Avx512F.ConvertToVector256Single(lowD), Avx512F.ConvertToVector256Single(highD));
         }
+        else
+        {
+            var low = Vector256.Create((float)lowD.GetElement(0), (float)lowD.GetElement(1), (float)lowD.GetElement(2), (float)lowD.GetElement(3),
+                (float)lowD.GetElement(4), (float)lowD.GetElement(5), (float)lowD.GetElement(6), (float)lowD.GetElement(7));
+            var high = Vector256.Create((float)highD.GetElement(0), (float)highD.GetElement(1), (float)highD.GetElement(2), (float)highD.GetElement(3),
+                (float)highD.GetElement(4), (float)highD.GetElement(5), (float)highD.GetElement(6), (float)highD.GetElement(7));
+            result = Vector512.Create(low, high);
+        }
+        return result;
+    }
+
+
+    /// <summary>
+    /// Converts two double precision vectors into a single precision vector
+    /// </summary>
+    /// <param name="lowD">The lower half of the double precision vector</param>
+    /// <param name="highD">The upper half of the double precision vector</param>
+    /// <returns>A single precision vector with the combined lower and upper halves</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector256<float> ConvertToFloat(Vector256<double> lowD, Vector256<double> highD)
+    {
+        Vector256<float> result;
+        if (Avx512F.IsSupported)
+        {
+            result = Vector256.Create(Avx512F.ConvertToVector128Single(lowD), Avx512F.ConvertToVector128Single(highD));
+        }
+        else
+        {
+            var low = Vector128.Create((float)lowD.GetElement(0), (float)lowD.GetElement(1), (float)lowD.GetElement(2), (float)lowD.GetElement(3));
+            var high = Vector128.Create((float)highD.GetElement(0), (float)highD.GetElement(1), (float)highD.GetElement(2), (float)highD.GetElement(3));
+            result = Vector256.Create(low, high);
+        }
+        return result;
+    }
+
+    [DoesNotReturn]
+    private static void ThrowNotSameSize()
+    {
+        throw new ArgumentException("The length of the parameters are not the same!");
+    }
+
+    private static bool EnsureSameSize(ReadOnlySpan<float> first, ReadOnlySpan<float> second)
+    {
+        if (first.Length != second.Length)
+        {
+            ThrowNotSameSize();
+        }
+        return true;
+    }
+
+    private static bool EnsureSameSize(ReadOnlySpan<float> first, ReadOnlySpan<float> second, ReadOnlySpan<float> third)
+    {
+        if (first.Length != second.Length)
+        {
+            ThrowNotSameSize();
+        }
+        if (first.Length != third.Length)
+        {
+            ThrowNotSameSize();
+        }
+        return true;
+    }
+
+
+    private static bool EnsureSameSize(ReadOnlySpan<float> first, ReadOnlySpan<float> second, ReadOnlySpan<float> third, ReadOnlySpan<float> fourth)
+    {
+        if (first.Length != second.Length)
+        {
+            ThrowNotSameSize();
+        }
+        if (first.Length != third.Length)
+        {
+            ThrowNotSameSize();
+        }
+        if (first.Length != fourth.Length)
+        {
+            ThrowNotSameSize();
+        }
+        return true;
+    }
+
+    private static bool EnsureSameSize(ReadOnlySpan<float> first, ReadOnlySpan<float> second, ReadOnlySpan<float> third, ReadOnlySpan<float> fourth
+        , ReadOnlySpan<float> fifth)
+    {
+        if (first.Length != second.Length)
+        {
+            ThrowNotSameSize();
+        }
+        if (first.Length != third.Length)
+        {
+            ThrowNotSameSize();
+        }
+        if (first.Length != fourth.Length)
+        {
+            ThrowNotSameSize();
+        }
+        if (first.Length != fifth.Length)
+        {
+            ThrowNotSameSize();
+        }
+        return true;
     }
 }

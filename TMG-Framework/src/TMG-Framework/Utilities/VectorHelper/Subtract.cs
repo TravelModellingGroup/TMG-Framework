@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2015-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2015-2026 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF.
 
@@ -18,147 +18,166 @@
 */
 
 using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using System.Threading.Tasks;
 
-namespace TMG.Utilities
+namespace TMG.Utilities;
+
+public static partial class VectorHelper
 {
-    public static partial class VectorHelper
+    /// <summary>
+    /// dest[i] = left[i] - right[i]
+    /// </summary>
+    /// <param name="dest">The destination span where the result is stored.</param>
+    /// <param name="left">The left-hand side span.</param>
+    /// <param name="right">The right-hand side span.</param>
+    public static void Subtract(Span<float> dest, ReadOnlySpan<float> left, ReadOnlySpan<float> right)
     {
-        public static void Subtract(float[] dest, float[] lhs, float rhs)
+        EnsureSameSize(dest, left, right);
+        nuint i = 0;
+        var end = (nuint)dest.Length - 16;
+        ref float destRef = ref MemoryMarshal.GetReference(dest);
+        ref float leftRef = ref MemoryMarshal.GetReference(left);
+        ref float rightRef = ref MemoryMarshal.GetReference(right);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
         {
-            var vectorLength = dest.Length / Vector<float>.Count;
-            var remainder = dest.Length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, 0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var lhsSpan = (new Span<float>(lhs, 0, lhs.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            Vector<float> rhsV = new Vector<float>(rhs);
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
             {
-                destSpan[i] = lhsSpan[i] - rhsV;
-                destSpan[i + 1] = lhsSpan[i + 1] - rhsV;
+                var vLeft = Vector512.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector512.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft - vRight;
+                vResult.StoreUnsafe(ref destRef, i);
             }
-            i *= Vector<float>.Count;
-            for (; i < dest.Length; i++)
+            // Check to see if we can perform a final 256-bit operation
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
             {
-                dest[i] = lhs[i] - rhs;
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft - vRight;
+                vResult.StoreUnsafe(ref destRef, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft - vRight;
+                vResult.StoreUnsafe(ref destRef, i);
             }
         }
 
-        public static void Subtract(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
+        for (; i < (nuint)dest.Length; i++)
         {
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            Vector<float> rhsV = new Vector<float>(rhs);
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
+            Unsafe.Add(ref destRef, i) = Unsafe.Add(ref leftRef, i) - Unsafe.Add(ref rightRef, i);
+        }
+    }
+
+    /// <summary>
+    /// dest[i] = left[i] - right
+    /// </summary>
+    /// <param name="dest">The destination span where the result is stored.</param>
+    /// <param name="left">The left-hand side span.</param>
+    /// <param name="right">The right-hand side scalar.</param>
+    public static void Subtract(Span<float> dest, ReadOnlySpan<float> left, float scalar)
+    {
+        EnsureSameSize(dest, left);
+        nuint i = 0;
+        var end = (nuint)dest.Length - 16;
+        ref float destRef = ref MemoryMarshal.GetReference(dest);
+        ref float leftRef = ref MemoryMarshal.GetReference(left);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
+        {
+            var vRight = Vector512.Create(scalar);
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
             {
-                destSpan[i] = lhsSpan[i] - rhsV;
-                destSpan[i + 1] = lhsSpan[i + 1] - rhsV;
+                var vLeft = Vector512.LoadUnsafe(ref leftRef, i);
+
+                var vResult = vLeft - vRight;
+                vResult.StoreUnsafe(ref destRef, i);
             }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
+            // Check to see if we can perform a final 256-bit operation
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
             {
-                dest[destIndex + i] = lhs[lhsIndex + i] - rhs;
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vRight256 = Vector256.Create(scalar);
+                var vResult = vLeft - vRight256;
+                vResult.StoreUnsafe(ref destRef, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            var vRight = Vector256.Create(scalar);
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vLeft = Vector256.LoadUnsafe(ref leftRef, i);
+                var vResult = vLeft - vRight;
+                vResult.StoreUnsafe(ref destRef, i);
             }
         }
 
-        public static void Subtract(float[] dest, float lhs, float[] rhs)
+        for (; i < (nuint)dest.Length; i++)
         {
-            var vectorLength = dest.Length / Vector<float>.Count;
-            var remainder = dest.Length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, 0, dest.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            var rhsSpan = (new Span<float>(rhs, 0, rhs.Length - remainder)).NonPortableCast<float, Vector<float>>();
-            Vector<float> lhsV = new Vector<float>(lhs);
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
+            Unsafe.Add(ref destRef, i) = Unsafe.Add(ref leftRef, i) - scalar;
+        }
+    }
+
+    /// <summary>
+    /// dest[i] = left - right[i]
+    /// </summary>
+    /// <param name="dest">The destination span where the result is stored.</param>
+    /// <param name="left">The left-hand side scalar.</param>
+    /// <param name="right">The right-hand side span.</param>
+    public static void Subtract(Span<float> dest, float left, ReadOnlySpan<float> right)
+    {
+        EnsureSameSize(dest, right);
+        nuint i = 0;
+        ref float destRef = ref MemoryMarshal.GetReference(dest);
+        ref float rightRef = ref MemoryMarshal.GetReference(right);
+
+        if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
+        {
+            var end = (nuint)dest.Length - 16;
+            var vLeft = Vector512.Create(left);
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
             {
-                destSpan[i] = lhsV - rhsSpan[i];
-                destSpan[i + 1] = lhsV - rhsSpan[i + 1];
+                var vRight = Vector512.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft - vRight;
+                vResult.StoreUnsafe(ref destRef, i);
             }
-            i *= Vector<float>.Count;
-            for (; i < dest.Length; i++)
+            // Check to see if we can perform a final 256-bit operation
+            if (i < (nuint)(dest.Length - Vector256<float>.Count))
             {
-                dest[i] = lhs - rhs[i];
+                var vLeft256 = Vector256.Create(left);
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft256 - vRight;
+                vResult.StoreUnsafe(ref destRef, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
+        {
+            var end = (nuint)(dest.Length - Vector256<float>.Count);
+            var vLeft = Vector256.Create(left);
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vRight = Vector256.LoadUnsafe(ref rightRef, i);
+                var vResult = vLeft - vRight;
+                vResult.StoreUnsafe(ref destRef, i);
             }
         }
 
-        public static void Subtract(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
+        for (; i < (nuint)dest.Length; i++)
         {
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            Vector<float> lhsV = new Vector<float>(lhs);
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
-            {
-                destSpan[i] = lhsV - rhsSpan[i];
-                destSpan[i + 1] = lhsV - rhsSpan[i + 1];
-            }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
-            {
-                dest[destIndex + i] = lhs - rhs[rhsIndex + i];
-            }
-        }
-
-        public static void Subtract(float[][] destination, float lhs, float[][] rhs)
-        {
-            Parallel.For(0, destination.Length, row =>
-            {
-                Subtract(destination[row], lhs, rhs[row]);
-            });
-        }
-
-        public static void Subtract(float[][] destination, float[][] lhs, float rhs)
-        {
-            Parallel.For(0, destination.Length, row =>
-            {
-                Subtract(destination[row], lhs[row], rhs);
-            });
-        }
-
-        public static void Subtract(float[][] destination, float[][] lhs, float[][] rhs)
-        {
-            Parallel.For(0, destination.Length, row =>
-            {
-                Subtract(destination[row], 0, lhs[row], 0, rhs[row], 0, destination[row].Length);
-            });
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="dest"></param>
-        /// <param name="destIndex"></param>
-        /// <param name="lhs"></param>
-        /// <param name="lhsIndex"></param>
-        /// <param name="rhs"></param>
-        /// <param name="rhsIndex"></param>
-        /// <param name="length"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Subtract(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
-        {
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
-            {
-                destSpan[i] = lhsSpan[i] - rhsSpan[i];
-                destSpan[i + 1] = lhsSpan[i + 1] - rhsSpan[i + 1];
-            }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
-            {
-                dest[destIndex + i] = lhs[lhsIndex + i] - rhs[rhsIndex + i];
-            }
+            Unsafe.Add(ref destRef, i) = left - Unsafe.Add(ref rightRef, i);
         }
     }
 }
+

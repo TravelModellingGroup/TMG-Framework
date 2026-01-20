@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2017 University of Toronto
+    Copyright 2017-2026 University of Toronto
 
     This file is part of TMG-Framework for XTMF2.
 
@@ -18,45 +18,71 @@
 */
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using TMG.Loading;
 using TMG.Test.Utilities;
-using XTMF2.RuntimeModules;
 
-namespace TMG.Test.Loading
+namespace TMG.Test.Loading;
+
+[TestClass]
+public class TestLoadVector
 {
-    [TestClass]
-    public class TestLoadVector
+    [TestMethod]
+    public void TestLoadVectorFromCSV()
     {
-        [TestMethod]
-        public void TestLoadVectorFromCSV()
+        var map = MapHelper.LoadMap(MapHelper.WriteCSV(64));
+        float[] data = new float[64];
+        for (int i = 0; i < data.Length; i++)
         {
-            var map = MapHelper.LoadMap(MapHelper.WriteCSV(64));
-            float[] data = new float[64];
-            for (int i = 0; i < data.Length; i++)
+            data[i] = 2.0f + i;
+        }
+        var vectorFileName = WriteVectorCSV(map, data);
+        LoadVectorFromCSV vecLoader = new LoadVectorFromCSV()
+        {
+            Categories = Helper.CreateParameter(map),
+            MapColumn = Helper.CreateParameter(0),
+            DataColumn = Helper.CreateParameter(1)
+        };
+        using (var stream = Helper.CreateReadStreamFromFile(vectorFileName))
+        {
+            var vector = vecLoader.Invoke(stream);
+            Assert.AreSame(map, vector.Categories);
+            var vData = vector.Data;
+            for (int i = 0; i < vData.Length; i++)
             {
-                data[i] = 2.0f + i;
-            }
-            var vectorFileName = VectorHelper.WriteVectorCSV(map, data);
-            LoadVectorFromCSV vecLoader = new LoadVectorFromCSV()
-            {
-                Categories = Helper.CreateParameter(map),
-                MapColumn = Helper.CreateParameter(0),
-                DataColumn = Helper.CreateParameter(1)
-            };
-            using (var stream = Helper.CreateReadStreamFromFile(vectorFileName))
-            {
-                var vector = vecLoader.Invoke(stream);
-                Assert.AreSame(map, vector.Categories);
-                var vData = vector.Data;
-                for (int i = 0; i < vData.Length; i++)
-                {
-                    Assert.AreEqual((float)(i + 2), vData[i], 0.00001f);
-                }
+                Assert.AreEqual((float)(i + 2), vData[i], 0.00001f);
             }
         }
     }
+
+    internal static string WriteVectorCSV(Categories categories, float[] data)
+    {
+        if (data.Length != categories.Count)
+        {
+            Assert.Fail("data length needs to be the same size as the map!");
+        }
+        var fileName = Path.GetTempFileName();
+        try
+        {
+            var vector = new Vector(categories);
+            Array.Copy(data, vector.Data, vector.Data.Length);
+            var save = new TMG.Saving.SaveVectorAsCSV()
+            {
+                MapColumnName = Helper.CreateParameter("Zone"),
+                DataColumnName = Helper.CreateParameter("Data")
+            };
+            using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
+            {
+                save.Invoke((vector, writeStream));
+            }
+            return fileName;
+        }
+        catch
+        {
+            File.Delete(fileName);
+            Assert.Fail("Unable to write vector CSV file");
+            return null;
+        }
+    }
 }
+

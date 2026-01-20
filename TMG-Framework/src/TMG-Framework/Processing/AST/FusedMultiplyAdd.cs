@@ -21,6 +21,7 @@ using XTMF2;
 using TMG.Utilities;
 using System;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace TMG.Frameworks.Data.Processing.AST
 {
@@ -103,7 +104,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = rhs.Accumulator ? rhs.VectorData : new Vector(rhs.VectorData);
                     var flat = retVector.Data;
-                    VectorHelper.FusedMultiplyAdd(flat, 0, rhs.VectorData.Data, 0, lhs.LiteralValue, add.LiteralValue, flat.Length);
+                    VectorHelper.FusedMultiplyAdd(flat, rhs.VectorData.Data, lhs.LiteralValue, add.LiteralValue);
                     return new ComputationResult(retVector, true);
                 }
                 else
@@ -115,11 +116,11 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var flatRhs = rhs.OdData.Data;
                     var flatAdd = add.LiteralValue;
                     var rowSize = retMatrix.RowCategories.Count;
-                    Parallel.For(0, rowSize, (int i) =>
+                    for (int i = 0; i < rowSize; i++)
                     {
-                        VectorHelper.FusedMultiplyAdd(flatRet, rowSize * i, flatRhs, rowSize * i,
-                            flatLhs, flatAdd, rowSize);
-                    });
+                        VectorHelper.FusedMultiplyAdd(flatRet, flatRhs,
+                            flatLhs, flatAdd);
+                    }
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -129,14 +130,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = lhs.Accumulator ? lhs.VectorData : new Vector(lhs.VectorData);
                     var flat = retVector.Data;
-                    VectorHelper.FusedMultiplyAdd(flat, 0, lhs.VectorData.Data, 0, rhs.LiteralValue, add.LiteralValue, flat.Length);
+                    VectorHelper.FusedMultiplyAdd(flat, lhs.VectorData.Data, lhs.LiteralValue, add.LiteralValue);
                     return new ComputationResult(retVector, true);
                 }
                 else
                 {
                     // matrix / float
                     var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData);
-                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.LiteralValue, add.LiteralValue, retMatrix.Data.Length);
+                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, lhs.OdData.Data, rhs.LiteralValue, add.LiteralValue);
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -147,29 +148,31 @@ namespace TMG.Frameworks.Data.Processing.AST
                     if (lhs.IsVectorResult && rhs.IsVectorResult)
                     {
                         var retVector = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new Vector(lhs.VectorData));
-                        VectorHelper.FusedMultiplyAdd(retVector.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, add.LiteralValue, retVector.Data.Length);
+                        VectorHelper.FusedMultiplyAdd(retVector.Data, lhs.VectorData.Data, rhs.VectorData.Data, add.LiteralValue);
                         return new ComputationResult(retVector, true, lhs.Direction);
                     }
                     else if (lhs.IsVectorResult)
                     {
                         var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData);
-                        var flatRet = retMatrix.Data;
-                        var flatRhs = rhs.OdData.Data;
                         var flatLhs = lhs.VectorData.Data;
                         var rowSize = flatLhs.Length;
                         if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            Parallel.For(0, rowSize, (int i) =>
+                            for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatRhs, i * rowSize, flatLhs[i], add.LiteralValue, rowSize);
-                            });
+                                var retRow = retMatrix.GetRow(i);
+                                var rhsRow = rhs.OdData.GetRow(i);
+                                VectorHelper.FusedMultiplyAdd(retRow, rhsRow, flatLhs[i], add.LiteralValue);
+                            }
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            Parallel.For(0, rowSize, (int i) =>
+                            for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatRhs, i * rowSize, flatLhs, 0, add.LiteralValue, rowSize);
-                            });
+                                var retRow = retMatrix.GetRow(i);
+                                var rhsRow = rhs.OdData.GetRow(i);
+                                VectorHelper.FusedMultiplyAdd(retRow, rhsRow, flatLhs, add.LiteralValue);
+                            }
                         }
                         else
                         {
@@ -180,23 +183,25 @@ namespace TMG.Frameworks.Data.Processing.AST
                     else
                     {
                         var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData);
-                        var flatRet = retMatrix.Data;
-                        var flatLhs = lhs.OdData.Data;
                         var flatRhs = rhs.VectorData.Data;
                         var rowSize = flatRhs.Length;
                         if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            Parallel.For(0, rowSize, (int i) =>
+                            for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs[i], add.LiteralValue, rowSize);
-                            });
+                                var retRow = retMatrix.GetRow(i);
+                                var lhsRow = lhs.OdData.GetRow(i);
+                                VectorHelper.FusedMultiplyAdd(retRow, lhsRow, flatRhs[i], add.LiteralValue);
+                            }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
-                            Parallel.For(0, rowSize, (int i) =>
+                            for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, add.LiteralValue, rowSize);
-                            });
+                                var retRow = retMatrix.GetRow(i);
+                                var lhsRow = lhs.OdData.GetRow(i);
+                                VectorHelper.FusedMultiplyAdd(retRow, lhsRow, flatRhs, add.LiteralValue);
+                            }
                         }
                         else
                         {
@@ -208,16 +213,12 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else
                 {
                     var retMatrix = lhs.Accumulator ? lhs.OdData : (rhs.Accumulator ? rhs.OdData : new Matrix(lhs.OdData));
-                    var flatRet = retMatrix.Data;
-                    var flatLhs = lhs.OdData.Data;
-                    var flatRhs = rhs.OdData.Data;
                     var flatAdd = add.LiteralValue;
                     var rowSize = retMatrix.RowCategories.Count;
-                    Parallel.For(0, rowSize, (int i) =>
-                    {
-                        VectorHelper.FusedMultiplyAdd(flatRet, rowSize * i, flatLhs, rowSize * i,
-                            flatRhs, rowSize * i, flatAdd, rowSize);
-                    });
+
+                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, lhs.OdData.Data,
+                        rhs.OdData.Data, flatAdd);
+
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -266,17 +267,23 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var rowSize = add.VectorData.Data.Length;
                     if (add.Direction == ComputationResult.VectorDirection.Vertical)
                     {
-                        Parallel.For(0, rowSize, (int i) =>
+                        for (int i = 0; i < rowSize; i++)
                         {
-                            VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.OdData.Data, i * rowSize, add.VectorData[i], rowSize);
-                        });
+                            var retRow = retMatrix.GetRow(i);
+                            var lhsRow = lhs.OdData.GetRow(i);
+                            var rhsRow = rhs.OdData.GetRow(i);
+                            VectorHelper.FusedMultiplyAdd(retRow, lhsRow, rhsRow, add.VectorData[i]);
+                        }
                     }
                     else
                     {
-                        Parallel.For(0, rowSize, (int i) =>
+                        for (int i = 0; i < rowSize; i++)
                         {
-                            VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.OdData.Data, i * rowSize, add.VectorData.Data, 0, rowSize);
-                        });
+                            var retRow = retMatrix.GetRow(i);
+                            var lhsRow = lhs.OdData.GetRow(i);
+                            var rhsRow = rhs.OdData.GetRow(i);
+                            VectorHelper.FusedMultiplyAdd(retRow, lhsRow, rhsRow, add.VectorData.Data);
+                        }
                     }
                     return new ComputationResult(retMatrix, true);
                 }
@@ -288,34 +295,42 @@ namespace TMG.Frameworks.Data.Processing.AST
                     {
                         if (add.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            Parallel.For(0, rowSize, (int i) =>
+                            for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data[i], add.VectorData.Data[i], rowSize);
-                            });
+                                var retRow = retMatrix.GetRow(i);
+                                var lhsRow = lhs.OdData.GetRow(i);
+                                VectorHelper.FusedMultiplyAdd(retRow, lhsRow, rhs.VectorData.Data[i], add.VectorData.Data[i]);
+                            }
                         }
                         else
                         {
-                            Parallel.For(0, rowSize, (int i) =>
+                            for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data[i], add.VectorData.Data, 0, rowSize);
-                            });
+                                var retRow = retMatrix.GetRow(i);
+                                var lhsRow = lhs.OdData.GetRow(i);
+                                VectorHelper.FusedMultiplyAdd(retRow, lhsRow, rhs.VectorData.Data[i], add.VectorData.Data);
+                            }
                         }
                     }
                     else
                     {
                         if (add.Direction == ComputationResult.VectorDirection.Vertical)
                         {
-                            Parallel.For(0, rowSize, (int i) =>
+                            for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data, 0, add.VectorData.Data[i], rowSize);
-                            });
+                                var retRow = retMatrix.GetRow(i);
+                                var lhsRow = lhs.OdData.GetRow(i);
+                                VectorHelper.FusedMultiplyAdd(retRow, lhsRow, rhs.VectorData.Data, add.VectorData.Data[i]);
+                            }
                         }
                         else
                         {
-                            Parallel.For(0, rowSize, (int i) =>
+                            for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.VectorData.Data, 0, add.VectorData.Data, 0, rowSize);
-                            });
+                                var retRow = retMatrix.GetRow(i);
+                                var lhsRow = lhs.OdData.GetRow(i);
+                                VectorHelper.FusedMultiplyAdd(retRow, lhsRow, rhs.VectorData.Data, add.VectorData.Data);
+                            }
                         }
                     }
                     return new ComputationResult(retMatrix, true);
@@ -327,17 +342,21 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var rowSize = add.VectorData.Data.Length;
                     if (add.Direction == ComputationResult.VectorDirection.Vertical)
                     {
-                        Parallel.For(0, rowSize, (int i) =>
+                        for (int i = 0; i < rowSize; i++)
                         {
-                            VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.LiteralValue, add.VectorData.Data[i], rowSize);
-                        });
+                            var retRow = retMatrix.GetRow(i);
+                            var lhsRow = lhs.OdData.GetRow(i);
+                            VectorHelper.FusedMultiplyAdd(retRow, lhsRow, rhs.LiteralValue, add.VectorData.Data[i]);
+                        }
                     }
                     else
                     {
-                        Parallel.For(0, rowSize, (int i) =>
+                        for (int i = 0; i < rowSize; i++)
                         {
-                            VectorHelper.FusedMultiplyAdd(retMatrix.Data, i * rowSize, lhs.OdData.Data, i * rowSize, rhs.LiteralValue, add.VectorData.Data, 0, rowSize);
-                        });
+                            var retRow = retMatrix.GetRow(i);
+                            var lhsRow = lhs.OdData.GetRow(i);
+                            VectorHelper.FusedMultiplyAdd(retRow, lhsRow, rhs.LiteralValue, add.VectorData.Data);
+                        }
                     }
                     return new ComputationResult(retMatrix, true);
                 }
@@ -356,7 +375,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var retVector = add.Accumulator ? add.VectorData :
                         (rhs.Accumulator ? rhs.VectorData :
                         (lhs.Accumulator ? lhs.VectorData : new Vector(lhs.VectorData)));
-                    VectorHelper.FusedMultiplyAdd(retVector.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, add.VectorData.Data, 0, retVector.Data.Length);
+                    VectorHelper.FusedMultiplyAdd(retVector.Data, lhs.VectorData.Data, rhs.VectorData.Data, add.VectorData.Data);
                     return new ComputationResult(retVector, true, add.Direction == lhs.Direction && add.Direction == rhs.Direction ? add.Direction : ComputationResult.VectorDirection.Unassigned);
                 }
                 // vector * lit + vector
@@ -364,8 +383,8 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = add.Accumulator ? add.VectorData :
                         (lhs.Accumulator ? lhs.VectorData : new Vector(lhs.VectorData));
-                    VectorHelper.FusedMultiplyAdd(retVector.Data, 0, lhs.VectorData.Data, 0, rhs.LiteralValue,
-                        add.VectorData.Data, 0, add.VectorData.Data.Length);
+                    VectorHelper.FusedMultiplyAdd(retVector.Data, lhs.VectorData.Data, rhs.LiteralValue,
+                        add.VectorData.Data);
                     return new ComputationResult(retVector, true, add.Direction == lhs.Direction && add.Direction == rhs.Direction ? add.Direction : ComputationResult.VectorDirection.Unassigned);
                 }
             }
@@ -403,15 +422,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var flatRhs = rhs.OdData.Data;
                     var flatAdd = add.OdData.Data;
                     var rowSize = retMatrix.RowCategories.Count;
-                    const int stepSize = 64;
-                    Parallel.For(0, (int)Math.Ceiling(rowSize / (double)stepSize) + 1, (int i) =>
-                    {
-                        var pos = rowSize * i * stepSize;
-                        for (int j = 0; j < stepSize && pos < flatRet.Length; j++, pos += rowSize)
-                        {
-                            VectorHelper.FusedMultiplyAdd(flatRet, flatLhs, flatRhs, flatAdd, pos, rowSize);
-                        }
-                    });
+                    VectorHelper.FusedMultiplyAdd(flatRet, flatLhs, flatRhs, flatAdd);                   
                     return new ComputationResult(retMatrix, true);
                 }
                 else if (rhs.IsVectorResult)
@@ -425,17 +436,23 @@ namespace TMG.Frameworks.Data.Processing.AST
                     var rowSize = retMatrix.RowCategories.Count;
                     if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                     {
-                        Parallel.For(0, rowSize, (int i) =>
+                        for (int i = 0; i < rowSize; i++)
                         {
-                            VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs[i], flatAdd, i * rowSize, rowSize);
-                        });
+                            var retRow = retMatrix.GetRow(i);
+                            var lhsRow = lhs.OdData.GetRow(i);
+                            var addRow = add.OdData.GetRow(i);
+                            VectorHelper.FusedMultiplyAdd(retRow, lhsRow, flatRhs[i], addRow);
+                        }
                     }
                     else
                     {
-                        Parallel.For(0, rowSize, (int i) =>
+                        for (int i = 0; i < rowSize; i++)
                         {
-                            VectorHelper.FusedMultiplyAdd(flatRet, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, flatAdd, i * rowSize, rowSize);
-                        });
+                            var retRow = retMatrix.GetRow(i);
+                            var lhsRow = lhs.OdData.GetRow(i);
+                            var addRow = add.OdData.GetRow(i);
+                            VectorHelper.FusedMultiplyAdd(retRow, lhsRow, flatRhs, addRow);
+                        }
                     }
                     return new ComputationResult(retMatrix, true);
                 }
@@ -444,12 +461,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     //RHS is scalar
                     var retMatrix = add.Accumulator ? add.OdData :
                         (lhs.Accumulator ? lhs.OdData : new Matrix(add.OdData));
-                    var rowSize = retMatrix.RowCategories.Count;
-                    Parallel.For(0, rowSize, (int i) =>
-                    {
-                        VectorHelper.FusedMultiplyAdd(retMatrix.Data, rowSize * i, lhs.OdData.Data, rowSize * i, rhs.LiteralValue,
-                            add.OdData.Data, rowSize * i, rowSize);
-                    });
+                    VectorHelper.FusedMultiplyAdd(retMatrix.Data, lhs.OdData.Data, rhs.LiteralValue, add.OdData.Data);
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -468,7 +480,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         // if the directions don't add up then the sum operation would be undefined!
                         return new ComputationResult("Unable to add vector without directionality starting at position " + MulLhs.Start + "!");
                     }
-                    VectorHelper.Multiply(tempVector.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, tempVector.Data.Length);
+                    VectorHelper.Multiply(tempVector.Data, lhs.VectorData.Data, rhs.VectorData.Data);
                 }
                 else
                 {
@@ -479,14 +491,18 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     Parallel.For(0, rowSize, (int i) =>
                     {
-                        VectorHelper.Add(flatRet, i * rowSize, flatAdd, i * rowSize, flatTemp[i], rowSize);
+                        var retRow = retMatrix.GetRow(i);
+                        var addRow = add.OdData.GetRow(i);
+                        VectorHelper.Add(retRow, addRow, flatTemp[i]);
                     });
                 }
                 else
                 {
                     Parallel.For(0, rowSize, (int i) =>
                     {
-                        VectorHelper.Add(flatRet, i * rowSize, flatAdd, i * rowSize, flatTemp, 0, rowSize);
+                        var retRow = retMatrix.GetRow(i);
+                        var addRow = add.OdData.GetRow(i);
+                        VectorHelper.Add(retRow, flatTemp, addRow);
                     });
                 }
                 return new ComputationResult(retMatrix, true);

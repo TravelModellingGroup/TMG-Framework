@@ -498,7 +498,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else if (flatRead == flatWrite)
                 {
                     // we only need to accumulate if we are going to return a previously accumulated matrix.
-                    VectorHelper.Memset(flatWrite, 0f);
+                    flatWrite.Fill(0f);
                 }
             });
             return new ComputationResult(writeTo, true);
@@ -692,7 +692,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 var saveTo = values[0].Accumulator ? values[0].VectorData : new Vector(values[0].VectorData);
                 var flat = saveTo.Data;
                 var source = values[0].VectorData.Data;
-                VectorHelper.Log(flat, 0, source, 0, source.Length);
+                VectorHelper.Log(flat, source);
                 return new ComputationResult(saveTo, true);
             }
             else
@@ -700,7 +700,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 var saveTo = values[0].Accumulator ? values[0].OdData : new Matrix(values[0].OdData);
                 var flat = saveTo.Data;
                 var source = values[0].OdData.Data;
-                VectorHelper.Log(flat, 0, source, 0, source.Length);
+                VectorHelper.Log(flat, source);
                 return new ComputationResult(saveTo, true);
             }
         }
