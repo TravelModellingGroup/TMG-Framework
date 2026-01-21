@@ -77,28 +77,30 @@ namespace TMG.Frameworks.Data.Processing.AST
                     if (lhs.IsVectorResult && rhs.IsVectorResult)
                     {
                         var retMatrix = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new Vector(lhs.VectorData));
-                        VectorHelper.Subtract(retMatrix.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, retMatrix.Data.Length);
+                        VectorHelper.Pow(retMatrix.Data, lhs.VectorData.Data, rhs.VectorData.Data);
                         return new ComputationResult(retMatrix, true, lhs.Direction);
                     }
                     else if (lhs.IsVectorResult)
                     {
                         var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData);
-                        var flatRet = retMatrix.Data;
-                        var flatRhs = rhs.OdData.Data;
                         var flatLhs = lhs.VectorData.Data;
                         var rowSize = flatLhs.Length;
                         if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.Pow(retMatrix.Data, i * rowSize, flatLhs[i], flatRhs, i * rowSize, rowSize);
+                                var retRow = retMatrix.GetRow(i);
+                                var rhsRow = rhs.OdData.GetRow(i);
+                                VectorHelper.Pow(retRow, flatLhs[i], rhsRow);
                             }
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.Pow(retMatrix.Data, i * rowSize, flatLhs, 0, flatRhs, i * rowSize, rowSize);
+                                var retRow = retMatrix.GetRow(i);
+                                var rhsRow = rhs.OdData.GetRow(i);
+                                VectorHelper.Pow(retRow, flatLhs, rhsRow);
                             }
                         }
                         else
@@ -110,22 +112,24 @@ namespace TMG.Frameworks.Data.Processing.AST
                     else
                     {
                         var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData);
-                        var flatRet = retMatrix.Data;
-                        var flatLhs = lhs.OdData.Data;
                         var flatRhs = rhs.VectorData.Data;
                         var rowSize = flatRhs.Length;
                         if (rhs.Direction == ComputationResult.VectorDirection.Vertical)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.Pow(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs[i], rowSize);
+                                var retRow = retMatrix.GetRow(i);
+                                var lhsRow = lhs.OdData.GetRow(i);
+                                VectorHelper.Pow(retRow, lhsRow, flatRhs[i]);
                             }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.Pow(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, rowSize);
+                                var retRow = retMatrix.GetRow(i);
+                                var lhsRow = lhs.OdData.GetRow(i);
+                                VectorHelper.Pow(retRow, lhsRow, flatRhs);
                             }
                         }
                         else

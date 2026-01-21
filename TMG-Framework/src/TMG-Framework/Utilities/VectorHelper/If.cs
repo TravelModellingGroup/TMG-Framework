@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2018-2026 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF2.
 
@@ -18,34 +18,77 @@
 */
 
 using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using static System.Numerics.Vector;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+
 namespace TMG.Utilities
 {
     public static partial class VectorHelper
     {
+        /// <summary>
+        /// Sets dest[i] = ifTrue[i] if cond[i] != 0 else ifFalse[i] for all i
+        /// </summary>
+        /// <param name="dest">The location to store the results to.</param>
+        /// <param name="cond">The variable containing the condition values.</param>
+        /// <param name="ifTrue">The values to set if the condition is not zero.</param>
+        /// <param name="ifFalse">The values to set if the condition is zero.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void If(float[] dest, int destIndex, float[] cond, int condIndex, float[] ifTrue, int trueIndex, float[] ifFalse, int falseIndex, int length)
+        public static void If(Span<float> dest, Span<float> cond, Span<float> ifTrue, Span<float> ifFalse)
         {
-            var zero = Vector<float>.Zero;
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var condSpan = (new Span<float>(cond, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var trueSpan = (new Span<float>(ifTrue, trueIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var falseSpan = (new Span<float>(ifFalse, falseIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            int i = 0;
-            for (; i < vectorLength; i+=2)
+            EnsureSameSize(dest, cond, ifTrue, ifFalse);
+            nuint i = 0;
+            var end = (nuint)dest.Length - 16;
+            ref float destRef = ref MemoryMarshal.GetReference(dest);
+            ref float condRef = ref MemoryMarshal.GetReference(cond);
+            ref float ifTrueRef = ref MemoryMarshal.GetReference(ifTrue);
+            ref float ifFalseRef = ref MemoryMarshal.GetReference(ifFalse);
+
+            if (Vector512.IsHardwareAccelerated && dest.Length >= Vector512<float>.Count)
             {
-                destSpan[i] = ConditionalSelect(GreaterThan(condSpan[i], zero), trueSpan[i], falseSpan[i]);
-                destSpan[i + 1] = ConditionalSelect(GreaterThan(condSpan[i + 1], zero), trueSpan[i + 1], falseSpan[i + 1]);
+                var vZero = Vector512<float>.Zero;
+                for (; i <= end; i += (nuint)Vector512<float>.Count)
+                {
+                    var vCond = Vector512.LoadUnsafe(ref condRef, i);
+                    var vIfTrue = Vector512.LoadUnsafe(ref ifTrueRef, i);
+                    var vIfFalse = Vector512.LoadUnsafe(ref ifFalseRef, i);
+                    var mask = Vector512.Equals(vCond, vZero);
+                    // The mask is for the false case so true and false are swapped here
+                    var vResult = Vector512.ConditionalSelect(mask, vIfFalse, vIfTrue);
+                    vResult.StoreUnsafe(ref destRef, i);
+                }
+                // Check to see if we can perform a final 256-bit operation
+                if (i < (nuint)(dest.Length - Vector256<float>.Count))
+                {
+                    var vCond = Vector256.LoadUnsafe(ref condRef, i);
+                    var vIfTrue = Vector256.LoadUnsafe(ref ifTrueRef, i);
+                    var vIfFalse = Vector256.LoadUnsafe(ref ifFalseRef, i);
+                    var mask = Vector256.Equals(vCond, Vector256<float>.Zero);
+                    // The mask is for the false case so true and false are swapped here
+                    var vResult = Vector256.ConditionalSelect(mask, vIfFalse, vIfTrue);
+                    vResult.StoreUnsafe(ref destRef, i);
+                    i += (nuint)Vector256<float>.Count;
+                }
             }
-            i *= Vector<float>.Count;
-            for(; i < length; i++)
+            else if (Vector256.IsHardwareAccelerated && dest.Length >= Vector256<float>.Count)
             {
-                dest[destIndex + i] = cond[condIndex + i] > 0f ? ifTrue[trueIndex + i] : ifFalse[falseIndex + i];
+                var vZero = Vector256<float>.Zero;
+                for (; i <= end; i += (nuint)Vector256<float>.Count)
+                {
+                    var vCond = Vector256.LoadUnsafe(ref condRef, i);
+                    var vIfTrue = Vector256.LoadUnsafe(ref ifTrueRef, i);
+                    var vIfFalse = Vector256.LoadUnsafe(ref ifFalseRef, i);
+                    var mask = Vector256.Equals(vCond, vZero);
+                    // The mask is for the false case so true and false are swapped here
+                    var vResult = Vector256.ConditionalSelect(mask, vIfFalse, vIfTrue);
+                    vResult.StoreUnsafe(ref destRef, i);
+                }
+            }
+
+            for (; i < (nuint)dest.Length; i++)
+            {
+                float c = Unsafe.Add(ref condRef, i);
+                Unsafe.Add(ref destRef, i) = c != 0.0f ? Unsafe.Add(ref ifTrueRef, i) : Unsafe.Add(ref ifFalseRef, i);
             }
         }
     }
