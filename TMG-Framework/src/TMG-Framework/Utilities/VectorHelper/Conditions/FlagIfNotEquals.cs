@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2015-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2015-2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF.
 
@@ -21,20 +21,19 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Threading.Tasks;
-using static System.Numerics.Vector;
 
 namespace TMG.Utilities;
 
 public static partial class VectorHelper
 {
+
     /// <summary>
-    /// dest[i] = lhs < rhs[i] ? 1.0f : 0.0f
+    /// dest[i] = value != data[i] ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
     /// <param name="lhs">The scalar value to compare against.</param>
     /// <param name="rhs">The data span.</param>
-    public static void FlagIfLessThan(Span<float> dest, float lhs, ReadOnlySpan<float> rhs)
+    public static void FlagIfNotEquals(Span<float> dest, float lhs, ReadOnlySpan<float> rhs)
     {
         EnsureSameSize(dest, rhs);
 
@@ -50,7 +49,7 @@ public static partial class VectorHelper
             for (; i <= length - (nuint)Vector512<float>.Count; i += (nuint)Vector512<float>.Count)
             {
                 var rhsV = Vector512.LoadUnsafe(ref pRhs, i);
-                var destV = Blend(vZero, vOne, Vector512.LessThan(lhsV, rhsV));
+                var destV = Blend(vOne, vZero, Vector512.Equals(rhsV, lhsV));
                 destV.StoreUnsafe(ref pDest, i);
             }
 
@@ -59,7 +58,7 @@ public static partial class VectorHelper
                 var vZero256 = Vector256<float>.Zero;
                 var vOne256 = Vector256<float>.One;
                 var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
-                var destV = Blend(vZero256, vOne256, Vector256.LessThan(lhsV.GetLower(), rhsV));
+                var destV = Blend(vOne256, vZero256, Vector256.Equals(rhsV, lhsV.GetLower()));
                 destV.StoreUnsafe(ref pDest, i);
                 i += (nuint)Vector256<float>.Count;
             }
@@ -72,28 +71,28 @@ public static partial class VectorHelper
             for (; i <= length - (nuint)Vector256<float>.Count; i += (nuint)Vector256<float>.Count)
             {
                 var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
-                var destV = Blend(vZero, vOne, Vector256.LessThan(lhsV, rhsV));
+                var destV = Blend(vOne, vZero, Vector256.Equals(rhsV, lhsV));
                 destV.StoreUnsafe(ref pDest, i);
             }
         }
         // Process the remainder.
         for (; i < length; i++)
         {
-            Unsafe.Add(ref pDest, i) = (lhs < Unsafe.Add(ref pRhs, i)) ? 1.0f : 0.0f;
+            Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pRhs, i) != lhs) ? 1.0f : 0.0f;
         }
 
     }
 
     /// <summary>
-    /// dest[i] = lhs[i] < rhs[i] ? 1.0f : 0.0f
+    /// dest[i] = value[i] != data[i] ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
-    /// <param name="lhs">The left hand side span.</param>
-    /// <param name="rhs">The right hand side span.</param>
-    public static void FlagIfLessThan(Span<float> dest, ReadOnlySpan<float> lhs, ReadOnlySpan<float> rhs)
+    /// <param name="lhs">The scalar value to compare against.</param>
+    /// <param name="rhs">The data span.</param>
+    public static void FlagIfNotEquals(Span<float> dest, ReadOnlySpan<float> lhs, ReadOnlySpan<float> rhs)
     {
         EnsureSameSize(dest, lhs, rhs);
-
+        // check if we are supposed to just clear everything and use a faster function for that
         nuint i = 0;
         var length = (nuint)rhs.Length;
         ref var pDest = ref MemoryMarshal.GetReference(dest);
@@ -107,7 +106,7 @@ public static partial class VectorHelper
             {
                 var rhsV = Vector512.LoadUnsafe(ref pRhs, i);
                 var lhsV = Vector512.LoadUnsafe(ref pLhs, i);
-                var destV = Blend(vZero, vOne, Vector512.LessThan(lhsV, rhsV));
+                var destV = Blend(vOne, vZero, Vector512.Equals(rhsV, lhsV));
                 destV.StoreUnsafe(ref pDest, i);
             }
 
@@ -117,7 +116,7 @@ public static partial class VectorHelper
                 var vOne256 = Vector256<float>.One;
                 var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
                 var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
-                var destV = Blend(vZero256, vOne256, Vector256.LessThan(lhsV, rhsV));
+                var destV = Blend( vOne256, vZero256, Vector256.Equals(rhsV, lhsV));
                 destV.StoreUnsafe(ref pDest, i);
                 i += (nuint)Vector256<float>.Count;
             }
@@ -128,74 +127,43 @@ public static partial class VectorHelper
             var vOne = Vector256<float>.One;
             for (; i <= length - (nuint)Vector256<float>.Count; i += (nuint)Vector256<float>.Count)
             {
-                var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
-                var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
-                var destV = Blend(vZero, vOne, Vector256.LessThan(lhsV, rhsV));
+                var dataV = Vector256.LoadUnsafe(ref pRhs, i);
+                var vValue = Vector256.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vOne, vZero, Vector256.Equals(dataV, vValue));
                 destV.StoreUnsafe(ref pDest, i);
             }
         }
         // Process the remainder.
         for (; i < length; i++)
         {
-            Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pLhs, i) < Unsafe.Add(ref pRhs, i)) ? 1.0f : 0.0f;
+            Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pRhs, i) != Unsafe.Add(ref pLhs, i)) ? 1.0f : 0.0f;
         }
     }
 
     /// <summary>
     /// Set the value to one if the condition is met.
     /// </summary>
-    public static void FlagIfLessThan(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
+    public static void FlagIfNotEquals(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
     {
-        FlagIfLessThan(new Span<float>(dest, destIndex, length), lhs, new ReadOnlySpan<float>(rhs, rhsIndex, length));
+        FlagIfNotEquals(new Span<float>(dest, destIndex, length), lhs, new ReadOnlySpan<float>(rhs, rhsIndex, length));
     }
 
     /// <summary>
     /// Set the value to one if the condition is met.
     /// </summary>
-    public static void FlagIfLessThan(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
+    public static void FlagIfNotEquals(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
     {
-        FlagIfLessThan(new Span<float>(dest, destIndex, length), new ReadOnlySpan<float>(lhs, lhsIndex, length), new ReadOnlySpan<float>(rhs, rhsIndex, length));
+        FlagIfNotEquals(new Span<float>(dest, destIndex, length), rhs, new ReadOnlySpan<float>(lhs, lhsIndex, length));
     }
 
     /// <summary>
     /// Set the value to one if the condition is met.
     /// </summary>
-    public static void FlagIfLessThan(float[][] dest, float[][] data, float literalValue)
+    public static void FlagIfNotEquals(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
     {
-        Parallel.For(0, dest.Length, i =>
-        {
-            FlagIfLessThan(dest[i], data[i], literalValue);
-        });
-    }
-
-    /// <summary>
-    /// Set the value to one if the condition is met.
-    /// </summary>
-    public static void FlagIfLessThan(float[] dest, float[] data, float literalValue)
-    {
-        // operator flips when moving rhs to lhs
-        FlagIfGreaterThan(dest, 0, literalValue, data, 0, dest.Length);
-    }
-
-    /// <summary>
-    /// Set the value to one if the condition is met.
-    /// </summary>
-    public static void FlagIfLessThan(float[][] dest, float[][] lhs, float[][] rhs)
-    {
-        Parallel.For(0, dest.Length, i =>
-        {
-            FlagIfLessThan(dest[i], 0, lhs[i], 0, rhs[i], 0, dest.Length);
-        });
-    }
-
-    /// <summary>
-    /// Set the value to one if the condition is met.
-    /// </summary>
-    public static void FlagIfLessThan(float[][] v1, float literalValue, float[][] v2)
-    {
-        Parallel.For(0, v1.Length, i =>
-        {
-            FlagIfGreaterThan(v1[i], 0, literalValue, v2[i], 0, v1[i].Length);
-        });
+        FlagIfNotEquals(new Span<float>(dest, destIndex, length),
+         new ReadOnlySpan<float>(lhs, lhsIndex, length),
+          new ReadOnlySpan<float>(rhs, rhsIndex, length));
     }
 }
+

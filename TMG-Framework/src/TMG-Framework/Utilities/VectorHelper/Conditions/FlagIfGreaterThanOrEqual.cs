@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2015-2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2015-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of XTMF.
 
@@ -18,69 +18,150 @@
 */
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using System.Threading.Tasks;
 using static System.Numerics.Vector;
 
-namespace TMG.Utilities
+namespace TMG.Utilities;
+
+public static partial class VectorHelper
 {
-    public static partial class VectorHelper
+    /// <summary>
+    /// dest[i] = lhs >= rhs[i] ? 1.0f : 0.0f
+    /// </summary>
+    /// <param name="dest">The destination span.</param>
+    /// <param name="lhs">The scalar value to compare against.</param>
+    /// <param name="rhs">The data span.</param>
+    public static void FlagIfGreaterThanOrEqual(Span<float> dest, float lhs, ReadOnlySpan<float> rhs)
     {
-        /// <summary>
-        /// Set the value to one if the condition is met.
-        /// </summary>
-        public static void FlagIfGreaterThanOrEqual(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
+        EnsureSameSize(dest, rhs);
+
+        nuint i = 0;
+        var length = (nuint)rhs.Length;
+        ref var pDest = ref MemoryMarshal.GetReference(dest);
+        ref var pRhs = ref MemoryMarshal.GetReference(rhs);
+        if (Vector512.IsHardwareAccelerated && length >= (nuint)Vector512<float>.Count)
         {
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var lhsV = new Vector<float>(lhs);
-            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            Vector<float> zero = Vector<float>.Zero;
-            Vector<float> one = Vector<float>.One;
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
+            var vZero = Vector512<float>.Zero;
+            var vOne = Vector512<float>.One;
+            var lhsV = Vector512.Create(lhs);
+            for (; i <= length - (nuint)Vector512<float>.Count; i += (nuint)Vector512<float>.Count)
             {
-                destSpan[i] = ConditionalSelect(GreaterThanOrEqual(lhsV, rhsSpan[i]), one, zero);
-                destSpan[i + 1] = ConditionalSelect(GreaterThanOrEqual(lhsV, rhsSpan[i]), one, zero);
+                var rhsV = Vector512.LoadUnsafe(ref pRhs, i);
+                var destV = Blend(vZero, vOne, Vector512.GreaterThanOrEqual(lhsV, rhsV));
+                destV.StoreUnsafe(ref pDest, i);
             }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
+
+            if (i <= length - (nuint)Vector256<float>.Count)
             {
-                dest[destIndex + i] = lhs >= rhs[rhsIndex + i] ? 1.0f : 0.0f;
+                var vZero256 = Vector256<float>.Zero;
+                var vOne256 = Vector256<float>.One;
+                var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
+                var destV = Blend(vZero256, vOne256, Vector256.GreaterThanOrEqual(lhsV.GetLower(), rhsV));
+                destV.StoreUnsafe(ref pDest, i);
+                i += (nuint)Vector256<float>.Count;
             }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= (nuint)Vector256<float>.Count)
+        {
+            var vZero = Vector256<float>.Zero;
+            var vOne = Vector256<float>.One;
+            var lhsV = Vector256.Create(lhs);
+            for (; i <= length - (nuint)Vector256<float>.Count; i += (nuint)Vector256<float>.Count)
+            {
+                var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
+                var destV = Blend(vZero, vOne, Vector256.GreaterThanOrEqual(lhsV, rhsV));
+                destV.StoreUnsafe(ref pDest, i);
+            }
+        }
+        // Process the remainder.
+        for (; i < length; i++)
+        {
+            Unsafe.Add(ref pDest, i) = (lhs >= Unsafe.Add(ref pRhs, i)) ? 1.0f : 0.0f;
         }
 
-        /// <summary>
-        /// Set the value to one if the condition is met.
-        /// </summary>
-        public static void FlagIfGreaterThanOrEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
-        {
-            FlagIfLessThanOrEqual(dest, destIndex, rhs, lhs, lhsIndex, length);
-        }
+    }
 
-        /// <summary>
-        /// Set the value to one if the condition is met.
-        /// </summary>
-        public static void FlagIfGreaterThanOrEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
+    /// <summary>
+    /// dest[i] = lhs[i] >= rhs[i] ? 1.0f : 0.0f
+    /// </summary>
+    /// <param name="dest">The destination span.</param>
+    /// <param name="lhs">The left hand side span.</param>
+    /// <param name="rhs">The right hand side span.</param>
+    public static void FlagIfGreaterThanOrEqual(Span<float> dest, ReadOnlySpan<float> lhs, ReadOnlySpan<float> rhs)
+    {
+        EnsureSameSize(dest, lhs, rhs);
+
+        nuint i = 0;
+        var length = (nuint)rhs.Length;
+        ref var pDest = ref MemoryMarshal.GetReference(dest);
+        ref var pLhs = ref MemoryMarshal.GetReference(lhs);
+        ref var pRhs = ref MemoryMarshal.GetReference(rhs);
+        if (Vector512.IsHardwareAccelerated && length >= (nuint)Vector512<float>.Count)
         {
-            var vectorLength = length / Vector<float>.Count;
-            var remainder = length % Vector<float>.Count;
-            var destSpan = (new Span<float>(dest, destIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var lhsSpan = (new Span<float>(lhs, lhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            var rhsSpan = (new Span<float>(rhs, rhsIndex, length - remainder)).NonPortableCast<float, Vector<float>>();
-            Vector<float> zero = Vector<float>.Zero;
-            Vector<float> one = Vector<float>.One;
-            int i = 0;
-            for (; i < vectorLength - 1; i += 2)
+            var vZero = Vector512<float>.Zero;
+            var vOne = Vector512<float>.One;
+            for (; i <= length - (nuint)Vector512<float>.Count; i += (nuint)Vector512<float>.Count)
             {
-                destSpan[i] = ConditionalSelect(GreaterThanOrEqual(lhsSpan[i], rhsSpan[i]), one, zero);
-                destSpan[i + 1] = ConditionalSelect(GreaterThanOrEqual(lhsSpan[i + 1], zero), one, zero);
+                var rhsV = Vector512.LoadUnsafe(ref pRhs, i);
+                var lhsV = Vector512.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vZero, vOne, Vector512.GreaterThanOrEqual(lhsV, rhsV));
+                destV.StoreUnsafe(ref pDest, i);
             }
-            i *= Vector<float>.Count;
-            for (; i < length; i++)
+
+            if (i <= length - (nuint)Vector256<float>.Count)
             {
-                dest[destIndex + i] = lhs[lhsIndex + i] >= rhs[rhsIndex + i] ? 1.0f : 0.0f;
+                var vZero256 = Vector256<float>.Zero;
+                var vOne256 = Vector256<float>.One;
+                var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
+                var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vZero256, vOne256, Vector256.GreaterThanOrEqual(lhsV, rhsV));
+                destV.StoreUnsafe(ref pDest, i);
+                i += (nuint)Vector256<float>.Count;
             }
         }
+        else if (Vector256.IsHardwareAccelerated && length >= (nuint)Vector256<float>.Count)
+        {
+            var vZero = Vector256<float>.Zero;
+            var vOne = Vector256<float>.One;
+            for (; i <= length - (nuint)Vector256<float>.Count; i += (nuint)Vector256<float>.Count)
+            {
+                var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
+                var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vZero, vOne, Vector256.GreaterThanOrEqual(lhsV, rhsV));
+                destV.StoreUnsafe(ref pDest, i);
+            }
+        }
+        // Process the remainder.
+        for (; i < length; i++)
+        {
+            Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pLhs, i) >= Unsafe.Add(ref pRhs, i)) ? 1.0f : 0.0f;
+        }
+    }
+
+    /// <summary>
+    /// Set the value to one if the condition is met.
+    /// </summary>
+    public static void FlagIfGreaterThanOrEqual(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
+    {
+        FlagIfGreaterThanOrEqual(new Span<float>(dest, destIndex, length), lhs, new ReadOnlySpan<float>(rhs, rhsIndex, length));
+    }
+
+    /// <summary>
+    /// Set the value to one if the condition is met.
+    /// </summary>
+    public static void FlagIfGreaterThanOrEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
+    {
+        FlagIfLessThanOrEqual(dest, destIndex, rhs, lhs, lhsIndex, length);
+    }
+
+    /// <summary>
+    /// Set the value to one if the condition is met.
+    /// </summary>
+    public static void FlagIfGreaterThanOrEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
+    {
+        FlagIfGreaterThanOrEqual(new Span<float>(dest, destIndex, length), new ReadOnlySpan<float>(lhs, lhsIndex, length), new ReadOnlySpan<float>(rhs, rhsIndex, length));
     }
 }
