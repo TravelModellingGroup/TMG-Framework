@@ -21,30 +21,22 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Threading.Tasks;
-// ReSharper disable CompareOfFloatsByEqualityOperator
 
 namespace TMG.Utilities;
 
 public static partial class VectorHelper
 {
+
     /// <summary>
-    /// dest[i] = value != 0 AND data != 0 ? 1.0f : 0.0f
+    /// dest[i] = value != data[i] ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
     /// <param name="lhs">The scalar value to compare against.</param>
     /// <param name="rhs">The data span.</param>
-    public static void FlagAnd(Span<float> dest, float lhs, ReadOnlySpan<float> rhs)
+    public static void FlagIfNotEquals(Span<float> dest, float lhs, ReadOnlySpan<float> rhs)
     {
         EnsureSameSize(dest, rhs);
-        // check if we are supposed to just clear everything and use a faster function for that
-        if (lhs == 0.0f)
-        {
-            dest.Clear();
-            return;
-        }
 
-        // Since we know that the lhs is not zero, we only need to check rhs for zero.
         nuint i = 0;
         var length = (nuint)rhs.Length;
         ref var pDest = ref MemoryMarshal.GetReference(dest);
@@ -53,10 +45,11 @@ public static partial class VectorHelper
         {
             var vZero = Vector512<float>.Zero;
             var vOne = Vector512<float>.One;
+            var lhsV = Vector512.Create(lhs);
             for (; i <= length - (nuint)Vector512<float>.Count; i += (nuint)Vector512<float>.Count)
             {
-                var dataV = Vector512.LoadUnsafe(ref pRhs, i);
-                var destV = Blend(vOne, vZero, Vector512.Equals(dataV, vZero));
+                var rhsV = Vector512.LoadUnsafe(ref pRhs, i);
+                var destV = Blend(vOne, vZero, Vector512.Equals(rhsV, lhsV));
                 destV.StoreUnsafe(ref pDest, i);
             }
 
@@ -65,7 +58,7 @@ public static partial class VectorHelper
                 var vZero256 = Vector256<float>.Zero;
                 var vOne256 = Vector256<float>.One;
                 var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
-                var destV = Blend(vOne256, vZero256, Vector256.Equals(rhsV, vZero256));
+                var destV = Blend(vOne256, vZero256, Vector256.Equals(rhsV, lhsV.GetLower()));
                 destV.StoreUnsafe(ref pDest, i);
                 i += (nuint)Vector256<float>.Count;
             }
@@ -74,28 +67,29 @@ public static partial class VectorHelper
         {
             var vZero = Vector256<float>.Zero;
             var vOne = Vector256<float>.One;
+            var lhsV = Vector256.Create(lhs);
             for (; i <= length - (nuint)Vector256<float>.Count; i += (nuint)Vector256<float>.Count)
             {
                 var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
-                var destV = Blend(vOne, vZero, Vector256.Equals(rhsV, vZero));
+                var destV = Blend(vOne, vZero, Vector256.Equals(rhsV, lhsV));
                 destV.StoreUnsafe(ref pDest, i);
             }
         }
         // Process the remainder.
         for (; i < length; i++)
         {
-            Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pRhs, i) == 0) ? 0.0f : 1.0f;
+            Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pRhs, i) != lhs) ? 1.0f : 0.0f;
         }
-        
+
     }
 
     /// <summary>
-    /// dest[i] = value[i] != 0 AND data != 0 ? 1.0f : 0.0f
+    /// dest[i] = value[i] != data[i] ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
     /// <param name="lhs">The scalar value to compare against.</param>
     /// <param name="rhs">The data span.</param>
-    public static void FlagAnd(Span<float> dest, ReadOnlySpan<float> lhs, ReadOnlySpan<float> rhs)
+    public static void FlagIfNotEquals(Span<float> dest, ReadOnlySpan<float> lhs, ReadOnlySpan<float> rhs)
     {
         EnsureSameSize(dest, lhs, rhs);
         // check if we are supposed to just clear everything and use a faster function for that
@@ -112,7 +106,7 @@ public static partial class VectorHelper
             {
                 var rhsV = Vector512.LoadUnsafe(ref pRhs, i);
                 var lhsV = Vector512.LoadUnsafe(ref pLhs, i);
-                var destV = Blend(vOne, vZero, Vector512.BitwiseOr(Vector512.Equals(rhsV, vZero), Vector512.Equals(lhsV, vZero)));
+                var destV = Blend(vOne, vZero, Vector512.Equals(rhsV, lhsV));
                 destV.StoreUnsafe(ref pDest, i);
             }
 
@@ -122,7 +116,7 @@ public static partial class VectorHelper
                 var vOne256 = Vector256<float>.One;
                 var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
                 var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
-                var destV = Blend(vOne256, vZero256, Vector256.BitwiseOr(Vector256.Equals(rhsV, vZero256), Vector256.Equals(lhsV, vZero256)));
+                var destV = Blend( vOne256, vZero256, Vector256.Equals(rhsV, lhsV));
                 destV.StoreUnsafe(ref pDest, i);
                 i += (nuint)Vector256<float>.Count;
             }
@@ -133,82 +127,43 @@ public static partial class VectorHelper
             var vOne = Vector256<float>.One;
             for (; i <= length - (nuint)Vector256<float>.Count; i += (nuint)Vector256<float>.Count)
             {
-                var rhsV = Vector256.LoadUnsafe(ref pRhs, i);
-                var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
-                var destV = Blend(vOne, vZero, Vector256.BitwiseOr(Vector256.Equals(rhsV, vZero), Vector256.Equals(lhsV, vZero)));
+                var dataV = Vector256.LoadUnsafe(ref pRhs, i);
+                var vValue = Vector256.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vOne, vZero, Vector256.Equals(dataV, vValue));
                 destV.StoreUnsafe(ref pDest, i);
             }
         }
         // Process the remainder.
         for (; i < length; i++)
         {
-            Unsafe.Add(ref pDest, i) = ((Unsafe.Add(ref pRhs, i) == 0) | (Unsafe.Add(ref pLhs, i) == 0)) ? 0.0f : 1.0f;
+            Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pRhs, i) != Unsafe.Add(ref pLhs, i)) ? 1.0f : 0.0f;
         }
     }
 
     /// <summary>
     /// Set the value to one if the condition is met.
     /// </summary>
-    public static void FlagAnd(float[] dest, float value, float[] data)
+    public static void FlagIfNotEquals(float[] dest, int destIndex, float lhs, float[] rhs, int rhsIndex, int length)
     {
-        FlagAnd(dest, value, data);
+        FlagIfNotEquals(new Span<float>(dest, destIndex, length), lhs, new ReadOnlySpan<float>(rhs, rhsIndex, length));
     }
 
     /// <summary>
     /// Set the value to one if the condition is met.
     /// </summary>
-    public static void FlagAnd(float[] dest, int destIndex, float value, float[] data, int dataIndex, int length)
+    public static void FlagIfNotEquals(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
     {
-        FlagAnd(new Span<float>(dest, destIndex, length), value, new ReadOnlySpan<float>(data, dataIndex, length));
+        FlagIfNotEquals(new Span<float>(dest, destIndex, length), rhs, new ReadOnlySpan<float>(lhs, lhsIndex, length));
     }
 
     /// <summary>
     /// Set the value to one if the condition is met.
     /// </summary>
-    public static void FlagAnd(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
+    public static void FlagIfNotEquals(float[] dest, int destIndex, float[] lhs, int lhsIndex, float[] rhs, int rhsIndex, int length)
     {
-        FlagAnd(new Span<float>(dest, destIndex, length), new ReadOnlySpan<float>(lhs, lhsIndex, length), new ReadOnlySpan<float>(rhs, rhsIndex, length));
-    }
-
-    /// <summary>
-    /// Set the value to one if the condition is met.
-    /// </summary>
-    public static void FlagAnd(float[][] dest, float[][] data, float literalValue)
-    {
-        Parallel.For(0, dest.Length, i =>
-        {
-            FlagAnd(dest[i], data[i], literalValue);
-        });
-    }
-
-    /// <summary>
-    /// Set the value to one if the condition is met.
-    /// </summary>
-    public static void FlagAnd(float[] dest, float[] data, float literalValue)
-    {
-        FlagAnd(dest, literalValue, data);
-    }
-
-    /// <summary>
-    /// Set the value to one if the condition is met.
-    /// </summary>
-    public static void FlagAnd(float[][] dest, float[][] lhs, float[][] rhs)
-    {
-        Parallel.For(0, dest.Length, i =>
-        {
-            FlagAnd(dest[i], 0, lhs[i], 0, rhs[i], 0, dest.Length);
-        });
-    }
-
-    /// <summary>
-    /// Set the value to one if the condition is met.
-    /// </summary>
-    public static void FlagAnd(float[][] v1, float literalValue, float[][] v2)
-    {
-        Parallel.For(0, v1.Length, i =>
-        {
-            FlagAnd(v1[i], literalValue, v2[i]);
-        });
+        FlagIfNotEquals(new Span<float>(dest, destIndex, length),
+         new ReadOnlySpan<float>(lhs, lhsIndex, length),
+          new ReadOnlySpan<float>(rhs, rhsIndex, length));
     }
 }
 

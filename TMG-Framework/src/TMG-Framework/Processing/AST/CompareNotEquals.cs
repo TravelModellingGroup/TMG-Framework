@@ -45,13 +45,13 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = rhs.Accumulator ? rhs.VectorData : new Vector(rhs.VectorData);
                     var flat = retVector.Data;
-                    VectorHelper.FlagIfNotEqual(flat, 0, lhs.LiteralValue, rhs.VectorData.Data, 0, flat.Length);
+                    VectorHelper.FlagIfNotEquals(flat, 0, lhs.LiteralValue, rhs.VectorData.Data, 0, flat.Length);
                     return new ComputationResult(retVector, true, rhs.Direction);
                 }
                 else
                 {
                     var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData);
-                    VectorHelper.FlagIfNotEqual(retMatrix.Data, 0, lhs.LiteralValue, rhs.OdData.Data, 0, retMatrix.Data.Length);
+                    VectorHelper.FlagIfNotEquals(retMatrix.Data, 0, lhs.LiteralValue, rhs.OdData.Data, 0, retMatrix.Data.Length);
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -61,14 +61,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = lhs.Accumulator ? lhs.VectorData : new Vector(lhs.VectorData);
                     var flat = retVector.Data;
-                    VectorHelper.FlagIfNotEqual(flat, 0, lhs.VectorData.Data, 0, rhs.LiteralValue, flat.Length);
+                    VectorHelper.FlagIfNotEquals(flat, 0, lhs.VectorData.Data, 0, rhs.LiteralValue, flat.Length);
                     return new ComputationResult(retVector, true, lhs.Direction);
                 }
                 else
                 {
                     // matrix / float
                     var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData);
-                    VectorHelper.FlagIfNotEqual(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.LiteralValue, retMatrix.Data.Length);
+                    VectorHelper.FlagIfNotEquals(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.LiteralValue, retMatrix.Data.Length);
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -79,7 +79,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     if (lhs.IsVectorResult && rhs.IsVectorResult)
                     {
                         var retMatrix = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new Vector(lhs.VectorData));
-                        VectorHelper.FlagIfNotEqual(retMatrix.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, retMatrix.Data.Length);
+                        VectorHelper.FlagIfNotEquals(retMatrix.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, retMatrix.Data.Length);
                         return new ComputationResult(retMatrix, true, lhs.Direction);
                     }
                     else if (lhs.IsVectorResult)
@@ -93,14 +93,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagIfNotEqual(retMatrix.Data, i * rowSize, flatLhs[i], flatRhs, i * rowSize, rowSize);
+                                VectorHelper.FlagIfNotEquals(retMatrix.Data, i * rowSize, flatLhs[i], flatRhs, i * rowSize, rowSize);
                             }
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagIfNotEqual(retMatrix.Data, i * rowSize, flatLhs, 0, flatRhs, i * rowSize, rowSize);
+                                VectorHelper.FlagIfNotEquals(retMatrix.Data, i * rowSize, flatLhs, 0, flatRhs, i * rowSize, rowSize);
                             }
                         }
                         else
@@ -120,14 +120,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagIfNotEqual(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs[i], rowSize);
+                                VectorHelper.FlagIfNotEquals(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs[i], rowSize);
                             }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagIfNotEqual(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, rowSize);
+                                VectorHelper.FlagIfNotEquals(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, rowSize);
                             }
                         }
                         else
@@ -140,7 +140,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else
                 {
                     var retMatrix = lhs.Accumulator ? lhs.OdData : (rhs.Accumulator ? rhs.OdData : new Matrix(lhs.OdData));
-                    VectorHelper.FlagIfNotEqual(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.OdData.Data, 0, lhs.OdData.Data.Length);
+                    VectorHelper.FlagIfNotEquals(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.OdData.Data, 0, lhs.OdData.Data.Length);
                     return new ComputationResult(retMatrix, true);
                 }
             }
