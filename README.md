@@ -17,7 +17,7 @@ operating XTMF2.
 
 ### Requirements
 
-1. DotNet Core 3.1+ SDK
+1. DotNet 10.0+ SDK
 
 ### Clone the TMG-Framework repository
 

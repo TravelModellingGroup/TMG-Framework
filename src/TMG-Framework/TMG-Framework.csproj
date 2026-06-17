@@ -6,6 +6,9 @@
     <Authors>University of Toronto</Authors>
     <Company>University of Toronto</Company>
     <Description>A set of modules for XTMF2 to provide assistance in Travel Demand Modelling.</Description>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath>..\..\..\XTMF2-Dev\Modules\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -20,11 +23,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\XTMF2\src\XTMF2.Interfaces\XTMF2.Interfaces.csproj" />
-    <ProjectReference Include="..\..\..\XTMF2\src\XTMF2\XTMF2.csproj" />
+    <Reference Include="XTMF2">
+      <HintPath>..\..\..\XTMF2-Dev\XTMF2.dll</HintPath>
+    </Reference>
+    <Reference Include="XTMF2.Interfaces">
+      <HintPath>..\..\..\XTMF2-Dev\XTMF2.Interfaces.dll</HintPath>
+    </Reference>   
   </ItemGroup>
 
 </Project>

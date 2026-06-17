@@ -6,19 +6,23 @@ jobs:
   build:
     runs-on: windows-2025   
     steps:
-    - uses: actions/checkout@v1
-      with:
-        submodules: recursive
     - name: Setup .NetCore
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 10.0.101
-    - name: Build with dotnet
+    - uses: actions/checkout@v1
+      with:
+        repository: TravelModellingGroup/XTMF2
+        ref: origin/dev
+    - name: Build XTMF2  
       run: |
-        cd TMG-Framework
-        dotnet build --configuration Release
+        cd "../XTMF2"
+        dotnet build -c Release
+    - uses: actions/checkout@v1    
+    - name: Build TMG-Framework
+      run: |
+        dotnet build -c Release
     - name: Unit Tests
       run: |
-        cd TMG-Framework
-        dotnet test
+        dotnet test -c Release
       
