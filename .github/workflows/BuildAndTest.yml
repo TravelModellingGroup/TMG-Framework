@@ -16,7 +16,7 @@ jobs:
         ref: origin/dev
     - name: Debug
       run: |
-        ls -hla .
+        ls .
     - name: Build XTMF2  
       run: |
         dotnet build -c Release
