@@ -16,15 +16,13 @@ jobs:
         ref: origin/dev
     - name: Build XTMF2  
       run: |
-        cd "XTMF2"
+        cd "../XTMF2"
         dotnet build -c Release
     - uses: actions/checkout@v1    
     - name: Build TMG-Framework
       run: |
-        cd "TMG-Framework"
         dotnet build -c Release
     - name: Unit Tests
       run: |
-        cd "TMG-Framework"
         dotnet test -c Release
       
