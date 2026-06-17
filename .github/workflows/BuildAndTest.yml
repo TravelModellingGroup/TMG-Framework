@@ -13,8 +13,11 @@ jobs:
     - uses: actions/checkout@v1
       with:
         repository: TravelModellingGroup/XTMF2
-        ref: refs/heads/dev
-    - name: Build XTMF2
+        ref: tree/dev
+    - name: Debug
+      run: |
+        ls -hla .
+    - name: Build XTMF2  
       run: |
         dotnet build -c Release
     - uses: actions/checkout@v1    
