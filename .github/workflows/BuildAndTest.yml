@@ -13,10 +13,8 @@ jobs:
     - uses: actions/checkout@v1
       with:
         repository: TravelModellingGroup/XTMF2
-        ref: origin/dev
-    - name: Build XTMF2  
+    - name: Build XTMF2
       run: |
-        cd "../XTMF2"
         dotnet build -c Release
     - uses: actions/checkout@v1    
     - name: Build TMG-Framework
