@@ -14,4 +14,13 @@
     <ProjectReference Include="..\TMG-Framework.Test\TMG-Framework.Test.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="XTMF2">
+      <HintPath>..\..\..\XTMF2-Dev\XTMF2.dll</HintPath>
+    </Reference>
+    <Reference Include="XTMF2.Interfaces">
+      <HintPath>..\..\..\XTMF2-Dev\XTMF2.Interfaces.dll</HintPath>
+    </Reference>   
+  </ItemGroup>
+
 </Project>
