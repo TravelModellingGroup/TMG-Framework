@@ -15,10 +15,8 @@ jobs:
         dotnet-version: 10.0.101
     - name: Build with dotnet
       run: |
-        cd TMG-Framework
-        dotnet build --configuration Release
+        dotnet build -c Release
     - name: Unit Tests
       run: |
-        cd TMG-Framework
-        dotnet test
+        dotnet test -c Release
       
