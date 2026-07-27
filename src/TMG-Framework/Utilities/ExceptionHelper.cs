@@ -18,6 +18,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace TMG.Utilities
@@ -34,6 +35,7 @@ namespace TMG.Utilities
         /// Invoke an out of range exception for a parameter with the given name.
         /// </summary>
         /// <param name="name">The name of the parameter that caused the out of range exception.</param>
+        [DoesNotReturn]
         internal static void ThrowOutOfRangeException(string name)
         {
             throw new ArgumentOutOfRangeException(name);
@@ -43,7 +45,18 @@ namespace TMG.Utilities
         /// Invoke an ArgumentNullException for a parameter with the given name.
         /// </summary>
         /// <param name="name">The name of the parameter that caused the ArgumentNullException.</param>
+        [DoesNotReturn]
         internal static void ThrowParameterNull(string name)
+        {
+            throw new ArgumentNullException(name);
+        }
+
+        /// <summary>
+        /// Invoke an ArgumentNullException for a parameter with the given name.
+        /// </summary>
+        /// <param name="name">The name of the parameter that caused the ArgumentNullException.</param>
+        [DoesNotReturn]
+        internal static T ThrowParameterNull<T>(string name)
         {
             throw new ArgumentNullException(name);
         }

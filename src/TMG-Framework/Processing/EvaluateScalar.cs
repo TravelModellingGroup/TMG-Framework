@@ -29,14 +29,14 @@ namespace TMG.Processing
     public class EvaluateScalar : BaseFunction<float>
     {
         [Parameter(Name = "Expression", Index = 0, Description = "The expression to compute using the following variables.")]
-        public IFunction<string> Expression;
+        public IFunction<string> Expression = null!;
 
         [SubModule(Name = "Variables", Description = "The variables to use in our expression", Index = 1)]
-        public IModule[] Variables;
+        public IModule[] Variables = null!;
 
         public override float Invoke()
         {
-            string error = null;
+            string? error = null;
             // compile and optimize the expression
             if (!TMG.Frameworks.Data.Processing.AST.Compiler.Compile(Expression.Invoke(), out var expression, ref error))
             {
@@ -59,7 +59,7 @@ namespace TMG.Processing
             
         }
 
-        public override bool RuntimeValidation(ref string error)
+        public override bool RuntimeValidation(ref string? error)
         {
             foreach (var module in Variables)
             {

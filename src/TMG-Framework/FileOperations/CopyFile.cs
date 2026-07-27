@@ -29,13 +29,13 @@ namespace TMG.FileOperations
     public class CopyFile : BaseAction
     {
         [Parameter(DefaultValue = "", Name = "Origin", Index = 0, Description = "The path to the file/directory to copy.")]
-        public IFunction<string> Origin;
+        public IFunction<string> Origin = null!;
 
         [Parameter(DefaultValue = "", Name = "Destination", Index = 1, Description = "The path to the file/directory to copy into.")]
-        public IFunction<string> Destination;
+        public IFunction<string> Destination = null!;
 
         [Parameter(DefaultValue = "False", Name = "Move", Index = 2, Description = "Should the origin be erased after the file is copied?")]
-        public IFunction<bool> Move;
+        public IFunction<bool> Move = null!;
 
         public override void Invoke()
         {
@@ -66,7 +66,9 @@ namespace TMG.FileOperations
                 }
                 else
                 {
-                    oInfo.CopyTo(dInfo.Directory.FullName, true);
+                    var directory = dInfo.Directory ?? 
+                        throw new XTMFRuntimeException(this, $"The path {dInfo.FullName} does not have a valid parent directory!");
+                    oInfo.CopyTo(directory.FullName, true);
                 }
             }
         }

@@ -28,7 +28,7 @@ namespace XTMF.Testing
         [TestMethod]
         public void TestCharParsing()
         {
-            string error = null;
+            string? error = null;
             var obj = ArbitraryParameterParser.ArbitraryParameterParse(typeof(char), "1", ref error);
             if (!(obj.Value is char))
             {
@@ -44,7 +44,7 @@ namespace XTMF.Testing
         [TestMethod]
         public void TestDateTimeParsing()
         {
-            string error = null;
+            string? error = null;
             var obj = ArbitraryParameterParser.ArbitraryParameterParse(typeof(DateTime), "10:00 AM", ref error);
             if (!(obj.Value is DateTime))
             {
@@ -60,7 +60,7 @@ namespace XTMF.Testing
         [TestMethod]
         public void TestFloatParsing()
         {
-            string error = null;
+            string? error = null;
             var obj = ArbitraryParameterParser.ArbitraryParameterParse(typeof(float), "12345.123", ref error);
             if (!(obj.Value is float))
             {
@@ -76,7 +76,7 @@ namespace XTMF.Testing
         [TestMethod]
         public void TestIntegerParsing()
         {
-            string error = null;
+            string? error = null;
             var obj = ArbitraryParameterParser.ArbitraryParameterParse(typeof(int), "12345", ref error);
             if (!(obj.Value is int))
             {
@@ -92,7 +92,7 @@ namespace XTMF.Testing
         [TestMethod]
         public void TestStringParsing()
         {
-            string error = null;
+            string? error = null;
             var obj = ArbitraryParameterParser.ArbitraryParameterParse(typeof(string), "12345.123", ref error);
             if (!(obj.Value is string))
             {
@@ -108,7 +108,7 @@ namespace XTMF.Testing
         [TestMethod]
         public void TestTestStructParsing()
         {
-            string error = null;
+            string? error = null;
             var obj = ArbitraryParameterParser.ArbitraryParameterParse(typeof(TestStruct), "10:00 AM", ref error);
             if (!(obj.Value is TestStruct))
             {
@@ -124,7 +124,7 @@ namespace XTMF.Testing
         private struct TestStruct
         {
             // ReSharper disable once UnusedMember.Local
-            public static bool TryParse(ref string error, string input, out TestStruct output)
+            public static bool TryParse(ref string? error, string input, out TestStruct output)
             {
                 output = default(TestStruct);
                 if (input.Length > 0)

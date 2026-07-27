@@ -30,41 +30,46 @@ namespace TMG.Processing
     public sealed class Evaluate2DGravityModel : BaseFunction<Matrix>
     {
         [SubModule(Name = "Production", Required = true, Index = 0, Description = "")]
-        public IFunction<Vector> Production;
+        public IFunction<Vector> Production = null!;
 
         [SubModule(Name = "Attraction", Required = true, Index = 1, Description = "")]
-        public IFunction<Vector> Attraction;
+        public IFunction<Vector> Attraction = null!;
 
         [SubModule(Name = "Friction", Required = true, Index = 2, Description = "")]
-        public IFunction<Matrix> Friction;
+        public IFunction<Matrix> Friction = null!;
 
         [Parameter(Name = "Max Iterations", Index = 3, DefaultValue = "100", Description = "The maximum number of iterations before terminating.")]
-        public IFunction<int> MaxIterations;
+        public IFunction<int> MaxIterations = null!;
 
         [Parameter(Name = "Max Error", Index = 4, DefaultValue = "0.05", Description = "The maximum amount of error before terminating.")]
-        public IFunction<float> MaxError;
+        public IFunction<float> MaxError = null!;
 
-        private static void Apply(float[] ret, float[] friction, float[] production,
-            float[] attraction, float[] attractionStar, float[] columnTotals)
+        private static void Apply(Matrix ret, Matrix friction, Vector production,
+            Vector attraction, Vector attractionStar, float[] columnTotals)
         {
-            Parallel.For(0, production.Length, new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount },
+            Parallel.For(0, production.Count, new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount },
                 () => new float[columnTotals.Length],
                 (flatOrigin, state, localTotals) =>
                 {
-                    var length = production.Length;
+                    var sProduction = production.Data;
+                    var length = sProduction.Length;
                     var rowIndex = length * flatOrigin;
+                    var sAttraction = attraction.Data;
+                    var sFriction = friction.Data.Slice(rowIndex, length);
+                    var sRet = ret.Data.Slice(rowIndex, length);
+                    var sAttractionStar = attractionStar.Data;
+                    
                     // check to see if there is no production, if not skip this
-                    if (production[flatOrigin] > 0)
+                    if (sProduction[flatOrigin] > 0)
                     {
-                        var sumAf = VectorHelper.Multiply3AndSum(friction, rowIndex, attraction, 0, attractionStar, 0, length);
-                        sumAf = (production[flatOrigin] / sumAf);
+                        var sumAf = VectorHelper.Multiply3AndSum(sFriction, sAttraction, sAttractionStar);
+                        sumAf = (sProduction[flatOrigin] / sumAf);
                         if (float.IsInfinity(sumAf) | float.IsNaN(sumAf))
                         {
                             // this needs to be 0f, otherwise we will be making the attractions have to be balanced higher
                             sumAf = 0f;
                         }
-                        VectorHelper.Multiply3Scalar1AndColumnSum(ret, flatOrigin * production.Length,
-                            friction, rowIndex, attraction, 0, attractionStar, 0, sumAf, localTotals, 0, length);
+                        VectorHelper.Multiply3Scalar1AndColumnSum(sRet, sFriction, sAttraction, sAttractionStar, sumAf, localTotals.AsSpan());
                     }
                     return localTotals;
                 },
@@ -77,11 +82,11 @@ namespace TMG.Processing
             });
         }
 
-        private bool Balance(float[] flatAttractions, float[] flatAttractionStar, float epsilon, float[] columnTotals)
+        private bool Balance(Vector flatAttractions, Vector flatAttractionStar, float epsilon, float[] columnTotals)
         {
-            VectorHelper.Divide(columnTotals, flatAttractions, columnTotals);
-            VectorHelper.Multiply(flatAttractionStar, flatAttractionStar, columnTotals);
-            VectorHelper.ReplaceIfNotFinite(flatAttractionStar, 0, 1.0f, flatAttractionStar.Length);
+            VectorHelper.Divide(columnTotals.AsSpan(), flatAttractions.Data, columnTotals.AsSpan());
+            VectorHelper.Multiply(flatAttractionStar.Data, flatAttractionStar.Data, columnTotals);
+            VectorHelper.ReplaceIfNotFinite(flatAttractionStar.Data, 1.0f);
             return VectorHelper.AreBoundedBy(columnTotals, 0, 1.0f, epsilon, columnTotals.Length);
         }
 
@@ -108,8 +113,8 @@ namespace TMG.Processing
             do
             {
                 Array.Clear(columnTotals, 0, columnTotals.Length);
-                Apply(ret.Data, friction.Data, production.Data, attraction.Data, attractionStar.Data, columnTotals);
-            } while (!Balance(attraction.Data, attractionStar.Data, maxError, columnTotals) || (++iteration < maxIterations));
+                Apply(ret, friction, production, attraction, attractionStar, columnTotals);
+            } while (!Balance(attraction, attractionStar, maxError, columnTotals) || (++iteration < maxIterations));
             return ret;
         }
 

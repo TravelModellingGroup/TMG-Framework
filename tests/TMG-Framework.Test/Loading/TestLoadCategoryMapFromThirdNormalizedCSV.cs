@@ -42,8 +42,11 @@ namespace TMG.Test.Loading
         [TestMethod]
         public void LoadMapWithoutDestinations()
         {
-            string error = null;
-            var baseCategories = Categories.CreateCategories(new List<int> { 1, 2, 3, 4 }, ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(new List<int> { 1, 2, 3, 4 }, out var baseCategories, ref error))
+            {
+                Assert.Fail(error);
+            }
             var pipe = CreateMapPipe();
             try
             {
@@ -54,7 +57,7 @@ namespace TMG.Test.Loading
                     DestinationColumn = Helper.CreateParameter(1),
                     BaseCategories = Helper.CreateParameter(baseCategories),
                     DestinationCategories = null,
-                    CSVStream = Helper.CreateParameter(pipe.GetReadStream(null))
+                    CSVStream = Helper.CreateParameter(pipe.GetReadStream(null!))
                 };
                 var map = module.Invoke();
                 Assert.IsNotNull(map);
@@ -76,9 +79,15 @@ namespace TMG.Test.Loading
         [TestMethod]
         public void LoadMapWithDestinations()
         {
-            string error = null;
-            var baseCategories = Categories.CreateCategories(new List<int> { 1, 2, 3, 4 }, ref error);
-            var destinationCategories = Categories.CreateCategories(new List<int> { 1, 2 }, ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(new List<int> { 1, 2, 3, 4 }, out var baseCategories, ref error))
+            {
+                Assert.Fail(error);
+            }
+            if (!Categories.CreateCategories(new List<int> { 1, 2 }, out var destinationCategories, ref error))
+            {
+                Assert.Fail(error);
+            }
             var pipe = CreateMapPipe();
             try
             {
@@ -89,7 +98,7 @@ namespace TMG.Test.Loading
                     DestinationColumn = Helper.CreateParameter(1),
                     BaseCategories = Helper.CreateParameter(baseCategories),
                     DestinationCategories = Helper.CreateParameter(destinationCategories),
-                    CSVStream = Helper.CreateParameter(pipe.GetReadStream(null))
+                    CSVStream = Helper.CreateParameter(pipe.GetReadStream(null!))
                 };
                 var map = module.Invoke();
                 Assert.IsNotNull(map);
@@ -113,9 +122,15 @@ namespace TMG.Test.Loading
         {
             Helper.ThrowsException<XTMFRuntimeException>(() =>
             {
-                string error = null;
-                var baseCategories = Categories.CreateCategories(new List<int> { 1, 2, 3, 4 }, ref error);
-                var destinationCategories = Categories.CreateCategories(new List<int> { 1 }, ref error);
+                string? error = null;
+                if (!Categories.CreateCategories(new List<int> { 1, 2, 3, 4 }, out var baseCategories, ref error))
+                {
+                    Assert.Fail(error);
+                }
+                if (!Categories.CreateCategories(new List<int> { 1 }, out var destinationCategories, ref error))
+                {
+                    Assert.Fail(error);
+                }
                 var pipe = CreateMapPipe();
                 try
                 {
@@ -126,7 +141,7 @@ namespace TMG.Test.Loading
                         DestinationColumn = Helper.CreateParameter(1),
                         BaseCategories = Helper.CreateParameter(baseCategories),
                         DestinationCategories = Helper.CreateParameter(destinationCategories),
-                        CSVStream = Helper.CreateParameter(pipe.GetReadStream(null))
+                        CSVStream = Helper.CreateParameter(pipe.GetReadStream(null!))
                     };
                     // We expect this to throw
                     var _ = module.Invoke();
@@ -146,9 +161,15 @@ namespace TMG.Test.Loading
         {
             Helper.ThrowsException<XTMFRuntimeException>(() =>
             {
-                string error = null;
-                var baseCategories = Categories.CreateCategories(new List<int> { 1, 2, 4 }, ref error);
-                var destinationCategories = Categories.CreateCategories(new List<int> { 1, 2 }, ref error);
+                string? error = null;
+                if (!Categories.CreateCategories(new List<int> { 1, 2, 4 }, out var baseCategories, ref error))
+                {
+                    Assert.Fail(error);
+                }
+                if (!Categories.CreateCategories(new List<int> { 1, 2 }, out var destinationCategories, ref error))
+                {
+                    Assert.Fail(error);
+                }
                 var pipe = CreateMapPipe();
                 try
                 {
@@ -159,7 +180,7 @@ namespace TMG.Test.Loading
                         DestinationColumn = Helper.CreateParameter(1),
                         BaseCategories = Helper.CreateParameter(baseCategories),
                         DestinationCategories = Helper.CreateParameter(destinationCategories),
-                        CSVStream = Helper.CreateParameter(pipe.GetReadStream(null))
+                        CSVStream = Helper.CreateParameter(pipe.GetReadStream(null!))
                     };
                     // We expect this to throw
                     var _ = module.Invoke();
@@ -178,7 +199,7 @@ namespace TMG.Test.Loading
         private static MemoryPipe CreateMapPipe()
         {
             var pipe = new MemoryPipe();
-            var writeStream = pipe.GetWriteStream(null);
+            var writeStream = pipe.GetWriteStream(null!);
             var writer = new StreamWriter(writeStream);
             writer.WriteLine("Zone,PD");
             writer.WriteLine("1,1");

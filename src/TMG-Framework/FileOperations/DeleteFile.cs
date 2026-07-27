@@ -29,7 +29,7 @@ namespace TMG.FileOperations
     public sealed class DeleteFile : BaseAction
     {
         [Parameter(DefaultValue = "", Name = "To Delete", Index = 0, Description = "The path to delete.")]
-        public IFunction<string> ToDelete;
+        public IFunction<string> ToDelete = null!;
 
         public override void Invoke()
         {

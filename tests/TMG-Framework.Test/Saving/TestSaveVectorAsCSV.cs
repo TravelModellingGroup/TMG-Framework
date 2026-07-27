@@ -19,6 +19,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using TMG.Saving;
@@ -82,7 +83,7 @@ namespace TMG.Test.Saving
                         MapColumn = Helper.CreateParameter(0),
                         DataColumn = Helper.CreateParameter(1)
                     }.Invoke(readStream);
-                    string error = null;
+                    string? error = null;
                     Assert.IsTrue(Compare(a, readVector, ref error), error);
                 }
             }
@@ -96,7 +97,8 @@ namespace TMG.Test.Saving
             }
         }
 
-        internal static bool Compare(Vector expected, Vector test, ref string error)
+        internal static bool Compare(Vector expected, Vector test, 
+            [NotNullWhen(false)] ref string? error)
         {
             if (expected.Categories != test.Categories)
             {

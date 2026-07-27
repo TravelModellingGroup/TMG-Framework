@@ -30,10 +30,10 @@ namespace TMG.Loading
     public sealed class LoadMatrixFromCSVMatrix : BaseFunction<ReadStream, Matrix>
     {
         [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Categories> RowCategories;
+        public IFunction<Categories> RowCategories = null!;
 
         [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
-        public IFunction<Categories> ColumnCategories;
+        public IFunction<Categories> ColumnCategories = null!;
 
         public override Matrix Invoke(ReadStream stream)
         {

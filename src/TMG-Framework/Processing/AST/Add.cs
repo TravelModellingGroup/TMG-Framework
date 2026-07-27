@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using TMG.Utilities;
 
 namespace TMG.Frameworks.Data.Processing.AST
@@ -29,38 +30,46 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         }
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst(
+            ref Expression ex,
+            [NotNullWhen(false)] ref string? error)
         {
             if(!base.OptimizeAst(ref ex, ref error))
             {
                 return false;
             }
-            if(!OptimizeFusedMultiplyAdd(ref ex)
-                || !OptimizeLiterals(ref ex))
+            if(!OptimizeFusedMultiplyAdd(ref ex, ref error)
+                || !OptimizeLiterals(ref ex, ref error))
             {
+
                 return false;
             }
             return true;
         }
 
-        private bool OptimizeLiterals(ref Expression ex)
+        private bool OptimizeLiterals(
+            [NotNullWhen(true)] ref Expression ex,
+            [NotNullWhen(false)] ref string? error)
         {
             var lhs = Lhs as Literal;
             var rhs = Rhs as Literal;
             if(lhs != null && rhs != null)
             {
                 ex = new Literal(Start, lhs.Value + rhs.Value);
+                return true;
             }
             return true;
         }
 
-        private bool OptimizeFusedMultiplyAdd(ref Expression ex)
+        private bool OptimizeFusedMultiplyAdd(
+            ref Expression ex,
+            [NotNullWhen(false)] ref string? error)
         {
             var lhsMul = Lhs as Multiply;
             var rhsMul = Rhs as Multiply;
-            if (lhsMul != null)
+            if (lhsMul is not null)
             {
-                ex = new FusedMultiplyAdd(Start, Rhs.Start)
+                ex = new FusedMultiplyAdd(Start, Rhs?.Start ?? -1)
                 {
                     MulLhs = lhsMul.Lhs,
                     MulRhs = lhsMul.Rhs,
@@ -69,7 +78,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             }
             else if (rhsMul != null)
             {
-                ex = new FusedMultiplyAdd(Start, Lhs.Start)
+                ex = new FusedMultiplyAdd(Start, Lhs?.Start ?? -1)
                 { 
                     MulLhs = rhsMul.Lhs,
                     MulRhs = rhsMul.Rhs,
@@ -155,7 +164,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to add vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to add vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -185,7 +194,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to add vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to add vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }

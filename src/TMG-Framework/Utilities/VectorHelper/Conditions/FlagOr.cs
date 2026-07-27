@@ -31,7 +31,7 @@ namespace TMG.Utilities;
 public static partial class VectorHelper
 {
     /// <summary>
-    /// dest[i] = value != 0 OR data != 0 ? 1.0f : 0.0f
+    /// dest[i] = lhs != 0 OR rhs != 0 ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
     /// <param name="lhs">The scalar value to compare against.</param>
@@ -89,6 +89,17 @@ public static partial class VectorHelper
             Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pRhs, i) == 0) ? 0.0f : 1.0f;
         }
 
+    }
+
+    /// <summary>
+    /// dest[i] = lhs[i] != 0 OR rhs != 0 ? 1.0f : 0.0f
+    /// </summary>
+    /// <param name="dest">The destination span.</param>
+    /// <param name="lhs">The scalar value to compare against.</param>
+    /// <param name="rhs">The data span.</param>
+    public static void FlagOr(Span<float> dest, ReadOnlySpan<float> lhs, float rhs)
+    {
+        FlagOr(dest, rhs, lhs);
     }
 
     /// <summary>

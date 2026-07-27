@@ -1248,6 +1248,57 @@ public static partial class VectorHelper
         return AreBoundedBy(new Span<float>(data, dataIndex, length), baseNumber, maxVarriation);
     }
 
+    internal static void ReplaceIfNaN(Span<float> dest, Span<float> source, Span<float> replacement)
+    {
+        if (dest.Length != source.Length || dest.Length != replacement.Length)
+        {
+            throw new ArgumentException("All spans must be the same length");
+        }
+        ref var pDest = ref MemoryMarshal.GetReference(dest);
+        ref var pSource = ref MemoryMarshal.GetReference(source);
+        ref var pReplacement = ref MemoryMarshal.GetReference(replacement);
+
+        nuint length = (nuint)dest.Length;
+        nuint i = 0;
+        if (Vector512.IsHardwareAccelerated && length >= (nuint)Vector512<float>.Count)
+        {
+            var end = (nuint)(dest.Length - Vector512<float>.Count);
+            for (; i <= end; i += (nuint)Vector512<float>.Count)
+            {
+                var vSource = Vector512.LoadUnsafe(ref pSource, i);
+                var vReplace = Vector512.LoadUnsafe(ref pReplacement, i);
+                var result = SelectIfFinite(vSource, vReplace);
+                Vector512.StoreUnsafe(result, ref pDest, i);
+            }
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var vSource = Vector256.LoadUnsafe(ref pSource, i);
+                var vReplace = Vector256.LoadUnsafe(ref pReplacement, i);
+                var result = SelectIfFinite(vSource, vReplace);
+                Vector256.StoreUnsafe(result, ref pDest, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= (nuint)Vector256<float>.Count)
+        {
+            var end = (nuint)(dest.Length - Vector256<float>.Count);
+            for (; i <= end; i += (nuint)Vector256<float>.Count)
+            {
+                var vSource = Vector256.LoadUnsafe(ref pSource, i);
+                var vReplace = Vector256.LoadUnsafe(ref pReplacement, i);
+                var result = SelectIfFinite(vSource, vReplace);
+                Vector256.StoreUnsafe(result, ref pDest, i);
+            }
+        }
+        
+        // Process the remainder
+        for (; i < length; i++)
+        {
+            dest[(int)i] = !float.IsNaN(source[(int)i]) ? source[(int)i] : replacement[(int)i];
+        }
+        
+    }
+
     internal static void ReplaceIfNaN(float[] dest, float[] source, float[] replacement, int offset, int length)
     {
         if (dest == null || source == null || replacement == null)
@@ -1290,6 +1341,51 @@ public static partial class VectorHelper
         for (; i < length; i++)
         {
             dest[offset + i] = -source[offset + i];
+        }
+    }
+
+    public static void Negate(Span<float> dest, Span<float> source)
+    {
+        if (dest.Length != source.Length)
+        {
+            throw new ArgumentException("Both spans must be the same length");
+        }
+        nuint i = 0;
+        nuint length = (nuint)dest.Length;
+        ref var pDest = ref MemoryMarshal.GetReference(dest);
+        ref var pSource = ref MemoryMarshal.GetReference(source);
+
+        if (Vector512.IsHardwareAccelerated && length >= (nuint)Vector512<float>.Count)
+        {
+            for (; i <= length - (nuint)Vector512<float>.Count; i += (nuint)Vector512<float>.Count)
+            {
+                var vSource = Vector512.LoadUnsafe(ref pSource, i);
+                var result = Vector512.Negate(vSource);
+                Vector512.StoreUnsafe(result, ref pDest, i);
+            }
+
+            if ((nuint)length - i >= (nuint)Vector256<float>.Count)
+            {
+                var vSource = Vector256.LoadUnsafe(ref pSource, i);
+                var result = Vector256.Negate(vSource);
+                Vector256.StoreUnsafe(result, ref pDest, i);
+                i += (nuint)Vector256<float>.Count;
+            }    
+        }
+        else if(Vector256.IsHardwareAccelerated && length >= (nuint)Vector256<float>.Count)
+        {
+            for (; i <= length - (nuint)Vector256<float>.Count; i += (nuint)Vector256<float>.Count)
+            {
+                var vSource = Vector256.LoadUnsafe(ref pSource, i);
+                var result = Vector256.Negate(vSource);
+                Vector256.StoreUnsafe(result, ref pDest, i);
+            }
+        }
+
+        // Process the remaining data.
+        for (; i < (nuint)dest.Length; i++)
+        {
+            Unsafe.Add(ref pDest, i) = -Unsafe.Add(ref pSource, i);
         }
     }
 

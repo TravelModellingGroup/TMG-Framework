@@ -72,7 +72,7 @@ namespace TMG.Test.Saving
                     {
                         Categories = Helper.CreateParameter(categories)
                     }.Invoke(readStream);
-                    string error = null;
+                    string? error = null;
                     Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
                 }
             }

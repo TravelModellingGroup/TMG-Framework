@@ -17,9 +17,12 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using static TMG.Utilities.ExceptionHelper;
 
 namespace TMG
@@ -27,7 +30,7 @@ namespace TMG
     /// <summary>
     /// A 2D representation with categories for rows and columns
     /// </summary>
-    public sealed class Matrix
+    public sealed class Matrix : IDisposable
     {
         /// <summary>
         /// The categories for the rows.
@@ -42,39 +45,75 @@ namespace TMG
         /// <summary>
         /// The backend storage for the matrix
         /// </summary>
-        public float[] Data { get; }
+        public Span<float> Data => _backingMemory is null ? ThrowAlreadyDisposed() : _backingMemory.Value.Span;
+
+        [DoesNotReturn]
+        private Span<float> ThrowAlreadyDisposed()
+        {
+            throw new ObjectDisposedException(nameof(Matrix));
+        }
+
+        private Memory<float>? _backingMemory;
 
         /// <summary>
         /// Used as a quick lookup for the number of columns per row.
         /// </summary>
         private readonly int _rowSpan;
 
+        private IMemoryOwner<float>? _allocator;
+
         /// <summary>
         /// Create a new matrix with the given row and column categories.
         /// </summary>
         /// <param name="rowCategories">The categories for the rows.</param>
         /// <param name="columnCategories">The categories for the columns.</param>
-        public Matrix(Categories rowCategories, Categories columnCategories)
+        public Matrix(Categories rowCategories, Categories columnCategories) : this(rowCategories, columnCategories, null) { }
+
+        /// <summary>
+        /// Get the number of columns in this matrix.
+        /// </summary>
+        public int NumberOfColumns => ColumnCategories.Count;
+
+        /// <summary>
+        /// Get the number of rows in this matrix.
+        /// </summary>
+        public int NumberOfRows => RowCategories.Count;
+
+        /// <summary>
+        /// Create a new matrix with the given row and column categories.
+        /// </summary>
+        /// <param name="rowCategories">The categories for the rows.</param>
+        /// <param name="columnCategories">The categories for the columns.</param>
+        /// <param name="allocator">The memory pool to use for the matrix data.</param>
+        public Matrix(Categories rowCategories, Categories columnCategories, MemoryPool<float>? allocator)
         {
-            RowCategories = rowCategories ?? throw new ArgumentNullException(nameof(rowCategories));
-            ColumnCategories = columnCategories ?? throw new ArgumentNullException(nameof(columnCategories));
+            RowCategories = rowCategories ?? ThrowParameterNull<Categories>(nameof(rowCategories));
+            ColumnCategories = columnCategories ?? ThrowParameterNull<Categories>(nameof(columnCategories));
             _rowSpan = ColumnCategories.Count;
-            Data = new float[RowCategories.Count * ColumnCategories.Count];
+            var size = RowCategories.Count * ColumnCategories.Count;
+            _backingMemory = allocator is null ? 
+                new float[size].AsMemory()
+                : (_allocator = allocator.Rent(size)).Memory[..size];
         }
 
         /// <summary>
         /// Create a new matrix using the dimensions from the given vector.
         /// </summary>
         /// <param name="vector">The vector to get the dimensions from.</param>
-        public Matrix(Vector vector)
+        public Matrix(Vector vector) : this(vector, null) { }
+
+        public Matrix(Vector vector, MemoryPool<float>? allocator)
         {
-            if (vector == null)
+            if (vector is null)
             {
                 ThrowParameterNull(nameof(vector));
             }
             ColumnCategories = RowCategories = vector.Categories;
             _rowSpan = ColumnCategories.Count;
-            Data = new float[RowCategories.Count * ColumnCategories.Count];
+            var size = RowCategories.Count * ColumnCategories.Count;
+            _backingMemory = allocator is null ?
+                new float[size].AsMemory() :
+                (_allocator = allocator.Rent(size)).Memory[..size];
         }
 
         /// <summary>
@@ -82,16 +121,26 @@ namespace TMG
         /// matrix.
         /// </summary>
         /// <param name="matrix">The matrix to copy the dimensions from.</param>
-        public Matrix(Matrix matrix)
+        public Matrix(Matrix matrix) : this(matrix, null) {}
+        
+        /// <summary>
+        /// Create a new matrix with the dimensions from the provided
+        /// </summary>
+        /// <param name="matrix">The matrix to copy the dimensions from.</param>
+        /// <param name="allocator">The memory pool to use for the matrix data.</param>
+        public Matrix(Matrix matrix, MemoryPool<float>? allocator)
         {
-            if (matrix == null)
+            if (matrix is null)
             {
                 ThrowParameterNull(nameof(matrix));
             }
             RowCategories = matrix.RowCategories;
             ColumnCategories = matrix.ColumnCategories;
             _rowSpan = matrix._rowSpan;
-            Data = new float[RowCategories.Count * ColumnCategories.Count];
+            var size = RowCategories.Count * ColumnCategories.Count;
+            _backingMemory = allocator is null ?
+                new float[size].AsMemory() :
+                (_allocator = allocator.Rent(size)).Memory[..size];
         }
 
         /// <summary>
@@ -153,7 +202,7 @@ namespace TMG
                 ThrowOutOfRangeException(nameof(flatRowIndex));
             }
             flatRowIndex = GetFlatRowIndex(flatRowIndex);
-            return new Span<float>(Data, flatRowIndex, _rowSpan);
+            return Data.Slice(flatRowIndex, _rowSpan);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -179,7 +228,7 @@ namespace TMG
         public Matrix Clone()
         {
             var ret = new Matrix(this);
-            Array.Copy(Data, ret.Data, Data.Length);
+            Data.CopyTo(ret.Data);
             return ret;
         }
 
@@ -193,6 +242,19 @@ namespace TMG
         private void InvalidRow(int rowIndex)
         {
             throw new ArgumentOutOfRangeException($"Invalid row index {rowIndex}!");
+        }
+
+        ~Matrix()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            _backingMemory = null;
+            Thread.MemoryBarrier();
+            _allocator?.Dispose();
+            _allocator = null;
         }
     }
 }

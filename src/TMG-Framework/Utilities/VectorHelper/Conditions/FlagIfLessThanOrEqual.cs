@@ -82,7 +82,56 @@ public static partial class VectorHelper
         {
             Unsafe.Add(ref pDest, i) = (lhs <= Unsafe.Add(ref pRhs, i)) ? 1.0f : 0.0f;
         }
+    }
 
+    public static void FlagIfLessThanOrEqual(Span<float> dest, ReadOnlySpan<float> lhs, float rhs)
+    {
+        EnsureSameSize(dest, lhs);
+
+        nuint i = 0;
+        nuint length = (nuint)lhs.Length;
+        ref var pDest = ref MemoryMarshal.GetReference(dest);
+        ref var pLhs = ref MemoryMarshal.GetReference(lhs);
+        if (Vector512.IsHardwareAccelerated && length >= (nuint)Vector512<float>.Count)
+        {
+            var vZero = Vector512<float>.Zero;
+            var vOne = Vector512<float>.One;
+            var rhsV = Vector512.Create(rhs);
+            for (; i <= length - (nuint)Vector512<float>.Count; i += (nuint)Vector512<float>.Count)
+            {
+                var lhsV = Vector512.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vZero, vOne, Vector512.LessThanOrEqual(lhsV, rhsV));
+                destV.StoreUnsafe(ref pDest, i);
+            }
+
+            if (i <= length - (nuint)Vector256<float>.Count)
+            {
+                var vZero256 = Vector256<float>.Zero;
+                var vOne256 = Vector256<float>.One;
+                var rhsV256 = Vector256.Create(rhs);
+                var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vZero256, vOne256, Vector256.LessThanOrEqual(lhsV, rhsV256));
+                destV.StoreUnsafe(ref pDest, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= (nuint)Vector256<float>.Count)
+        {
+            var vZero = Vector256<float>.Zero;
+            var vOne = Vector256<float>.One;
+            var rhsV = Vector256.Create(rhs);
+            for (; i <= length - (nuint)Vector256<float>.Count; i += (nuint)Vector256<float>.Count)
+            {
+                var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vZero, vOne, Vector256.LessThanOrEqual(lhsV, rhsV));
+                destV.StoreUnsafe(ref pDest, i);
+            }
+        }
+        // Process the remainder.
+        for (; i < length; i++)
+        {
+            Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pLhs, i) <= rhs) ? 1.0f : 0.0f;
+        }
     }
 
     /// <summary>

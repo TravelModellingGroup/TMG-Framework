@@ -18,6 +18,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using static TMG.Utilities.ExceptionHelper;
@@ -46,7 +47,9 @@ namespace TMG
         private readonly List<(int originFlatIndex, int destinationFlatIndex)> _baseToDestination;
 
         public static bool CreateCategoryMap(Categories baseCategories, Categories destinationCategories,
-            List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination, out CategoryMap map, ref string error)
+            List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination, 
+            [NotNullWhen(true) ] out CategoryMap? map,
+            [NotNullWhen(false)] ref string? error)
         {
             if (baseCategories == null)
             {
@@ -95,7 +98,7 @@ namespace TMG
             _baseToDestination = baseToDestination;
         }
 
-        private static bool FailWith(ref string error, string message)
+        private static bool FailWith([NotNullWhen(false)] ref string? error, string message)
         {
             error = message;
             return false;
@@ -106,7 +109,8 @@ namespace TMG
         /// </summary>
         /// <param name="baseToDestination"></param>
         private static bool ValidateMapping(Categories baseCategories, Categories destinationCategories,
-            List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination, ref string error)
+            List<(int originFlatIndex, int destinationFlatIndex)> baseToDestination, 
+            [NotNullWhen(false)] ref string? error)
         {
             if (baseCategories == null)
             {
@@ -138,10 +142,12 @@ namespace TMG
         /// <param name="ret"></param>
         /// <param name="error"></param>
         /// <returns></returns>
-        public bool AggregateToDestination(Vector baseVector, out Vector ret, ref string error)
+        public bool AggregateToDestination(Vector baseVector, 
+            [NotNullWhen(true)] out Vector? ret,
+            [NotNullWhen(false)] ref string? error)
         {
             ret = null;
-            if (baseVector == null)
+            if (baseVector is null)
             {
                 return FailWith(ref error, "baseVector was null!");
             }

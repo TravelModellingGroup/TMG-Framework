@@ -38,7 +38,7 @@ namespace TMG.Test.Utilities
         /// <param name="value">The value to be returned</param>
         /// <param name="moduleName">The name of the module to create.</param>
         /// <returns></returns>
-        internal static IFunction<T> CreateParameter<T>(T value, string moduleName = null)
+        internal static IFunction<T> CreateParameter<T>(T value, string? moduleName = null)
         {
             return new BasicParameter<T>()
             {
@@ -69,7 +69,7 @@ namespace TMG.Test.Utilities
         /// <typeparam name="K">OutputType</typeparam>
         /// <param name="innerFunction">Processing logic</param>
         /// <returns>A module that executes the function passed in.</returns>
-        internal static IFunction<T, K> CreateModule<T, K>(Func<T, K> innerFunction, string moduleName = null)
+        internal static IFunction<T, K> CreateModule<T, K>(Func<T, K> innerFunction, string? moduleName = null)
         {
             return new CustomizableModule<T, K>(innerFunction)
             {
@@ -110,12 +110,12 @@ namespace TMG.Test.Utilities
         /// </summary>
         /// <param name="action"></param>
         /// <param name="expectedExceptionType"></param>
-        public static void ThrowsException(Action action, Type expectedExceptionType = null)
+        public static void ThrowsException(Action action, Type? expectedExceptionType = null)
         {
             try
             {
                 action();
-                Assert.Fail("Expected exception of type " + expectedExceptionType.FullName);
+                Assert.Fail("Expected exception of type " + (expectedExceptionType?.FullName ?? "null"));
             }
             catch (Exception ex)
             {

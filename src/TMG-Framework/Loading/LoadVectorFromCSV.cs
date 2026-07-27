@@ -29,13 +29,13 @@ namespace TMG.Loading
     public sealed class LoadVectorFromCSV : BaseFunction<ReadStream, Vector>
     {
         [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Categories> Categories;
+        public IFunction<Categories> Categories = null!;
 
         [Parameter(DefaultValue = "0", Name = "Map Column", Index = 1, Description = "The 0 indexed column containing the sparse map index.")]
-        public IFunction<int> MapColumn;
+        public IFunction<int> MapColumn = null!;
 
         [Parameter(DefaultValue = "1", Name = "Data Column", Index = 2, Description = "The 0 indexed column containing the data to load index.")]
-        public IFunction<int> DataColumn;
+        public IFunction<int> DataColumn = null!;
 
         public override Vector Invoke(ReadStream stream)
         {

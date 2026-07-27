@@ -29,17 +29,17 @@ namespace TMG.Processing
     public class EvaluateMatrix : BaseFunction<Matrix>
     {
         [Parameter(Name = "Expression", Index = 0, Description = "The expression to compute using the following variables.")]
-        public IFunction<string> Expression;
+        public IFunction<string> Expression = null!;
 
         [SubModule(Name = "Variables", Description = "The variables to use in our expression", Index = 1)]
-        public IModule[] Variables;
+        public IModule[] Variables = null!;
 
-        private string PreviousExpressionString = null;
-        private Expression PreviousExpression = null;
+        private string? PreviousExpressionString = null;
+        private Expression? PreviousExpression = null;
 
         public override Matrix Invoke()
         {
-            string error = null;
+            string? error = null;
             // compile and optimize the expression
             var expressionString = Expression.Invoke();
             if (PreviousExpression == null || expressionString != PreviousExpressionString)
@@ -69,7 +69,7 @@ namespace TMG.Processing
             throw new XTMFRuntimeException(this, "The expression resulted in a scalar instead of a matrix!");
         }
 
-        public override bool RuntimeValidation(ref string error)
+        public override bool RuntimeValidation(ref string? error)
         {
             foreach(var module in Variables)
             {

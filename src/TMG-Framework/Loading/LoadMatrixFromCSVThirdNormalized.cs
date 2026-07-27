@@ -29,19 +29,19 @@ namespace TMG.Loading
     public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, Matrix>
     {
         [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Categories> RowCategories;
+        public IFunction<Categories> RowCategories = null!;
 
         [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
-        public IFunction<Categories> ColumnCategories;
+        public IFunction<Categories> ColumnCategories = null!;
 
         [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the origin.")]
-        public IFunction<int> OriginColumn;
+        public IFunction<int> OriginColumn = null!;
 
         [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the destination.")]
-        public IFunction<int> DestinationColumn;
+        public IFunction<int> DestinationColumn = null!;
 
         [Parameter(DefaultValue = "2", Name = "Data Column", Index = 4, Description = "The 0 indexed column containing the data to load index.")]
-        public IFunction<int> DataColumn;
+        public IFunction<int> DataColumn = null!;
 
         public override Matrix Invoke(ReadStream stream)
         {

@@ -80,7 +80,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     if (lhs.IsVectorResult && rhs.IsVectorResult)
                     {
                         var retMatrix = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new Vector(lhs.VectorData));
-                        VectorHelper.FlagAnd(retMatrix.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, retMatrix.Data.Length);
+                        VectorHelper.FlagAnd(retMatrix.Data, lhs.VectorData.Data, rhs.VectorData.Data);
                         return new ComputationResult(retMatrix, true, lhs.Direction);
                     }
                     else if (lhs.IsVectorResult)
@@ -94,19 +94,19 @@ namespace TMG.Frameworks.Data.Processing.AST
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagAnd(retMatrix.Data, i * rowSize, flatLhs[i], flatRhs, i * rowSize, rowSize);
+                                VectorHelper.FlagAnd(retMatrix.GetRow(i), flatLhs[i], flatRhs.Slice(i * rowSize, rowSize));
                             }
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagAnd(retMatrix.Data, i * rowSize, flatLhs, 0, flatRhs, i * rowSize, rowSize);
+                                VectorHelper.FlagAnd(retMatrix.GetRow(i), flatLhs, flatRhs.Slice(i * rowSize, rowSize));
                             }
                         }
                         else
                         {
-                            return new ComputationResult("Unable to add vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to add vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -121,19 +121,19 @@ namespace TMG.Frameworks.Data.Processing.AST
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagAnd(retMatrix.Data, i * rowSize, flatRhs[i], flatLhs, i * rowSize, rowSize);
+                                VectorHelper.FlagAnd(retMatrix.GetRow(i), flatRhs[i], flatLhs.Slice(i * rowSize, rowSize));
                             }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagAnd(retMatrix.Data, i * rowSize, flatRhs, 0, flatLhs, i * rowSize, rowSize);
+                                VectorHelper.FlagAnd(retMatrix.GetRow(i), flatRhs, flatLhs.Slice(i * rowSize, rowSize));
                             }
                         }
                         else
                         {
-                            return new ComputationResult("Unable to add vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to add vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -141,7 +141,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else
                 {
                     var retMatrix = lhs.Accumulator ? lhs.OdData : (rhs.Accumulator ? rhs.OdData : new Matrix(lhs.OdData));
-                    VectorHelper.FlagAnd(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.OdData.Data, 0, retMatrix.Data.Length);
+                    VectorHelper.FlagAnd(retMatrix.Data, lhs.OdData.Data, rhs.OdData.Data);
                     return new ComputationResult(retMatrix, true);
                 }
             }

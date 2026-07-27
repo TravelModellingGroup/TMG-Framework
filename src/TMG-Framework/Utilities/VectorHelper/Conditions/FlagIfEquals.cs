@@ -31,7 +31,7 @@ public static partial class VectorHelper
 {
 
     /// <summary>
-    /// dest[i] = value == data[i] ? 1.0f : 0.0f
+    /// dest[i] = lhs == rhs[i] ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
     /// <param name="lhs">The scalar value to compare against.</param>
@@ -87,7 +87,19 @@ public static partial class VectorHelper
     }
 
     /// <summary>
-    /// dest[i] = value[i] == data[i] ? 1.0f : 0.0f
+    /// dest[i] = lhs[i] == rhs ? 1.0f : 0.0f
+    /// </summary>
+    /// <param name="dest">The destination span.</param>
+    /// <param name="lhs">The data span.</param>
+    /// <param name="rhs">The scalar value to compare against.</param>
+    public static void FlagIfEquals(Span<float> dest, ReadOnlySpan<float> lhs, float rhs)
+    {
+        // Since the order does not matter, just reverse the sides.
+        FlagIfEquals(dest, rhs, lhs);
+    }
+
+    /// <summary>
+    /// dest[i] = lhs[i] == rhs[i] ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
     /// <param name="lhs">The scalar value to compare against.</param>

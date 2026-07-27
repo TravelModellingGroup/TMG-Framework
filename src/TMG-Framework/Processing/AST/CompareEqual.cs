@@ -45,13 +45,13 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = rhs.Accumulator ? rhs.VectorData : new Vector(rhs.VectorData);
                     var flat = retVector.Data;
-                    VectorHelper.FlagIfEquals(flat, 0, lhs.LiteralValue, rhs.VectorData.Data, 0, flat.Length);
+                    VectorHelper.FlagIfEquals(flat, lhs.LiteralValue, rhs.VectorData.Data);
                     return new ComputationResult(retVector, true, rhs.Direction);
                 }
                 else
                 {
                     var retMatrix = rhs.Accumulator ? rhs.OdData : new Matrix(rhs.OdData);
-                    VectorHelper.FlagIfEquals(retMatrix.Data, 0, lhs.LiteralValue, rhs.OdData.Data, 0, retMatrix.Data.Length);
+                    VectorHelper.FlagIfEquals(retMatrix.Data, lhs.LiteralValue, rhs.OdData.Data);
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -61,14 +61,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     var retVector = lhs.Accumulator ? lhs.VectorData : new Vector(lhs.VectorData);
                     var flat = retVector.Data;
-                    VectorHelper.FlagIfEquals(flat, 0, lhs.VectorData.Data, 0, rhs.LiteralValue, flat.Length);
+                    VectorHelper.FlagIfEquals(flat, lhs.VectorData.Data, rhs.LiteralValue);
                     return new ComputationResult(retVector, true, lhs.Direction);
                 }
                 else
                 {
                     // matrix / float
                     var retMatrix = lhs.Accumulator ? lhs.OdData : new Matrix(lhs.OdData);
-                    VectorHelper.FlagIfEquals(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.LiteralValue, retMatrix.Data.Length);
+                    VectorHelper.FlagIfEquals(retMatrix.Data, lhs.OdData.Data, rhs.LiteralValue);
                     return new ComputationResult(retMatrix, true);
                 }
             }
@@ -79,7 +79,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     if (lhs.IsVectorResult && rhs.IsVectorResult)
                     {
                         var retMatrix = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new Vector(lhs.VectorData));
-                        VectorHelper.FlagIfEquals(retMatrix.Data, 0, lhs.VectorData.Data, 0, rhs.VectorData.Data, 0, retMatrix.Data.Length);
+                        VectorHelper.FlagIfEquals(retMatrix.Data, lhs.VectorData.Data, rhs.VectorData.Data);
                         return new ComputationResult(retMatrix, true, lhs.Direction);
                     }
                     else if (lhs.IsVectorResult)
@@ -93,19 +93,19 @@ namespace TMG.Frameworks.Data.Processing.AST
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagIfEquals(retMatrix.Data, i * rowSize, flatLhs[i], flatRhs, i * rowSize, rowSize);
+                                VectorHelper.FlagIfEquals(retMatrix.Data.Slice(i * rowSize, rowSize), flatLhs[i], flatRhs.Slice(i * rowSize, rowSize));
                             }
                         }
                         else if (lhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagIfEquals(retMatrix.Data, i * rowSize, flatLhs, 0, flatRhs, i * rowSize, rowSize);
+                                VectorHelper.FlagIfEquals(retMatrix.Data.Slice(i * rowSize, rowSize), flatLhs, flatRhs.Slice(i * rowSize, rowSize));
                             }
                         }
                         else
                         {
-                            return new ComputationResult("Unable to compare equal a vector without directionality to a matrix starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to compare equal a vector without directionality to a matrix starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -120,19 +120,19 @@ namespace TMG.Frameworks.Data.Processing.AST
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagIfEquals(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs[i], rowSize);
+                                VectorHelper.FlagIfEquals(retMatrix.GetRow(i), flatLhs.Slice(i * rowSize, rowSize), flatRhs[i]);
                             }
                         }
                         else if (rhs.Direction == ComputationResult.VectorDirection.Horizontal)
                         {
                             for (int i = 0; i < rowSize; i++)
                             {
-                                VectorHelper.FlagIfEquals(retMatrix.Data, i * rowSize, flatLhs, i * rowSize, flatRhs, 0, rowSize);
+                                VectorHelper.FlagIfEquals(retMatrix.GetRow(i), flatLhs.Slice(i * rowSize, rowSize), flatRhs);
                             }
                         }
                         else
                         {
-                            return new ComputationResult("Unable to compare equal a vector without directionality to a matrix starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to compare equal a vector without directionality to a matrix starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -140,7 +140,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 else
                 {
                     var retMatrix = lhs.Accumulator ? lhs.OdData : (rhs.Accumulator ? rhs.OdData : new Matrix(lhs.OdData));
-                    VectorHelper.FlagIfEquals(retMatrix.Data, 0, lhs.OdData.Data, 0, rhs.OdData.Data, 0, retMatrix.Data.Length);
+                    VectorHelper.FlagIfEquals(retMatrix.Data, lhs.OdData.Data, rhs.OdData.Data);
                     return new ComputationResult(retMatrix, true);
                 }
             }

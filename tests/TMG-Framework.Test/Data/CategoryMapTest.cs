@@ -29,10 +29,16 @@ namespace TMG.Test.Data
         [TestMethod]
         public void Aggregate()
         {
-            string error = null;
-            Categories a = Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, out var a, ref error))
+            {
+                Assert.Fail(error);
+            }
             Assert.IsNotNull(a, error);
-            Categories b = Categories.CreateCategories(new List<int> { 2, 4 }, ref error);
+            if (!Categories.CreateCategories(new List<int> { 2, 4 }, out var b, ref error))
+            {
+                Assert.Fail(error);
+            }
             Assert.IsNotNull(b, error);
             Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
                 new List<(int originFlatIndex, int destinationFlatIndex)>()
@@ -48,7 +54,7 @@ namespace TMG.Test.Data
             va.Data[2] = 2;
             va.Data[3] = 4;
             Assert.IsTrue(map.AggregateToDestination(va, out var result, ref error), error);
-            Assert.HasCount(2, result.Data);
+            Assert.AreEqual(2, result.Data.Length);
             Assert.AreSame(b, result.Categories);
             Assert.AreEqual(10, result.Data[0]);
             Assert.AreEqual(6, result.Data[1]);
@@ -57,10 +63,16 @@ namespace TMG.Test.Data
         [TestMethod]
         public void CreateIndex()
         {
-            string error = null;
-            Categories a = Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, out var a, ref error))
+            {
+                Assert.Fail(error);
+            }
             Assert.IsNotNull(a, error);
-            Categories b = Categories.CreateCategories(new List<int> { 2, 4 }, ref error);
+            if (!Categories.CreateCategories(new List<int> { 2, 4 }, out var b, ref error))
+            {
+                Assert.Fail(error);
+            }
             Assert.IsNotNull(b, error);
             Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
                 new List<(int originFlatIndex, int destinationFlatIndex)>()
@@ -80,10 +92,16 @@ namespace TMG.Test.Data
         [TestMethod]
         public void CreateReverseIndex()
         {
-            string error = null;
-            Categories a = Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, out var a, ref error))
+            {
+                Assert.Fail(error);
+            }
             Assert.IsNotNull(a, error);
-            Categories b = Categories.CreateCategories(new List<int> { 2, 4 }, ref error);
+            if (!Categories.CreateCategories(new List<int> { 2, 4 }, out var b, ref error))
+            {
+                Assert.Fail(error);
+            }
             Assert.IsNotNull(b, error);
             Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
                 new List<(int originFlatIndex, int destinationFlatIndex)>()

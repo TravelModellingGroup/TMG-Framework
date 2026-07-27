@@ -20,6 +20,7 @@
 using XTMF2;
 using TMG.Utilities;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TMG.Frameworks.Data.Processing.AST
 {
@@ -30,7 +31,9 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         }
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst(
+            ref Expression ex,
+            [NotNullWhen(false)] ref string? error)
         {
             if (!base.OptimizeAst(ref ex, ref error))
             {
@@ -102,7 +105,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     if (lhs.IsVectorResult && rhs.IsVectorResult)
                     {
                         var retMatrix = lhs.Accumulator ? lhs.VectorData : (rhs.Accumulator ? rhs.VectorData : new Vector(lhs.VectorData));
-                        VectorHelper.Divide(retMatrix.Data.AsSpan(), lhs.VectorData.Data.AsSpan(), rhs.VectorData.Data.AsSpan());
+                        VectorHelper.Divide(retMatrix.Data, lhs.VectorData.Data, rhs.VectorData.Data);
                         return new ComputationResult(retMatrix, true, lhs.Direction);
                     }
                     else if (lhs.IsVectorResult)
@@ -130,7 +133,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to add vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to add vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -161,7 +164,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to add vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to add vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }

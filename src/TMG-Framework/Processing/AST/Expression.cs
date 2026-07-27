@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Threading.Tasks;
 using XTMF2;
@@ -33,13 +34,15 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         }
 
-        private static bool FailWithError(out ComputationResult result, string message)
+        private static bool FailWithError(
+            [NotNullWhen(false)] out ComputationResult? result, string message)
         {
             result = new ComputationResult(message);
             return false;
         }
 
-        protected bool ValidateSizes(ComputationResult lhs, ComputationResult rhs, int position, out ComputationResult errorResult)
+        protected bool ValidateSizes(ComputationResult lhs, ComputationResult rhs, int position, 
+            [NotNullWhen(false)] out ComputationResult? errorResult)
         {
             errorResult = null;
             if (lhs.IsValue || lhs.IsVectorResult && rhs.IsOdResult)
@@ -52,7 +55,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 if (rhs.IsOdResult)
                 {
-                    if (!(lhs.OdData.ColumnCategories == rhs.OdData.ColumnCategories
+                    if (!(lhs.OdData!.ColumnCategories == rhs.OdData!.ColumnCategories
                         && lhs.OdData.RowCategories == rhs.OdData.RowCategories))
                     {
                         return FailWithError(out errorResult, $"Operation at position {position} failed because data was not of compatible categories.");
@@ -63,13 +66,13 @@ namespace TMG.Frameworks.Data.Processing.AST
                     switch (rhs.Direction)
                     {
                         case ComputationResult.VectorDirection.Horizontal:
-                            if (!(lhs.OdData.ColumnCategories == rhs.VectorData.Categories))
+                            if (!(lhs.OdData!.ColumnCategories == rhs.VectorData!.Categories))
                             {
                                 return FailWithError(out errorResult, $"Operation at position {position} failed because data was not of compatible categories.");
                             }
                             break;
                         case ComputationResult.VectorDirection.Vertical:
-                            if (!(lhs.OdData.RowCategories == rhs.VectorData.Categories))
+                            if (!(lhs.OdData!.RowCategories == rhs.VectorData!.Categories))
                             {
                                 return FailWithError(out errorResult, $"Operation at position {position} failed because data was not of compatible categories.");
                             }
@@ -83,7 +86,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 if (rhs.IsVectorResult)
                 {
-                    if (lhs.VectorData.Categories != rhs.VectorData.Categories)
+                    if (lhs.VectorData!.Categories != rhs.VectorData!.Categories)
                     {
                         return FailWithError(out errorResult, "Operation failed because data was not of compatible categories.");
                     }
@@ -92,7 +95,8 @@ namespace TMG.Frameworks.Data.Processing.AST
             return true;
         }
 
-        private static int FindEndOfBracket(char[] buffer, int start, int length, ref string error)
+        private static int FindEndOfBracket(char[] buffer, int start, int length, 
+            [NotNullWhen(false)] ref string? error)
         {
             int bracketLevel = 1;
             int i = start;
@@ -115,14 +119,17 @@ namespace TMG.Frameworks.Data.Processing.AST
             return -1;
         }
 
-        internal static bool Optimize(ref Expression ex, ref string error)
+        internal static bool Optimize(
+            [NotNullWhen(true)] ref Expression ex,
+            [NotNullWhen(false)] ref string? error)
         {
             // if this ever becomes a real problem try to add some optimization to the expression tree
             return ex.OptimizeAst(ref ex, ref error);
         }
 
 
-        private static int FindStartOfBracket(char[] buffer, int start, int length, ref string error)
+        private static int FindStartOfBracket(char[] buffer, int start, int length, 
+            [NotNullWhen(false)] ref string? error)
         {
             int bracketLevel = 1;
             int i = start + length - 1;
@@ -162,7 +169,12 @@ namespace TMG.Frameworks.Data.Processing.AST
             var t = e.GetType();
             if (t == typeof(Bracket))
             {
-                return IsCompareType(((Bracket)e).InnerExpression);
+                var inner = ((Bracket)e).InnerExpression;
+                if (inner is null)
+                {
+                    return false;
+                }
+                return IsCompareType(inner);
             }
             return t == typeof(CompareEqual)
                 || t == typeof(CompareNotEquals)
@@ -172,7 +184,9 @@ namespace TMG.Frameworks.Data.Processing.AST
                 || t == typeof(CompareOr);
         }
 
-        public static bool Compile(char[] buffer, int start, int length, out Expression ex, ref string error)
+        public static bool Compile(char[] buffer, int start, int length, 
+            [NotNullWhen(true)] out Expression? ex,
+            [NotNullWhen(false)] ref string? error)
         {
             ex = null;
             var endPlusOne = (length + start);
@@ -186,6 +200,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             int endIndex = FindEndOfBracket(buffer, i + 1, endPlusOne - (i + 1), ref error);
                             if (endIndex < 0)
                             {
+                                error = $"At position {i} we found a '(' character without an accompanying ')'";
                                 return false;
                             }
                             i = endIndex;
@@ -237,6 +252,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             int endIndex = FindEndOfBracket(buffer, i + 1, endPlusOne - (i + 1), ref error);
                             if (endIndex < 0)
                             {
+                                error = $"At position {i} we found a '(' character without an accompanying ')'";
                                 return false;
                             }
                             i = endIndex;
@@ -326,6 +342,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             int endIndex = FindEndOfBracket(buffer, i + 1, endPlusOne - (i + 1), ref error);
                             if (endIndex < 0)
                             {
+                                error = $"At position {i} we found a '(' character without an accompanying ')'";
                                 return false;
                             }
                             i = endIndex;
@@ -354,6 +371,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             int endIndex = FindEndOfBracket(buffer, i + 1, endPlusOne - (i + 1), ref error);
                             if (endIndex < 0)
                             {
+                                error = $"At position {i} we found a '(' character without an accompanying ')'";
                                 return false;
                             }
                             i = endIndex;
@@ -400,6 +418,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             int endIndex = FindEndOfBracket(buffer, i + 1, endPlusOne - (i + 1), ref error);
                             if (endIndex < 0)
                             {
+                                error = $"At position {i} we found a '(' character without an accompanying ')'";
                                 return false;
                             }
                             i = endIndex;
@@ -425,6 +444,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             int endIndex = FindStartOfBracket(buffer, start, i - start, ref error);
                             if (endIndex < 0)
                             {
+                                error = $"At position {i} we found a ')' character without an accompanying '('";
                                 return false;
                             }
                             i = endIndex;
@@ -450,6 +470,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             int endIndex = FindEndOfBracket(buffer, i + 1, endPlusOne - (i + 1), ref error);
                             if (endIndex < 0)
                             {
+                                error = $"At position {i} we found a '(' character without an accompanying ')'";
                                 return false;
                             }
                             i = endIndex;
@@ -472,8 +493,9 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     case '(':
                         int endIndex = FindEndOfBracket(buffer, i + 1, endPlusOne - (i + 1), ref error);
-                        if (endPlusOne < 0)
+                        if (endIndex < 0)
                         {
+                            error = $"At position {i} we found a '(' character without an accompanying ')'";
                             return false;
                         }
                         i = endIndex;
@@ -512,11 +534,12 @@ namespace TMG.Frameworks.Data.Processing.AST
                                 int endIndex = FindEndOfBracket(buffer, i + 1, endPlusOne - (i + 1), ref error);
                                 if (endIndex < 0)
                                 {
+                                    error = $"At position {i} we found a '(' character without an accompanying ')'";
                                     return false;
                                 }
                                 List<Expression> parameters = new List<Expression>();
                                 int lastStart = i + 1;
-                                Expression p;
+                                Expression? p;
                                 for (int j = i + 1; j < endIndex; j++)
                                 {
                                     if (buffer[j] == '(')
@@ -525,6 +548,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                                         var innerEndIndex = FindEndOfBracket(buffer, j + 1, endIndex, ref error);
                                         if (innerEndIndex < 0)
                                         {
+                                            error = $"At position {j} we found a '(' character without an accompanying ')'";
                                             return false;
                                         }
                                         j = innerEndIndex;
@@ -548,7 +572,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                                     }
                                     parameters.Add(p);
                                 }
-                                if (!FunctionCall.GetCall(start, builder.ToString(), parameters.ToArray(), out FunctionCall toReturn, ref error))
+                                if (!FunctionCall.GetCall(start, builder.ToString(), parameters.ToArray(), out FunctionCall? toReturn, ref error))
                                 {
                                     return false;
                                 }
@@ -573,6 +597,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                             int endIndex = FindEndOfBracket(buffer, i + 1, endPlusOne - (i + 1), ref error);
                             if (endIndex < 0)
                             {
+                                error = $"At position {i} we found a '(' character without an accompanying ')'";
                                 return false;
                             }
                             var toReturn = new Bracket(i);
@@ -637,23 +662,30 @@ namespace TMG.Frameworks.Data.Processing.AST
 
     public abstract class MonoExpression : Expression
     {
-        public Expression InnerExpression;
+        public Expression? InnerExpression;
 
         public MonoExpression(int start) : base(start)
         {
 
         }
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst( 
+            ref Expression ex,
+            [NotNullWhen(false)] ref string? error)
         {
+            if (InnerExpression is null)
+            {
+                error = "MonoExpression at position " + Start + " has no inner expression!";
+                return false;
+            }
             return InnerExpression.OptimizeAst(ref InnerExpression, ref error);
         }
     }
 
     public abstract class BinaryExpression : Expression
     {
-        public Expression Lhs;
-        public Expression Rhs;
+        public Expression? Lhs;
+        public Expression? Rhs;
 
         public BinaryExpression(int start) : base(start)
         {
@@ -662,8 +694,16 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
-            ComputationResult lhs = null;
-            ComputationResult rhs = null;
+            ComputationResult lhs = null!;
+            ComputationResult rhs = null!;
+            if (Lhs is null)
+            {
+                return new ComputationResult($"BinaryExpression at position {Start} has no LHS!");
+            }
+            if (Rhs is null)
+            {
+                return new ComputationResult($"BinaryExpression at position {Start} has no RHS!");
+            }
             Parallel.Invoke(
                 () => lhs = Lhs.Evaluate(dataSources),
                 () => rhs = Rhs.Evaluate(dataSources));
@@ -684,8 +724,19 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public abstract ComputationResult Evaluate(ComputationResult lhs, ComputationResult rhs);
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst(ref Expression ex, 
+            [NotNullWhen(false)] ref string? error)
         {
+            if (Lhs is null)
+            {
+                error = "BinaryExpression at position " + Start + " has no LHS!";
+                return false;
+            }
+            if (Rhs is null)
+            {
+                error = "BinaryExpression at position " + Start + " has no RHS!";
+                return false;
+            }
             if (!Lhs.OptimizeAst(ref Lhs, ref error) || !Rhs.OptimizeAst(ref Rhs, ref error))
             {
                 return false;
@@ -701,7 +752,8 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         }
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst(ref Expression ex, 
+            [NotNullWhen(false)] ref string? error)
         {
             return true;
         }
@@ -716,11 +768,21 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
+            if (InnerExpression is null)
+            {
+                return new ComputationResult($"Bracket at position {Start} has no inner expression!");
+            }
             return InnerExpression.Evaluate(dataSources);
         }
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst(ref Expression ex,
+            [NotNullWhen(false)] ref string? error)
         {
+            if (InnerExpression is null)
+            {
+                error = "MonoExpression at position " + Start + " has no inner expression!";
+                return false;
+            }
             if (!InnerExpression.OptimizeAst(ref ex, ref error))
             {
                 return false;

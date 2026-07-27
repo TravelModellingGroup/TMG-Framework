@@ -87,7 +87,7 @@ namespace TMG.Test.Saving
                         RowCategories = Helper.CreateParameter(categories),
                         ColumnCategories = Helper.CreateParameter(categories)
                     }.Invoke(readStream);
-                    string error = null;
+                    string? error = null;
                     Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
                 }
             }
@@ -161,7 +161,7 @@ namespace TMG.Test.Saving
                         DestinationColumn = Helper.CreateParameter(1),
                         DataColumn = Helper.CreateParameter(2),
                     }.Invoke(readStream);
-                    string error = null;
+                    string? error = null;
                     Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
                 }
             }

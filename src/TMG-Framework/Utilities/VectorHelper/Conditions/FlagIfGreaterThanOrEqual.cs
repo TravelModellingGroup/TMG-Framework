@@ -85,6 +85,61 @@ public static partial class VectorHelper
     }
 
     /// <summary>
+    /// dest[i] = lhs[i] >= rhs ? 1.0f : 0.0f
+    /// </summary>
+    /// <param name="dest">The destination span.</param>
+    /// <param name="lhs">The data span.</param>
+    /// <param name="rhs">The scalar value to compare against.</param>
+    public static void FlagIfGreaterThanOrEqual(Span<float> dest, ReadOnlySpan<float> lhs, float rhs)
+    {
+        EnsureSameSize(dest, lhs);
+
+        nuint i = 0;
+        var length = (nuint)lhs.Length;
+        ref var pDest = ref MemoryMarshal.GetReference(dest);
+        ref var pLhs = ref MemoryMarshal.GetReference(lhs);
+        if (Vector512.IsHardwareAccelerated && length >= (nuint)Vector512<float>.Count)
+        {
+            var vZero = Vector512<float>.Zero;
+            var vOne = Vector512<float>.One;
+            var rhsV = Vector512.Create(rhs);
+            for (; i <= length - (nuint)Vector512<float>.Count; i += (nuint)Vector512<float>.Count)
+            {
+                var lhsV = Vector512.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vZero, vOne, Vector512.GreaterThanOrEqual(lhsV, rhsV));
+                destV.StoreUnsafe(ref pDest, i);
+            }
+
+            if (i <= length - (nuint)Vector256<float>.Count)
+            {
+                var vZero256 = Vector256<float>.Zero;
+                var vOne256 = Vector256<float>.One;
+                var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vZero256, vOne256, Vector256.GreaterThanOrEqual(lhsV, rhsV.GetLower()));
+                destV.StoreUnsafe(ref pDest, i);
+                i += (nuint)Vector256<float>.Count;
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && length >= (nuint)Vector256<float>.Count)
+        {
+            var vZero = Vector256<float>.Zero;
+            var vOne = Vector256<float>.One;
+            var rhsV = Vector256.Create(rhs);
+            for (; i <= length - (nuint)Vector256<float>.Count; i += (nuint)Vector256<float>.Count)
+            {
+                var lhsV = Vector256.LoadUnsafe(ref pLhs, i);
+                var destV = Blend(vZero, vOne, Vector256.GreaterThanOrEqual(lhsV, rhsV));
+                destV.StoreUnsafe(ref pDest, i);
+            }
+        }
+        // Process the remainder.
+        for (; i < length; i++)
+        {
+            Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pLhs, i) >= rhs) ? 1.0f : 0.0f;
+        }
+    }
+
+    /// <summary>
     /// dest[i] = lhs[i] >= rhs[i] ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
@@ -154,7 +209,7 @@ public static partial class VectorHelper
     /// </summary>
     public static void FlagIfGreaterThanOrEqual(float[] dest, int destIndex, float[] lhs, int lhsIndex, float rhs, int length)
     {
-        FlagIfLessThanOrEqual(dest, destIndex, rhs, lhs, lhsIndex, length);
+        FlagIfGreaterThanOrEqual(dest, destIndex, rhs, lhs, lhsIndex, length);
     }
 
     /// <summary>

@@ -31,7 +31,7 @@ namespace TMG.Loading
     public sealed class LoadMatrixFromMTX : BaseFunction<ReadStream, Matrix>
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Categories> Categories;
+        public IFunction<Categories> Categories = null!;
 
         private const uint MagicNumber = 0xC4D4F1B2;
 
@@ -77,7 +77,7 @@ namespace TMG.Loading
                 var soFar = 0;
                 while (soFar < dataSize)
                 {
-                    var amount = reader.Read(MemoryMarshal.Cast<float,byte>(new Span<float>(data))[soFar..dataSize]);
+                    var amount = reader.Read(MemoryMarshal.Cast<float,byte>(data)[soFar..dataSize]);
                     if(amount == 0)
                     {
                         throw new XTMFRuntimeException(this, $"The matrix expected {dataSize}bytes but we only could get {soFar}bytes!");

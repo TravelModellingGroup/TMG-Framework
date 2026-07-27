@@ -17,6 +17,7 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using XTMF2;
 namespace TMG
@@ -259,15 +260,17 @@ namespace TMG
 
         public static bool TryParse(string timeString, out Time time)
         {
-            string error = null;
+            string? error = null;
             return TryParse(ref error, timeString, out time);
         }
 
-        public static bool TryParse(ref string error, string timeString, out Time time)
+        public static bool TryParse(
+            [NotNullWhen(false)]ref string? error, string timeString, out Time time)
         {
             time = new Time();
             if (String.IsNullOrWhiteSpace(timeString))
             {
+                error = "Time string is null or whitespace!";
                 return false;
             }
             int seconds = 0, minutes = 0, hours = 0;
@@ -454,6 +457,7 @@ namespace TMG
                         }
                         break;
                     default:
+                        error = "Unexpected state found!";
                         return false;
                 }
             }
@@ -496,7 +500,7 @@ namespace TMG
             return _internalTime < other._internalTime ? -1 : (_internalTime == other._internalTime ? 0 : 1);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is Time other)
             {

@@ -31,13 +31,13 @@ namespace TMG.Processing
     public class IntegerizeMatrix : BaseFunction<Matrix>
     {
         [SubModule(Required = true, Index = 0, Name = "Input Matrix", Description = "The matrix that will be integerized.")]
-        public IFunction<Matrix> InputMatrix;
+        public IFunction<Matrix> InputMatrix = null!;
 
         [Parameter(Index = 1, Name = "Random Seed", Description = "The number used to initialize the random number generator.")]
-        public IFunction<int> RandomSeed;
+        public IFunction<int> RandomSeed = null!;
 
         [SubModule(Required = true, Index = 2, Name = "Zone To PD Map", Description = "A mapping between zone numbers and")]
-        public IFunction<CategoryMap> ZoneToPDMap;
+        public IFunction<CategoryMap> ZoneToPDMap = null!;
 
         /// <summary>
         /// Computes an integer matrix given the input matrix, randomly assigning the remainders within

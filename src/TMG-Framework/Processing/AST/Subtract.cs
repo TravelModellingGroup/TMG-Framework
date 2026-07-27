@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using TMG.Utilities;
 
 namespace TMG.Frameworks.Data.Processing.AST
@@ -29,7 +30,8 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         }
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst(ref Expression ex, 
+            [NotNullWhen(false)] ref string? error)
         {
             if(!base.OptimizeAst(ref ex, ref error))
             {
@@ -120,7 +122,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to subtract vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to subtract vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -149,7 +151,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to subtract vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to subtract vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }

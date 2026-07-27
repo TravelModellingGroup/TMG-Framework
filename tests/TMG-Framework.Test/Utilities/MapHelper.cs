@@ -96,8 +96,12 @@ namespace TMG.Test.Utilities
         /// <returns>A new Categories with sparse space in [1..numberOfElements]</returns>
         internal static Categories LoadMap(int numberOfElements)
         {
-            string error = null;
-            return Categories.CreateCategories(Enumerable.Range(1, numberOfElements).ToList(), ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(Enumerable.Range(1, numberOfElements).ToList(), out var categories, ref error))
+            {
+                Assert.Fail(error);
+            }
+            return categories;
         }
     }
 }
