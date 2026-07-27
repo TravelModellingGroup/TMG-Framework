@@ -32,19 +32,19 @@ namespace TMG.Loading
     public class LoadCategoryMapFromThirdNormalizedCSV : BaseFunction<CategoryMap>
     {
         [SubModule(Index = 0, Required = true, Name = "Base Categories", Description = "The categories that this map from to the Destination Categories.")]
-        public IFunction<Categories> BaseCategories;
+        public IFunction<Categories> BaseCategories = null!;
 
         [SubModule(Index = 1, Required = false, Name = "Destination Categories", Description = "The categories that this map to from the Base Categories.  If not linked the CSV will create a new one based on the destination values found.")]
-        public IFunction<Categories> DestinationCategories;
+        public IFunction<Categories>? DestinationCategories;
 
         [SubModule(Index = 2, Required = true, Name = "CSV Stream", Description = "The stream that we will read from.")]
-        public IFunction<ReadStream> CSVStream;
+        public IFunction<ReadStream> CSVStream = null!;
 
         [Parameter(DefaultValue = "0", Name = "Base Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the base category index.")]
-        public IFunction<int> BaseColumn;
+        public IFunction<int> BaseColumn = null!;
 
         [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 4, Description = "The 0 indexed column containing the sparse map index for the destination category index.")]
-        public IFunction<int> DestinationColumn;
+        public IFunction<int> DestinationColumn = null!;
 
         public override CategoryMap Invoke()
         {
@@ -88,13 +88,12 @@ namespace TMG.Loading
         /// <exception cref="XTMFRuntimeException">This throws when we are unable to create the categories object.</exception>
         private Categories GetDestinationCategoriesFromRecords(List<(int baseSparseIndex, int destinationSparseIndex)> records)
         {
-            string error = null;
-            var ret = Categories.CreateCategories(records
+            string? error = null;
+            if(!Categories.CreateCategories(records
                 .Select(r => r.destinationSparseIndex)
                 .Distinct()
                 .OrderBy(r => r)
-                .ToList(), ref error);
-            if(ret is null)
+                .ToList(), out var ret,ref error))
             {
                 throw new XTMFRuntimeException(this, error);
             }
@@ -126,7 +125,7 @@ namespace TMG.Loading
                     }
                     return ret;
                 }).ToList();
-            string error = null;
+            string? error = null;
             if (!CategoryMap.CreateCategoryMap(baseCategories, destinationCategories, flatRecords, out var map, ref error))
             {
                 throw new XTMFRuntimeException(this, error);

@@ -17,6 +17,7 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using TMG.Utilities;
 using XTMF2;
@@ -66,7 +67,8 @@ namespace TMG.Frameworks.Data.Processing.AST
             _type = call;
         }
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst(ref Expression ex, 
+            [NotNullWhen(false)] ref string? error)
         {
             for (int i = 0; i < _parameters.Length; i++)
             {
@@ -78,7 +80,9 @@ namespace TMG.Frameworks.Data.Processing.AST
             return true;
         }
 
-        public static bool GetCall(int start, string call, Expression[] parameters, out FunctionCall ex, ref string error)
+        public static bool GetCall(int start, string call, Expression[] parameters, 
+            [NotNullWhen(true)] out FunctionCall? ex,
+            [NotNullWhen(false)] ref string? error)
         {
             //decode the call to a type
             ex = null;
@@ -90,7 +94,9 @@ namespace TMG.Frameworks.Data.Processing.AST
             return true;
         }
 
-        private static bool Decode(string call, ref string error, out FunctionType type)
+        private static bool Decode(string call, 
+            [NotNullWhen(false)] ref string? error,
+            out FunctionType type)
         {
             type = FunctionType.Undefined;
             call = call.ToLowerInvariant();
@@ -519,13 +525,13 @@ namespace TMG.Frameworks.Data.Processing.AST
             var flatWrite = writeTo.Data;
             var flatRead = toNormalize.OdData.Data;
             // sum the whole matrix in parallel using SIMD for each array
-            var denominator = VectorHelper.Sum(flatRead, 0, flatRead.Length);
+            var denominator = VectorHelper.Sum(flatRead);
             if (denominator == 0f)
             {
                 // only clear the write array if it was an accumulator
                 if (flatRead == flatWrite)
                 {
-                    Array.Clear(flatWrite, 0, flatRead.Length);
+                    flatWrite.Clear();
                 }
             }
             else
@@ -547,21 +553,17 @@ namespace TMG.Frameworks.Data.Processing.AST
             else if (condition.IsVectorResult && replacement.IsVectorResult)
             {
                 var saveTo = values[0].Accumulator ? values[0].VectorData : new Vector(values[0].VectorData);
-                VectorHelper.ReplaceIfNaN(saveTo.Data, condition.VectorData.Data, replacement.VectorData.Data, 0, replacement.VectorData.Data.Length);
+                VectorHelper.ReplaceIfNaN(saveTo.Data, condition.VectorData.Data, replacement.VectorData.Data);
                 return new ComputationResult(saveTo, true, condition.Direction);
             }
             else if (condition.IsOdResult && replacement.IsOdResult)
             {
                 var saveTo = values[0].Accumulator ? values[0].OdData : new Matrix(values[0].OdData);
+                int rows = values[0].OdData.RowCategories.Count;
                 var flatSave = saveTo.Data;
                 var flatCond = condition.OdData.Data;
                 var flatRep = replacement.OdData.Data;
-                int rows = values[0].OdData.RowCategories.Count;
-                int columns = values[0].OdData.ColumnCategories.Count;
-                System.Threading.Tasks.Parallel.For(0, rows, (int i) =>
-                {
-                    VectorHelper.ReplaceIfNaN(flatSave, flatCond, flatRep, i * columns, columns);
-                });
+                VectorHelper.ReplaceIfNaN(flatSave, flatCond, flatRep);
                 return new ComputationResult(saveTo, true);
             }
             return new ComputationResult($"{Start + 1}:The Condition and Replacement case of an IfNaN expression must be of the same dimensionality.");
@@ -628,7 +630,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                                 {
                                     var toAssign = cond[i] > 0 ? t : f;
                                     var rowOffset = i * cond.Length;
-                                    Array.Copy(toAssign, rowOffset, result, rowOffset, cond.Length);
+                                    toAssign.Slice(rowOffset, cond.Length).CopyTo(result.Slice(rowOffset, cond.Length));
                                 }
                                 return new ComputationResult(saveTo, true);
                             }
@@ -659,15 +661,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                     return new ComputationResult($"{Start + 1}:The True and False cases must be a Matrix when the condition is a matrix.");
                 }
                 var saveTo = values[0].Accumulator ? values[0].OdData : new Matrix(values[0].OdData);
-                var cond = condition.OdData.Data;
-                var tr = ifTrue.OdData.Data;
-                var fa = ifFalse.OdData.Data;
-                var sa = saveTo.Data;
-                var columnSize = condition.OdData.GetFlatRowIndex(1);
                 // this will never have a remainder
-                var rowSize = cond.Length / columnSize;
-                System.Threading.Tasks.Parallel.For(0, rowSize, (int row) =>
+                System.Threading.Tasks.Parallel.For(0, condition.OdData.NumberOfRows, (int row) =>
                 {
+                    var cond = condition.OdData.Data;
+                    var tr = ifTrue.OdData.Data;
+                    var fa = ifFalse.OdData.Data;
+                    var sa = saveTo.Data;
+                    var columnSize = condition.OdData.NumberOfColumns;
                     var start = columnSize * row;
                     var end = columnSize * (row + 1);
                     for (int i = start; i < end; i++)
@@ -768,14 +769,14 @@ namespace TMG.Frameworks.Data.Processing.AST
                     // each row is the single value
                     for (int i = 0; i < flatVector.Length; i++)
                     {
-                        VectorHelper.Set(flatMatrix, i * rowSize, flatVector[i], rowSize);
+                        VectorHelper.Set(flatMatrix.Slice(i * rowSize, rowSize), flatVector[i]);
                     }
                     break;
                 case ComputationResult.VectorDirection.Horizontal:
                     // each column is the single value
-                    for (int i = 0; i < flatMatrix.Length; i += flatVector.Length)
+                    for (int i = 0; i < newMatrix.NumberOfRows; i++)
                     {
-                        Array.Copy(flatVector, 0, flatMatrix, i, flatVector.Length);
+                        flatVector.CopyTo(newMatrix.GetRow(i));
                     }
                     break;
             }
@@ -799,12 +800,12 @@ namespace TMG.Frameworks.Data.Processing.AST
             if (computationResult.IsVectorResult)
             {
                 var flat = computationResult.VectorData.Data;
-                return new ComputationResult(VectorHelper.Sum(flat, 0, flat.Length) / flat.Length);
+                return new ComputationResult(VectorHelper.Sum(flat) / flat.Length);
             }
             else
             {
                 var flat = computationResult.OdData.Data;
-                return new ComputationResult(VectorHelper.Sum(flat, 0, flat.Length) / flat.Length);
+                return new ComputationResult(VectorHelper.Sum(flat) / flat.Length);
             }
         }
 
@@ -834,12 +835,12 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             if (computationResult.IsVectorResult)
             {
-                return new ComputationResult(VectorHelper.Sum(computationResult.VectorData.Data, 0, computationResult.VectorData.Data.Length));
+                return new ComputationResult(VectorHelper.Sum(computationResult.VectorData.Data));
             }
             else if (computationResult.IsOdResult)
             {
                 var data = computationResult.OdData.Data;
-                var total = VectorHelper.Sum(data, 0, data.Length);
+                var total = VectorHelper.Sum(data);
                 return new ComputationResult(total);
             }
             return new ComputationResult("Unknown data type to sum!");
@@ -888,11 +889,11 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             var ret = new Vector(computationResult.OdData.RowCategories);
             var flatRet = ret.Data;
-            var flatData = computationResult.OdData.Data;
+            var flatData = computationResult.OdData;
             var rowSize = ret.Categories.Count;
             for (int i = 0; i < flatRet.Length; i++)
             {
-                flatRet[i] = VectorHelper.Sum(flatData, i * rowSize, rowSize);
+                flatRet[i] = VectorHelper.Sum(flatData.GetRow(i));
             }
             return new ComputationResult(ret, true, ComputationResult.VectorDirection.Vertical);
         }
@@ -917,11 +918,10 @@ namespace TMG.Frameworks.Data.Processing.AST
             var data = computationResult.OdData;
             var ret = new Vector(data.RowCategories);
             var flatRet = ret.Data;
-            var flatData = data.Data;
             var rowSize = ret.Categories.Count;
             for (int i = 0; i < flatRet.Length; i++)
             {
-                flatRet[i] = VectorHelper.Sum(flatData, i * rowSize, rowSize);
+                flatRet[i] = VectorHelper.Sum(data.GetRow(i));
             }
             VectorHelper.Multiply(flatRet, flatRet, 1.0f / flatRet.Length);
             return new ComputationResult(ret, true, ComputationResult.VectorDirection.Vertical);

@@ -19,6 +19,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using TMG.Saving;
@@ -34,9 +35,10 @@ namespace TMG.Test.Utilities
             try
             {
                 var matrix = new Matrix(categories, categories);
+                
                 for (int i = 0; i < data.Length; i++)
                 {
-                    Array.Copy(data[i], 0, matrix.Data, i * data.Length, data[i].Length);
+                    data[i].AsSpan().CopyTo(matrix.GetRow(i));    
                 }
                 var save = new SaveMatrixAsCSV()
                 {
@@ -67,7 +69,7 @@ namespace TMG.Test.Utilities
                 var matrix = new Matrix(categories, categories);
                 for (int i = 0; i < data.Length; i++)
                 {
-                    Array.Copy(data[i], 0, matrix.Data, i * data.Length, data[i].Length);
+                    data[i].AsSpan().CopyTo(matrix.GetRow(i));
                 }
                 var save = new SaveMatrixAsCSV()
                 {
@@ -90,7 +92,8 @@ namespace TMG.Test.Utilities
             }
         }
 
-        internal static bool Compare(Matrix expected, Matrix testCase, ref string error)
+        internal static bool Compare(Matrix expected, Matrix testCase, 
+            [NotNullWhen(false)] ref string? error)
         {
             if(expected.ColumnCategories != testCase.ColumnCategories)
             {
@@ -125,7 +128,7 @@ namespace TMG.Test.Utilities
                 var matrix = new Matrix(categories, categories);
                 for (int i = 0; i < data.Length; i++)
                 {
-                    Array.Copy(data[i], 0, matrix.Data, i * data.Length, data[i].Length);
+                    data[i].AsSpan().CopyTo(matrix.GetRow(i));
                 }
                 var save = new SaveMatrixAsMTX();
                 using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))

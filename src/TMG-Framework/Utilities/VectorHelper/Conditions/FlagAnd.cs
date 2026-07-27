@@ -93,6 +93,17 @@ public static partial class VectorHelper
     /// dest[i] = value[i] != 0 AND data != 0 ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
+    /// <param name="lhs">The data span.</param>
+    /// <param name="rhs">The scalar value to compare against.</param>
+    public static void FlagAnd(Span<float> dest, ReadOnlySpan<float> lhs, float rhs)
+    {
+        FlagAnd(dest, rhs, lhs);
+    }
+
+    /// <summary>
+    /// dest[i] = value[i] != 0 AND data != 0 ? 1.0f : 0.0f
+    /// </summary>
+    /// <param name="dest">The destination span.</param>
     /// <param name="lhs">The scalar value to compare against.</param>
     /// <param name="rhs">The data span.</param>
     public static void FlagAnd(Span<float> dest, ReadOnlySpan<float> lhs, ReadOnlySpan<float> rhs)

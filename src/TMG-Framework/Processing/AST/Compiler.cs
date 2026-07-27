@@ -17,11 +17,15 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace TMG.Frameworks.Data.Processing.AST
 {
     public static class Compiler
     {
-        public static bool Compile(string expression,out Expression ex, ref string error)
+        public static bool Compile(string expression, 
+            [NotNullWhen(true)] out Expression? ex,
+            [NotNullWhen(false)] ref string? error)
         {
             var buffer = expression.ToCharArray();
             return Expression.Compile(buffer, 0, buffer.Length, out ex, ref error) && Expression.Optimize(ref ex, ref error);

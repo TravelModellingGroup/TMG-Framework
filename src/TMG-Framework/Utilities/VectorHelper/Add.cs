@@ -89,7 +89,6 @@ public static partial class VectorHelper
             for (; i <= end; i += (nuint)Vector512<float>.Count)
             {
                 var vLeft = Vector512.LoadUnsafe(ref leftRef, i);
-
                 var vResult = vLeft + vRight;
                 vResult.StoreUnsafe(ref destRef, i);
             }
@@ -119,6 +118,11 @@ public static partial class VectorHelper
         {
             Unsafe.Add(ref destRef, i) = Unsafe.Add(ref leftRef, i) + scalar;
         }
+    }
+
+    public static void Add(Span<float> dest, float lhs, ReadOnlySpan<float> rhs)
+    {
+        Add(dest, rhs, lhs);
     }
 
     public static void Add(Span<float> dest, ReadOnlySpan<float> left, ReadOnlySpan<float> right, ReadOnlySpan<float> third)

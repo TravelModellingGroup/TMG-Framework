@@ -17,6 +17,7 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Diagnostics.CodeAnalysis;
 using XTMF2;
 using TMG.Utilities;
 
@@ -36,18 +37,20 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public abstract ComputationResult Evaluate(IModule[] dataSources);
 
-        internal abstract bool OptimizeAst(ref Expression ex, ref string error);
+        internal abstract bool OptimizeAst(
+            ref Expression ex,
+            [NotNullWhen(false)] ref string? error);
     }
 
     public class ComputationResult
     {
-        public bool IsOdResult => OdData != null;
+        public bool IsOdResult => OdData is not null;
 
-        public bool IsVectorResult => VectorData != null;
+        public bool IsVectorResult => VectorData is not null;
 
-        public bool Error => ErrorMessage != null;
+        public bool Error => ErrorMessage is not null;
 
-        public string ErrorMessage { get; private set; }
+        public string? ErrorMessage { get; private set; }
 
         public bool Accumulator { get; private set; }
 
@@ -68,6 +71,8 @@ namespace TMG.Frameworks.Data.Processing.AST
         
         public bool IsValue => !IsOdResult && !IsVectorResult && !Error;
 
+// TODO: Get these warnings fixes once we have the time to do so. For now, we will just suppress them.
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         public ComputationResult(float value)
         {
             LiteralValue = value;
@@ -98,5 +103,6 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             ErrorMessage = errorMessage;
         }
+    #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     }
 }

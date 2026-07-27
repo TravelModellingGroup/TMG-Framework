@@ -42,7 +42,7 @@ namespace TMG
             return (first.Start == other.Start) & (first.Stop == other.Stop);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is Range other)
             {

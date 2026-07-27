@@ -28,17 +28,17 @@ namespace TMG.Select
     public sealed class SelectGivenTime<T> : BaseFunction<Time, T>
     {
         [SubModule(Index = 0, Name = "Time Period Data", Required = true, Description = "The possible results for given time periods")]
-        public IFunction<(TimePeriod period, T data)>[] TimePeriodData;
+        public IFunction<(TimePeriod period, T data)>[] TimePeriodData = null!;
 
         [Parameter(Index = 1, Name = "Default Time Period", DefaultValue = "0", Required = true, Description = "The time period to select if no time periods are applicable.")]
-        public IFunction<int> DefaultTimePeriod;
+        public IFunction<int> DefaultTimePeriod = null!;
 
-        private TimePeriod[] _TimeOperations;
+        private TimePeriod[]? _TimeOperations;
 
         public override T Invoke(Time context)
         {
             var local = _TimeOperations;
-            if (local != null)
+            if (local is not null)
             {
                 for (int i = 0; i < local.Length; i++)
                 {
@@ -78,7 +78,7 @@ namespace TMG.Select
             return Invoke(context);
         }
 
-        public override bool RuntimeValidation(ref string error)
+        public override bool RuntimeValidation(ref string? error)
         {
             if (TimePeriodData.Length <= 0)
             {

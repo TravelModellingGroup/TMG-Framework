@@ -29,10 +29,10 @@ namespace TMG.Processing
     public sealed class ExecutePipelineInOrderParallel<T> : BaseFunction<IEnumerable<T>, IEnumerable<T>>
     {
         [SubModule(Index = 0, Name = "To Execute In Parallel", Required = true, Description = "The functions in order to execute the data through in parallel.")]
-        public IFunction<T, T> ToExecuteInParallel;
+        public IFunction<T, T> ToExecuteInParallel = null!;
 
         [SubModule(Index = 1, Name = "To Execute In Serial", Required = false, Description = "The functions in order to execute the data through in parallel.")]
-        public IFunction<T,T>[] ToExecuteNotInParallel;
+        public IFunction<T,T>[] ToExecuteNotInParallel = null!;
 
         public override IEnumerable<T> Invoke(IEnumerable<T> context)
         {

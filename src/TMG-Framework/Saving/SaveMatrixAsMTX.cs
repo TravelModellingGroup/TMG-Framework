@@ -63,7 +63,7 @@ namespace TMG.Saving
                     }
                 }
                 // use span to avoid copying the data
-                writer.Write(MemoryMarshal.Cast<float,byte>(new Span<float>(matrix.Data)));
+                writer.Write(MemoryMarshal.Cast<float,byte>(matrix.Data));
             }
         }
     }

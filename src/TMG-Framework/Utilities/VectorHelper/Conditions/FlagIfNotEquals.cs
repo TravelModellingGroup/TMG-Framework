@@ -28,7 +28,7 @@ public static partial class VectorHelper
 {
 
     /// <summary>
-    /// dest[i] = value != data[i] ? 1.0f : 0.0f
+    /// dest[i] = lhs != rhs[i] ? 1.0f : 0.0f
     /// </summary>
     /// <param name="dest">The destination span.</param>
     /// <param name="lhs">The scalar value to compare against.</param>
@@ -81,6 +81,18 @@ public static partial class VectorHelper
             Unsafe.Add(ref pDest, i) = (Unsafe.Add(ref pRhs, i) != lhs) ? 1.0f : 0.0f;
         }
 
+    }
+
+    /// <summary>
+    /// dest[i] = lhs[i] != rhs ? 1.0f : 0.0f
+    /// </summary>
+    /// <param name="dest">The destination span.</param>
+    /// <param name="lhs">The scalar value to compare against.</param>
+    /// <param name="rhs">The data span.</param>
+    public static void FlagIfNotEquals(Span<float> dest, ReadOnlySpan<float> lhs, float rhs)
+    {
+        // The order does not matter, so we can just call the other function
+        FlagIfNotEquals(dest, rhs, lhs);
     }
 
     /// <summary>

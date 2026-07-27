@@ -47,10 +47,10 @@ namespace TMG.Saving
         }
 
         [Parameter(Name = "Map Column Name", DefaultValue = "Zone", Description = "The header to give to the map indexes", Index = 0)]
-        public IFunction<string> MapColumnName;
+        public IFunction<string> MapColumnName = null!;
 
         [Parameter(Name = "Data Column Name", DefaultValue = "Data", Description = "The header to give to the data", Index = 1)]
-        public IFunction<string> DataColumnName;
+        public IFunction<string> DataColumnName = null!;
 
         private void WriteHeaders(StreamWriter writer)
         {

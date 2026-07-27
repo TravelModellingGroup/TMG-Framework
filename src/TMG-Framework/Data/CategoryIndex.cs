@@ -75,7 +75,7 @@ namespace TMG
             return _Value == other._Value;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is CategoryIndex other)
             {

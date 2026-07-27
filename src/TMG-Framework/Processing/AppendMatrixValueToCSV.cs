@@ -33,22 +33,22 @@ namespace TMG.Processing
     {
 
         [Parameter(Name = "Column Name", DefaultValue = "Value", Description = "The name to use for the column", Index = 0)]
-        public IFunction<string> ColumnName;
+        public IFunction<string> ColumnName = null!;
 
         [Parameter(Name = "Row Index", DefaultValue = "1", Description = "The 0 indexed column containing the sparse map index for the row.", Index = 1)]
-        public IFunction<int> RowIndex;
+        public IFunction<int> RowIndex = null!;
 
         [Parameter(Name = "Column Index", DefaultValue = "2", Description = "The 0 indexed column containing the sparse map index for the column.", Index = 2)]
-        public IFunction<int> ColumnIndex;
+        public IFunction<int> ColumnIndex = null!;
 
         [SubModule(Name = "Matrix", Index = 3, Description = "The matrix to assign.", Required = true)]
-        public IFunction<Matrix> Matrix;
+        public IFunction<Matrix> Matrix = null!;
 
         [SubModule(Name = "Input Stream", Index = 4, Description = "The stream contianing the CSV file.", Required = true)]
-        public IFunction<ReadStream> InputStream;
+        public IFunction<ReadStream> InputStream = null!;
 
         [SubModule(Name = "Output Stream", Index = 5, Description = "The stream to store the results.", Required = true)]
-        public IFunction<WriteStream> OutputStream;
+        public IFunction<WriteStream> OutputStream = null!;
 
         public override void Invoke()
         {

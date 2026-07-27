@@ -256,6 +256,18 @@ public static partial class VectorHelper
     }
 
     /// <summary>
+    /// Dest[i] = lhs * rhs[i]
+    /// </summary>
+    /// <param name="dest">The location to store the values into.</param>
+    /// <param name="left">The scalar value that is being multiplied.</param>
+    /// <param name="right">The span of values that is being multiplied.</param>
+    public static void Multiply(Span<float> dest,
+        float left, ReadOnlySpan<float> right)
+    {
+        Multiply(dest, right, left);
+    }
+
+    /// <summary>
     /// Dest[i] = lhs[i] * rhs[i] * third
     /// </summary>
     /// <param name="dest">The location to store the values into.</param>

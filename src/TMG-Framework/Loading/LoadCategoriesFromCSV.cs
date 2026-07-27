@@ -46,9 +46,11 @@ public sealed class LoadCategoriesFromCSV : BaseFunction<ReadStream, Categories>
         {
             throw new XTMFRuntimeException(this, "Unable to create Categories object with no contained categories.");
         }
-        string error = null;
-        var ret = Categories.CreateCategories(record, ref error) 
-            ?? throw new XTMFRuntimeException(this, error);
+        string? error = null;
+        if (!Categories.CreateCategories(record, out var ret, ref error))
+        {
+            throw new XTMFRuntimeException(this, error);
+        }
         return ret;
     }
 }
@@ -79,9 +81,11 @@ public sealed class LoadCategoriesFromCSVF : BaseFunction<Categories>
         {
             throw new XTMFRuntimeException(this, "Unable to create Categories object with no contained categories.");
         }
-        string error = null;
-        var ret = Categories.CreateCategories(record, ref error)
-            ?? throw new XTMFRuntimeException(this, error);
+        string? error = null;
+        if (!Categories.CreateCategories(record, out var ret, ref error))
+        {
+            throw new XTMFRuntimeException(this, error);
+        }
         return ret;
     }
 }

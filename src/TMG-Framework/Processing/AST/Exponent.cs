@@ -105,7 +105,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to subtract vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to subtract vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -134,7 +134,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to subtract vector without directionality starting at position " + Lhs.Start + "!");
+                            return new ComputationResult("Unable to subtract vector without directionality starting at position " + (Lhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }

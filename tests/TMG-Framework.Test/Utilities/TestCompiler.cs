@@ -34,9 +34,17 @@ namespace XTMF.Testing.TMG.Data
 
         public TestCompiler()
         {
-            string error = null;
-            matrixCategories = Categories.CreateCategories(new List<int>() { 1, 2 }, ref error);
-            vectorCategories = Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(new List<int>() { 1, 2 }, out var tempMatrixCategories, ref error))
+            {
+                Assert.Fail(error);
+            }
+            if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var tempVectorCategories, ref error))
+            {
+                Assert.Fail(error);
+            }
+            matrixCategories = tempMatrixCategories;
+            vectorCategories = tempVectorCategories;
         }
         /// <summary>
         /// Create a new simple matrix for testing.
@@ -77,7 +85,7 @@ namespace XTMF.Testing.TMG.Data
         }
 
         /// <summary>
-        /// Create a new simple matrix for testing.
+        /// Create a new simple scalar for testing.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="m11"></param>
@@ -617,8 +625,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestMatrixSumRows()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("SumRows(A + B)", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("SumRows(A + B)", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -634,8 +642,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestMatrixSumColumns()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("SumColumns(A + B)", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("SumColumns(A + B)", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -651,8 +659,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestMatrixAsHorizontal()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("AsHorizontal(SumRows(A + B))", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("AsHorizontal(SumRows(A + B))", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -668,8 +676,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestMatrixSum()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("Sum(A + B)", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("Sum(A + B)", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -682,8 +690,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestVectorSum()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("Sum(SumRows(A + B))", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("Sum(SumRows(A + B))", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -716,8 +724,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestVectorAbs()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("Abs(SumRows(A) - SumRows(B))", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("Abs(SumRows(A) - SumRows(B))", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -732,8 +740,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestScalarAbs()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("Abs(Sum(A) - Sum(B))", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("Abs(Sum(A) - Sum(B))", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -746,8 +754,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestMatrixAvg()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("Avg(A - B)", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("Avg(A - B)", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -760,8 +768,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestVectorAvg()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("Avg(SumRows(A) - SumRows(B))", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("Avg(SumRows(A) - SumRows(B))", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -774,8 +782,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestMatrixAvgRows()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("AvgRows(A)", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("AvgRows(A)", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -791,8 +799,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestMatrixAvgColumns()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("AvgColumns(A)", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("AvgColumns(A)", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -808,8 +816,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestPI()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("PI( )", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("PI( )", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[0]);
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual((float)Math.PI, result.LiteralValue, 0.000001f);
@@ -818,8 +826,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestE()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("E( )", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("E( )", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[0]);
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual((float)Math.E, result.LiteralValue, 0.000001f);
@@ -938,8 +946,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestMatrixLength()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("Length(A + 1) + Length(B - 1)", out Expression ex, ref error));
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("Length(A + 1) + Length(B - 1)", out Expression? ex, ref error));
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -973,8 +981,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestOptimizeFusedMultiplyAddIsOptimizedIn()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("A * B + A", out Expression ex, ref error), $"Unable to compile 'A * B + A'\r\n{error}");
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("A * B + A", out Expression? ex, ref error), $"Unable to compile 'A * B + A'\r\n{error}");
             Assert.IsInstanceOfType(ex, typeof(FusedMultiplyAdd));
             Assert.IsTrue(Compiler.Compile("A + B * A", out ex, ref error), $"Unable to compile 'A * B + A'\r\n{error}");
             Assert.IsInstanceOfType(ex, typeof(FusedMultiplyAdd));
@@ -998,8 +1006,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestOptimizeAddLiterals()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("1 + 2", out Expression ex, ref error), $"Unable to compile '1 + 2'\r\n{error}");
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("1 + 2", out Expression? ex, ref error), $"Unable to compile '1 + 2'\r\n{error}");
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -1014,8 +1022,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestOptimizeSubtractLiterals()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("1 - 2", out Expression ex, ref error), $"Unable to compile '1 - 2'\r\n{error}");
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("1 - 2", out Expression? ex, ref error), $"Unable to compile '1 - 2'\r\n{error}");
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -1030,8 +1038,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestOptimizeMultiplyLiterals()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("1 * 2", out Expression ex, ref error), $"Unable to compile '1 * 2'\r\n{error}");
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("1 * 2", out Expression? ex, ref error), $"Unable to compile '1 * 2'\r\n{error}");
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -1046,8 +1054,8 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestOptimizeDivideLiterals()
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile("1 / 2", out Expression ex, ref error), $"Unable to compile '1 / 2'\r\n{error}");
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile("1 / 2", out Expression? ex, ref error), $"Unable to compile '1 / 2'\r\n{error}");
             var result = ex.Evaluate(new IModule[]
             {
                 CreateMatrixData("A", 1, 2, 3, 4),
@@ -1280,9 +1288,9 @@ namespace XTMF.Testing.TMG.Data
         [TestMethod]
         public void TestSubtractionOrder()
         {
-            string error = null;
+            string? error = null;
             var equation = "2 + 3 - 1 + 2";
-            Assert.IsTrue(Compiler.Compile(equation, out Expression ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
+            Assert.IsTrue(Compiler.Compile(equation, out Expression? ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
             var result = ex.Evaluate(new IModule[0]);
             Assert.IsTrue(result.IsValue, "The result was not a scalar!");
             Assert.AreEqual(6.0f, result.LiteralValue, 0.000001f);
@@ -1293,8 +1301,8 @@ namespace XTMF.Testing.TMG.Data
         /// </summary>
         private static Expression CompareMatrix(string equation, IModule[] data, float m11, float m12, float m21, float m22)
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile(equation, out Expression ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile(equation, out Expression? ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
             var result = ex.Evaluate(data);
             Assert.IsTrue(result.IsOdResult, result.ErrorMessage);
             var flat = result.OdData.Data;
@@ -1310,12 +1318,12 @@ namespace XTMF.Testing.TMG.Data
         /// </summary>
         private static Expression CompareVector(string equation, IModule[] data, float m11, float m12, float m21, float m22)
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile(equation, out Expression ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile(equation, out Expression? ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
             var result = ex.Evaluate(data);
             if (result.Error)
             {
-                Assert.Fail(result.ErrorMessage);
+                Assert.Fail(result.ErrorMessage ?? "Unknown error");
             }
             Assert.IsTrue(result.IsVectorResult);
             var flat = result.VectorData.Data;
@@ -1331,12 +1339,12 @@ namespace XTMF.Testing.TMG.Data
         /// </summary>
         private static Expression CompareScalar(string equation, IModule[] data, float m11)
         {
-            string error = null;
-            Assert.IsTrue(Compiler.Compile(equation, out Expression ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
+            string? error = null;
+            Assert.IsTrue(Compiler.Compile(equation, out Expression? ex, ref error), $"Unable to compile '{equation}'\r\n{error}");
             var result = ex.Evaluate(data);
             if (result.Error)
             {
-                Assert.Fail(result.ErrorMessage);
+                Assert.Fail(result.ErrorMessage ?? "Unknown error");
             }
             Assert.IsTrue(result.IsValue);
             Assert.AreEqual(m11, result.LiteralValue, 0.00001f);

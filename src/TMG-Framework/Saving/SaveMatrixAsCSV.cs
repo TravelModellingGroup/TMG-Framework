@@ -30,19 +30,19 @@ namespace TMG.Saving
     {
         [Parameter(Name = "Third Normalized", DefaultValue = "True", Index = 0,
             Description = "Should the data be saved in third normalized form?  If not it will be saved as a CSV Matrix")]
-        public IFunction<bool> ThirdNormalized;
+        public IFunction<bool> ThirdNormalized = null!;
 
         [Parameter(Name = "First Index Header", DefaultValue = "Origin", Index = 1,
             Description = "The name of the first index.")]
-        public IFunction<string> FirstIndexHeader;
+        public IFunction<string> FirstIndexHeader = null!;
 
         [Parameter(Name = "Second Index Header", DefaultValue = "Destination", Index = 2,
             Description = "The name of the second index.")]
-        public IFunction<string> SecondIndexHeader;
+        public IFunction<string> SecondIndexHeader = null!;
 
         [Parameter(Name = "Data Index Header", DefaultValue = "Data", Index = 3,
             Description = "The name of the Data index.")]
-        public IFunction<string> DataIndexHeader;
+        public IFunction<string> DataIndexHeader = null!;
 
         public override void Invoke((Matrix Matrix, WriteStream Stream) context)
         {

@@ -22,15 +22,16 @@ using TMG.Utilities;
 using System;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TMG.Frameworks.Data.Processing.AST
 {
     public sealed class FusedMultiplyAdd : Expression
     {
 
-        public Expression MulLhs;
-        public Expression MulRhs;
-        public Expression Add;
+        public Expression? MulLhs;
+        public Expression? MulRhs;
+        public Expression? Add;
         private int AddStart;
 
         public FusedMultiplyAdd(int mulStart, int addStart) : base(mulStart)
@@ -40,9 +41,13 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
-            ComputationResult mulLhs = null;
-            ComputationResult mulRhs = null;
-            ComputationResult add = null;
+            ComputationResult mulLhs = null!;
+            ComputationResult mulRhs = null!;
+            ComputationResult add = null!;
+            if (MulLhs is null || MulRhs is null || Add is null)
+            {
+                return new ComputationResult("Unable to evaluate FusedMultiplyAdd with null operands starting at position " + Start + "!");
+            }
             Parallel.Invoke(
                 () => mulLhs = MulLhs.Evaluate(dataSources),
                 () => mulRhs = MulRhs.Evaluate(dataSources),
@@ -176,7 +181,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to add vector without directionality starting at position " + MulLhs.Start + "!");
+                            return new ComputationResult("Unable to add vector without directionality starting at position " + (MulLhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -205,7 +210,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                         }
                         else
                         {
-                            return new ComputationResult("Unable to add vector without directionality starting at position " + MulLhs.Start + "!");
+                            return new ComputationResult("Unable to add vector without directionality starting at position " + (MulLhs?.Start ?? -1) + "!");
                         }
                         return new ComputationResult(retMatrix, true);
                     }
@@ -244,15 +249,15 @@ namespace TMG.Frameworks.Data.Processing.AST
             {
                 if (lhs.IsVectorResult && lhs.Direction == ComputationResult.VectorDirection.Unassigned)
                 {
-                    return new ComputationResult("Unable to multiply vector without directionality starting at position " + MulLhs.Start + "!");
+                    return new ComputationResult("Unable to multiply vector without directionality starting at position " + (MulLhs?.Start ?? -1) + "!");
                 }
                 if (rhs.IsVectorResult && lhs.Direction == ComputationResult.VectorDirection.Unassigned)
                 {
-                    return new ComputationResult("Unable to multiply vector without directionality starting at position " + MulRhs.Start + "!");
+                    return new ComputationResult("Unable to multiply vector without directionality starting at position " + (MulRhs?.Start ?? -1) + "!");
                 }
                 if (add.Direction == ComputationResult.VectorDirection.Unassigned)
                 {
-                    return new ComputationResult("Unable to add vector without directionality starting at position " + Add.Start + "!");
+                    return new ComputationResult("Unable to add vector without directionality starting at position " + (Add?.Start ?? -1) + "!");
                 }
                 // if the lhs is a value just swap the two around
                 if (!lhs.IsOdResult)
@@ -394,11 +399,11 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
             if (lhs.IsVectorResult && lhs.Direction == ComputationResult.VectorDirection.Unassigned)
             {
-                return new ComputationResult("Unable to multiply vector without directionality starting at position " + MulLhs.Start + "!");
+                return new ComputationResult("Unable to multiply vector without directionality starting at position " + (MulLhs?.Start ?? -1) + "!");
             }
             if (rhs.IsVectorResult && rhs.Direction == ComputationResult.VectorDirection.Unassigned)
             {
-                return new ComputationResult("Unable to multiply vector without directionality starting at position " + MulRhs.Start + "!");
+                return new ComputationResult("Unable to multiply vector without directionality starting at position " + (MulRhs?.Start ?? -1) + "!");
             }
             // Ensure that the LHS is a higher or equal order to the RHS (Matrix > Vector > Scalar)
             if (!lhs.IsOdResult)
@@ -478,7 +483,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                     if (lhs.Direction != rhs.Direction)
                     {
                         // if the directions don't add up then the sum operation would be undefined!
-                        return new ComputationResult("Unable to add vector without directionality starting at position " + MulLhs.Start + "!");
+                        return new ComputationResult("Unable to add vector without directionality starting at position " + (MulLhs?.Start ?? -1) + "!");
                     }
                     VectorHelper.Multiply(tempVector.Data, lhs.VectorData.Data, rhs.VectorData.Data);
                 }
@@ -486,11 +491,12 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     VectorHelper.Multiply(tempVector.Data, lhs.VectorData.Data, rhs.LiteralValue);
                 }
-                var flatTemp = tempVector.Data;
+                
                 if (lhs.Direction == ComputationResult.VectorDirection.Vertical)
                 {
                     Parallel.For(0, rowSize, (int i) =>
                     {
+                        var flatTemp = tempVector.Data;
                         var retRow = retMatrix.GetRow(i);
                         var addRow = add.OdData.GetRow(i);
                         VectorHelper.Add(retRow, addRow, flatTemp[i]);
@@ -500,6 +506,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 {
                     Parallel.For(0, rowSize, (int i) =>
                     {
+                        var flatTemp = tempVector.Data;
                         var retRow = retMatrix.GetRow(i);
                         var addRow = add.OdData.GetRow(i);
                         VectorHelper.Add(retRow, flatTemp, addRow);
@@ -516,8 +523,14 @@ namespace TMG.Frameworks.Data.Processing.AST
             }
         }
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst(ref Expression ex, 
+            [NotNullWhen(false)] ref string? error)
         {
+            if (MulLhs is null || MulRhs is null || Add is null)
+            {
+                error = "Unable to optimize FusedMultiplyAdd with null operands starting at position " + Start + "!";
+                return false;
+            }
             return !(!MulLhs.OptimizeAst(ref MulLhs, ref error)
                     || !MulLhs.OptimizeAst(ref MulRhs, ref error)
                     || !MulLhs.OptimizeAst(ref Add, ref error));

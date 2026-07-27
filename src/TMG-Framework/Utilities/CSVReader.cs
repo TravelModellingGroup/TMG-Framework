@@ -41,7 +41,7 @@ namespace TMG.Utilities
         private CsvPartition[] Data = new CsvPartition[50];
 
         private char[] DataBuffer = new char[0x4000];
-        private char[] DataBuffer2;
+        private char[]? DataBuffer2;
 
         private int DataBufferLength;
 

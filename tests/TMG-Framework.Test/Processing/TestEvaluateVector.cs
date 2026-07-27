@@ -46,7 +46,7 @@ namespace TMG.Test.Processing
                     Helper.CreateParameter(c, "C"),
                 }
             };
-            string error = null;
+            string? error = null;
             Assert.IsTrue(eval.RuntimeValidation(ref error), error);
             var res = eval.Invoke();
             Assert.IsNotNull(res);

@@ -18,6 +18,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using static TMG.Utilities.ExceptionHelper;
 
@@ -42,13 +43,15 @@ namespace TMG
             set => RangeSets[index] = value;
         }
 
-        public static bool TryParse(string rangeString, out RangeSetSet output)
+        public static bool TryParse(string rangeString, [NotNullWhen(true)] out RangeSetSet? output)
         {
-            string error = null;
+            string? error = null;
             return TryParse(ref error, rangeString, out output);
         }
 
-        public static bool TryParse(ref string error, string rangeString, out RangeSetSet output)
+        public static bool TryParse([NotNullWhen(false)] ref string? error,
+            string rangeString,
+            [NotNullWhen(true)] out RangeSetSet? output)
         {
             if (rangeString == null)
             {
@@ -68,7 +71,7 @@ namespace TMG
                     {
                         if (rangeString[endPos] == '}')
                         {
-                            if (!RangeSet.TryParse(ref error, rangeString.Substring(startPos + 1, endPos - startPos - 1), out RangeSet temp))
+                            if (!RangeSet.TryParse(ref error, rangeString.Substring(startPos + 1, endPos - startPos - 1), out RangeSet? temp))
                             {
                                 return false;
                             }
@@ -88,7 +91,7 @@ namespace TMG
             // in case it is a set of 1 element
             if (rangeSets.Count == 0)
             {
-                if (RangeSet.TryParse(ref error, rangeString, out RangeSet temp))
+                if (!RangeSet.TryParse(ref error, rangeString, out RangeSet? temp))
                 {
                     return false;
                 }
@@ -128,7 +131,7 @@ namespace TMG
             }
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             var other = obj as RangeSetSet;
             if (Count != other?.Count) return false;

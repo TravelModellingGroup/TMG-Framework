@@ -22,6 +22,7 @@ using System.Text;
 using System.Linq;
 using static TMG.Utilities.ExceptionHelper;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TMG
 {
@@ -46,7 +47,9 @@ namespace TMG
         /// <param name="elements"></param>
         /// <param name="error"></param>
         /// <returns></returns>
-        public static Categories CreateCategories(List<int> elements, ref string error)
+        public static bool CreateCategories(List<int> elements, 
+            [NotNullWhen(true)] out Categories? categories,
+            [NotNullWhen(false)] ref string? error)
         {
             elements = elements?.ToList() ?? throw new ArgumentNullException(nameof(elements));
             elements.Sort();
@@ -55,10 +58,12 @@ namespace TMG
                 if(elements[i - 1] == elements[i])
                 {
                     error = $"Found a duplicate category {elements[i]}!";
-                    return null;
+                    categories = null;
+                    return false;
                 }
             }
-            return new Categories(elements);
+            categories = new Categories(elements);
+            return true;
         }
 
         /// <summary>

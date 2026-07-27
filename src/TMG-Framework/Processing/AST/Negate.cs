@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 using TMG.Utilities;
 using XTMF2;
 
@@ -32,8 +33,15 @@ namespace TMG.Frameworks.Data.Processing.AST
         {
         }
 
-        internal override bool OptimizeAst(ref Expression ex, ref string error)
+        internal override bool OptimizeAst(ref Expression ex, 
+            [NotNullWhen(false)] ref string? error)
         {
+            if (InnerExpression is null)
+            {
+                error = "Unable to optimize Negate with null operand starting at position " + Start + "!";
+                return false;
+            }
+
             // Optimize our children first
             if (!InnerExpression.OptimizeAst(ref InnerExpression, ref error))
             {
@@ -49,6 +57,11 @@ namespace TMG.Frameworks.Data.Processing.AST
 
         public override ComputationResult Evaluate(IModule[] dataSources)
         {
+            if (InnerExpression is null)
+            {
+                return new ComputationResult("Unable to evaluate Negate with null operand starting at position " + Start + "!");
+            }
+
             var inner = InnerExpression.Evaluate(dataSources);
             if (inner.IsValue)
             {
@@ -57,7 +70,7 @@ namespace TMG.Frameworks.Data.Processing.AST
             else if (inner.IsVectorResult)
             {
                 var ret = inner.Accumulator ? inner.VectorData : new Vector(inner.VectorData);
-                VectorHelper.Negate(ret.Data, inner.VectorData.Data, 0, ret.Data.Length);
+                VectorHelper.Negate(ret.Data, inner.VectorData.Data);
                 return new ComputationResult(ret, true, inner.Direction);
             }
             else
@@ -65,7 +78,7 @@ namespace TMG.Frameworks.Data.Processing.AST
                 var ret = inner.Accumulator ? inner.OdData : new Matrix(inner.OdData);
                 var flatRet = ret.Data;
                 var flatInner = inner.OdData.Data;
-                VectorHelper.Negate(flatRet, flatInner, 0, flatInner.Length);
+                VectorHelper.Negate(flatRet, flatInner);
                 return new ComputationResult(ret, true);
             }
         }

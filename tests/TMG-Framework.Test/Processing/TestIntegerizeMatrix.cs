@@ -36,9 +36,15 @@ namespace TMG.Test.Processing
         [TestMethod]
         public void IntegerizeZeroMatrix()
         {
-            string error = null;
-            var zones = Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, ref error);
-            var pds = Categories.CreateCategories(new List<int>() { 1, 2, }, ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var zones, ref error))
+            {
+                Assert.Fail(error);
+            }
+            if (!Categories.CreateCategories(new List<int>() { 1, 2, }, out var pds, ref error))
+            {
+                Assert.Fail(error);
+            }
             Assert.IsTrue(CategoryMap.CreateCategoryMap(zones, pds, new List<(int originFlatIndex, int destinationFlatIndex)>()
             {
                 new (0, 0),
@@ -63,9 +69,15 @@ namespace TMG.Test.Processing
         [TestMethod]
         public void IntegerizeIdentityMatrix()
         {
-            string error = null;
-            var zones = Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, ref error);
-            var pds = Categories.CreateCategories(new List<int>() { 1, 2, }, ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var zones, ref error))
+            {
+                Assert.Fail(error);
+            }
+            if (!Categories.CreateCategories(new List<int>() { 1, 2, }, out var pds, ref error))
+            {
+                Assert.Fail(error);
+            }
             Assert.IsTrue(CategoryMap.CreateCategoryMap(zones, pds, new List<(int originFlatIndex, int destinationFlatIndex)>()
             {
                 new (0, 0),
@@ -96,9 +108,15 @@ namespace TMG.Test.Processing
         [TestMethod]
         public void IntegerizeRealMatrix()
         {
-            string error = null;
-            var zones = Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, ref error);
-            var pds = Categories.CreateCategories(new List<int>() { 1, 2, }, ref error);
+            string? error = null;
+            if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var zones, ref error))
+            {
+                Assert.Fail(error);
+            }
+            if (!Categories.CreateCategories(new List<int>() { 1, 2, }, out var pds, ref error))
+            {
+                Assert.Fail(error);
+            }
             Assert.IsTrue(CategoryMap.CreateCategoryMap(zones, pds, new List<(int originFlatIndex, int destinationFlatIndex)>()
             {
                 new (0, 0),

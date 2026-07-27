@@ -58,9 +58,9 @@ namespace TMG.Data.Testing
         [TestMethod()]
         public void TryParseTestFail()
         {
-            string error = null;
+            string? error = null;
             string rangeString = "{1-2,4-5},{11-12,14-15";
-            bool actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet output);
+            bool actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet? output);
             Assert.IsNotNull(error);
             Assert.IsNull(output);
             Assert.IsFalse(actual);
@@ -74,7 +74,7 @@ namespace TMG.Data.Testing
         {
             string rangeString = "{1-2,4-5},{11-12,14-15}";
             RangeSetSet outputExpected = new RangeSetSet(GenerateTempRange());
-            var actual = RangeSetSet.TryParse(rangeString, out RangeSetSet output);
+            var actual = RangeSetSet.TryParse(rangeString, out RangeSetSet? output);
             Assert.AreEqual(outputExpected, output);
             Assert.IsTrue(actual);
         }
@@ -85,10 +85,10 @@ namespace TMG.Data.Testing
         [TestMethod()]
         public void TryParseTestSuccess()
         {
-            string error = null;
+            string? error = null;
             string rangeString = "{1-2,4-5},{11-12,14-15}";
             RangeSetSet outputExpected = new RangeSetSet(GenerateTempRange());
-            var actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet output);
+            var actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet? output);
             Assert.IsNull(error);
             Assert.AreEqual(outputExpected, output);
             Assert.IsTrue(actual);

@@ -65,7 +65,7 @@ public class TestLoadVector
         try
         {
             var vector = new Vector(categories);
-            Array.Copy(data, vector.Data, vector.Data.Length);
+            data.AsSpan().CopyTo(vector.Data);
             var save = new TMG.Saving.SaveVectorAsCSV()
             {
                 MapColumnName = Helper.CreateParameter("Zone"),

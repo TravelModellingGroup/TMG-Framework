@@ -28,10 +28,10 @@ namespace TMG.Construct
     public sealed class ConstructTimePeriodFromTimes : BaseFunction<TimePeriod>
     {
         [Parameter(Index = 0, Name = "Start Time", Required = true, Description = "The time to use as the starting point of the time period (Inclusive).")]
-        public IFunction<Time> StartTime;
+        public IFunction<Time> StartTime = null!;
 
         [Parameter(Index = 1, Name = "End Time", Required = true, Description = "The time to use as the ending point of the time period (Exclusive).")]
-        public IFunction<Time> EndTime;
+        public IFunction<Time> EndTime = null!;
 
         public override TimePeriod Invoke()
         {
