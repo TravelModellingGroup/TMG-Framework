@@ -131,6 +131,7 @@ namespace TMG.Test.Loading
             var matrixLoader = new LoadMatrixFromMTX()
             {
                 Categories = Helper.CreateParameter(map),
+                ConvertBetweenZoneSystems = Helper.CreateParameter(false)
             };
             using (var stream = (new OpenReadStreamFromFile()
             {
@@ -147,6 +148,47 @@ namespace TMG.Test.Loading
                         if (Math.Abs((2.0f + i * j) - vData[i * map.Count + j]) < 0.00001f)
                         {
                             Assert.AreEqual(2.0f + i * j, vData[i * map.Count + j], 0.00001f);
+                        }
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestLoadMatrixFromMTXDifferentZoneSystem()
+        {
+            var bigMap = MapHelper.LoadMap(MapHelper.WriteCSV(64));
+            var smallMap = MapHelper.LoadMap(MapHelper.WriteCSV(32));
+            float[][] data = new float[64][];
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = new float[64];
+                for (int j = 0; j < data[i].Length; j++)
+                {
+                    data[i][j] = 2.0f + i * j;
+                }
+            }
+            var matrixFileName = MatrixHelper.WriteMatrixToMTX(bigMap, data);
+            var matrixLoader = new LoadMatrixFromMTX()
+            {
+                Categories = Helper.CreateParameter(smallMap),
+                ConvertBetweenZoneSystems = Helper.CreateParameter(true)
+            };
+            using (var stream = (new OpenReadStreamFromFile()
+            {
+                FilePath = Helper.CreateParameter(matrixFileName)
+            }).Invoke())
+            {
+                var matrix = matrixLoader.Invoke(stream);
+                Assert.AreSame(smallMap, matrix.RowCategories);
+                var vData = matrix.Data;
+                for (int i = 0; i < smallMap.Count; i++)
+                {
+                    for (int j = 0; j < smallMap.Count; j++)
+                    {
+                        if (Math.Abs((2.0f + i * j) - vData[i * smallMap.Count + j]) < 0.00001f)
+                        {
+                            Assert.AreEqual(2.0f + i * j, vData[i * smallMap.Count + j], 0.00001f);
                         }
                     }
                 }

@@ -80,10 +80,10 @@ namespace TMG
         }
 
         /// <summary>
-        /// 
+        /// Gives the flat index of the specified sparse index, or less than 0 if the sparse index is not in the map.
         /// </summary>
-        /// <param name="sparseIndex"></param>
-        /// <returns></returns>
+        /// <param name="sparseIndex">The sparse index to look up</param>
+        /// <returns>Gives the flat index of the specified sparse index, or less than 0 if the sparse index is not in the map.</returns>
         public int GetFlatIndex(CategoryIndex sparseIndex)
         {
             return _elements.BinarySearch(sparseIndex);

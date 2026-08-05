@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using TMG.Utilities;
@@ -32,6 +33,9 @@ namespace TMG.Loading
     {
         [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
         public IFunction<Categories> Categories = null!;
+
+        [Parameter(Name = "Convert Between Zone Systems", DefaultValue = "false", Description = "A function that converts between the zone system of the matrix and the zone system of the map.", Index = 1)]
+        public IFunction<bool> ConvertBetweenZoneSystems = null!;
 
         private const uint MagicNumber = 0xC4D4F1B2;
 
@@ -60,32 +64,102 @@ namespace TMG.Loading
                 {
                     throw new XTMFRuntimeException(this, $"The matrix contained {numberOfIndexes} dimensions!");
                 }
-                int firstSize = reader.ReadInt32();
-                int secondSize = reader.ReadInt32();
-                if(categories.Count != firstSize)
+
+                var convert = ConvertBetweenZoneSystems.Invoke();
+                if(!convert)
                 {
-                    throw new XTMFRuntimeException(this, "The matrix had the wrong number of elements in the first dimension!");
+                    LoadWithoutConversion(categories, matrix, reader);
                 }
-                if (categories.Count != secondSize)
+                else
                 {
-                    throw new XTMFRuntimeException(this, "The matrix had the wrong number of elements in the second dimension!");
-                }
-                ValidateIndexes(reader, categories);
-                ValidateIndexes(reader, categories);
-                var data = matrix.Data;
-                var dataSize = data.Length * sizeof(float);
-                var soFar = 0;
-                while (soFar < dataSize)
-                {
-                    var amount = reader.Read(MemoryMarshal.Cast<float,byte>(data)[soFar..dataSize]);
-                    if(amount == 0)
-                    {
-                        throw new XTMFRuntimeException(this, $"The matrix expected {dataSize}bytes but we only could get {soFar}bytes!");
-                    }
-                    soFar += amount;
+                    LoadWithConversion(categories, matrix, reader);
                 }
             }
             return matrix;
+        }
+
+        private void LoadWithoutConversion(Categories categories, Matrix matrix, BinaryReader reader)
+        {
+            int firstSize = reader.ReadInt32();
+            int secondSize = reader.ReadInt32();
+            if (categories.Count != firstSize)
+            {
+                throw new XTMFRuntimeException(this, "The matrix had the wrong number of elements in the first dimension!");
+            }
+            if (categories.Count != secondSize)
+            {
+                throw new XTMFRuntimeException(this, "The matrix had the wrong number of elements in the second dimension!");
+            }
+            ValidateIndexes(reader, categories);
+            ValidateIndexes(reader, categories);
+
+            var data = matrix.Data;
+            var dataSize = data.Length * sizeof(float);
+            var soFar = 0;
+            while (soFar < dataSize)
+            {
+                var amount = reader.Read(MemoryMarshal.Cast<float, byte>(data)[soFar..dataSize]);
+                if (amount == 0)
+                {
+                    throw new XTMFRuntimeException(this, $"The matrix expected {dataSize}bytes but we only could get {soFar}bytes!");
+                }
+                soFar += amount;
+            }
+        }
+
+        private void LoadWithConversion(Categories categories, Matrix matrix, BinaryReader reader)
+        {
+            int rowSize = reader.ReadInt32();
+            int columnSize = reader.ReadInt32();
+            
+            if (rowSize != columnSize)
+            {
+                throw new XTMFRuntimeException(this, "The matrix was not square!");
+            }
+
+            // Load in the column categories (sparse space)
+            var rows = new int[rowSize];
+            var columns = new int[columnSize];
+
+            reader.ReadExactly(MemoryMarshal.Cast<int, byte>(rows.AsSpan()));
+            reader.ReadExactly(MemoryMarshal.Cast<int, byte>(columns.AsSpan()));
+
+            // Load in the matrix data
+            var numberOfElements = rowSize * columnSize;
+            var dataSize = numberOfElements * sizeof(float);
+            var data = new float[numberOfElements];
+            var dataSpan = data.AsSpan();
+            var soFar = 0;
+            while (soFar < dataSize)
+            {
+                var amount = reader.Read(MemoryMarshal.Cast<float, byte>(dataSpan)[soFar..dataSize]);
+                if (amount == 0)
+                {
+                    throw new XTMFRuntimeException(this, $"The matrix expected {dataSize}bytes but we only could get {soFar}bytes!");
+                }
+                soFar += amount;
+            }
+
+            ref var matrixData = ref MemoryMarshal.GetReference(matrix.Data);
+            ref var rData = ref MemoryMarshal.GetReference(dataSpan);
+            var matrixColumnSize = matrix.NumberOfColumns;
+            for (int i = 0; i < rowSize; i++)
+            {
+                var rowIndex = categories.GetFlatIndex(rows[i]);
+                if (rowIndex < 0)
+                {
+                    continue;
+                }
+                for (int j = 0; j < columnSize; j++)
+                {
+                    var columnIndex = categories.GetFlatIndex(columns[j]);
+                    if (columnIndex >= 0)
+                    {
+                        ref var writeTo = ref Unsafe.Add(ref matrixData, rowIndex * matrixColumnSize + columnIndex);
+                        writeTo = Unsafe.Add(ref rData, i * columnSize + j);
+                    }
+                }
+            }
         }
 
         private void ValidateIndexes(BinaryReader reader, Categories categories)
