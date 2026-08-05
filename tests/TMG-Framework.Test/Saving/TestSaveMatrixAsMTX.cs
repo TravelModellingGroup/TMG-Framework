@@ -70,7 +70,8 @@ namespace TMG.Test.Saving
                 {
                     var readMatrix = new TMG.Loading.LoadMatrixFromMTX()
                     {
-                        Categories = Helper.CreateParameter(categories)
+                        Categories = Helper.CreateParameter(categories),
+                        ConvertBetweenZoneSystems = Helper.CreateParameter(false)
                     }.Invoke(readStream);
                     string? error = null;
                     Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
