@@ -235,12 +235,13 @@ namespace TMG.Utilities
                                 Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
                             }
                             columns = numberOfColumns;
-                            return true;
+                            return columns > 0;
                         }
                     }
                     c = DataBuffer[DataBufferPosition++];
-                    if ((c == '\n') || (c == '\0'))
+                    if ((prevC == '\r' && c != '\n' && c != '\0') || (c == '\n') || (c == '\0'))
                     {
+                        // Create a new column if this is a Linux file format.
                         if (prevC != '\r')
                         {
                             if (Data.Length <= numberOfColumns)
@@ -248,6 +249,12 @@ namespace TMG.Utilities
                                 ExpandDataSections();
                             }
                             Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
+                            addOne = false;
+                        }
+                        else if (prevC == '\r' && c != '\n' && c != '\0')
+                        {
+                            // If it was just a MAC encoded line ending then we need to process the current character in the next load.
+                            DataBufferPosition--;
                             addOne = false;
                         }
                         break;
@@ -322,12 +329,13 @@ namespace TMG.Utilities
                                 Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
                             }
                             columns = numberOfColumns;
-                            return true;
+                            return columns > 0;
                         }
                     }
                     c = DataBuffer[DataBufferPosition++];
-                    if ((c == '\n') || (c == '\0'))
+                    if ((prevC == '\r' && c != '\n' && c != '\0') || (c == '\n') || (c == '\0'))
                     {
+                        // Create a new column if this is a Linux file format.
                         if (prevC != '\r')
                         {
                             if (Data.Length <= numberOfColumns)
@@ -335,6 +343,12 @@ namespace TMG.Utilities
                                 ExpandDataSections();
                             }
                             Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
+                            addOne = false;
+                        }
+                        else if (prevC == '\r' && c != '\n' && c != '\0')
+                        {
+                            // If it was just a MAC encoded line ending then we need to process the current character in the next load.
+                            DataBufferPosition--;
                             addOne = false;
                         }
                         break;
