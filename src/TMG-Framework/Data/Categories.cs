@@ -66,6 +66,31 @@ namespace TMG
             return true;
         }
 
+                /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="elements"></param>
+        /// <param name="error"></param>
+        /// <returns></returns>
+        public static bool CreateCategories(Span<int> elements, 
+            [NotNullWhen(true)] out Categories? categories,
+            [NotNullWhen(false)] ref string? error)
+        {
+            var list = new List<int>(elements.ToArray());
+            list.Sort();
+            for (int i = 1; i < list.Count; i++)
+            {
+                if(list[i - 1] == list[i])
+                {
+                    error = $"Found a duplicate category {list[i]}!";
+                    categories = null;
+                    return false;
+                }
+            }
+            categories = new Categories(list);
+            return true;
+        }
+
         /// <summary>
         /// Create a SparseMap from a list of elements
         /// </summary>
