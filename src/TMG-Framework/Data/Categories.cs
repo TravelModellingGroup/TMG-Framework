@@ -42,11 +42,11 @@ namespace TMG
         private readonly List<int> _elements;
 
         /// <summary>
-        /// 
+        /// Create a Categories instance from a list of elements
         /// </summary>
-        /// <param name="elements"></param>
-        /// <param name="error"></param>
-        /// <returns></returns>
+        /// <param name="elements">The list of elements to use, values will be sorted, any duplicates will return in failure.</param>
+        /// <param name="error">The error message if creation fails</param>
+        /// <returns>True if creation succeeds, false otherwise</returns>
         public static bool CreateCategories(List<int> elements, 
             [NotNullWhen(true)] out Categories? categories,
             [NotNullWhen(false)] ref string? error)
@@ -67,9 +67,34 @@ namespace TMG
         }
 
         /// <summary>
-        /// Create a SparseMap from a list of elements
+        /// Create a Categories instance from a list of elements
         /// </summary>
-        /// <param name="elements">The sorted elements to use</param>
+        /// <param name="elements">The list of elements to use, values will be sorted, any duplicates will return in failure.</param>
+        /// <param name="error">The error message if creation fails</param>
+        /// <returns>True if creation succeeds, false otherwise</returns>
+        public static bool CreateCategories(Span<int> elements, 
+            [NotNullWhen(true)] out Categories? categories,
+            [NotNullWhen(false)] ref string? error)
+        {
+            var list = new List<int>(elements.ToArray());
+            list.Sort();
+            for (int i = 1; i < list.Count; i++)
+            {
+                if(list[i - 1] == list[i])
+                {
+                    error = $"Found a duplicate category {list[i]}!";
+                    categories = null;
+                    return false;
+                }
+            }
+            categories = new Categories(list);
+            return true;
+        }
+
+        /// <summary>
+        /// Create a Categories instance from a list of elements
+        /// </summary>
+        /// <param name="elements">The sorted list of elements to use</param>
         private Categories(List<int> elements)
         {
             if(elements == null)
