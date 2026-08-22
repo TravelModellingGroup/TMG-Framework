@@ -17,92 +17,87 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Diagnostics.CodeAnalysis;
-using XTMF2;
-using TMG.Utilities;
+namespace TMG.Frameworks.Data.Processing.AST;
 
-namespace TMG.Frameworks.Data.Processing.AST
+public abstract class AstNode
 {
-    public abstract class AstNode
+    /// <summary>
+    /// The starting point of the node
+    /// </summary>
+    internal readonly int Start;
+
+    protected AstNode(int start)
     {
-        /// <summary>
-        /// The starting point of the node
-        /// </summary>
-        internal readonly int Start;
-
-        protected AstNode(int start)
-        {
-            Start = start;
-        }
-
-        public abstract ComputationResult Evaluate(IModule[] dataSources);
-
-        internal abstract bool OptimizeAst(
-            ref Expression ex,
-            [NotNullWhen(false)] ref string? error);
+        Start = start;
     }
 
-    public class ComputationResult
+    public abstract ComputationResult Evaluate(IModule[] dataSources);
+
+    internal abstract bool OptimizeAst(
+        ref Expression ex,
+        [NotNullWhen(false)] ref string? error);
+}
+
+public class ComputationResult
+{
+    public bool IsOdResult => OdData is not null;
+
+    public bool IsVectorResult => VectorData is not null;
+
+    public bool Error => ErrorMessage is not null;
+
+    public string? ErrorMessage { get; private set; }
+
+    public bool Accumulator { get; private set; }
+
+    public enum VectorDirection
     {
-        public bool IsOdResult => OdData is not null;
+        Unassigned,
+        Horizontal,
+        Vertical
+    }
 
-        public bool IsVectorResult => VectorData is not null;
+    public VectorDirection Direction { get; private set; }
 
-        public bool Error => ErrorMessage is not null;
+    public Matrix OdData { get; }
 
-        public string? ErrorMessage { get; private set; }
+    public Vector VectorData { get; }
 
-        public bool Accumulator { get; private set; }
+    public float LiteralValue { get; }
 
-        public enum VectorDirection
-        {
-            Unassigned,
-            Horizontal,
-            Vertical
-        }
+    public bool IsValue => !IsOdResult && !IsVectorResult && !Error;
 
-        public VectorDirection Direction { get; private set; }
-
-        public Matrix OdData { get; }
-
-        public Vector VectorData { get; }
-
-        public float LiteralValue { get; }
-        
-        public bool IsValue => !IsOdResult && !IsVectorResult && !Error;
-
-// TODO: Get these warnings fixes once we have the time to do so. For now, we will just suppress them.
+    // TODO: Get these warnings fixes once we have the time to do so. For now, we will just suppress them.
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-        public ComputationResult(float value)
-        {
-            LiteralValue = value;
-        }
-
-        public ComputationResult(Matrix data, bool accumulator)
-        {
-            OdData = data;
-            Accumulator = accumulator;
-        }
-
-        public ComputationResult(Vector data, bool accumulator, VectorDirection direction = VectorDirection.Unassigned)
-        {
-            VectorData = data;
-            Accumulator = accumulator;
-            Direction = direction;
-        }
-
-        public ComputationResult(ComputationResult res, VectorDirection direction)
-        {
-            OdData = res.OdData;
-            LiteralValue = res.LiteralValue;
-            VectorData = res.VectorData;
-            Direction = direction;
-        }
-
-        public ComputationResult(string errorMessage)
-        {
-            ErrorMessage = errorMessage;
-        }
-    #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+    public ComputationResult(float value)
+    {
+        LiteralValue = value;
     }
+
+    public ComputationResult(Matrix data, bool accumulator)
+    {
+        OdData = data;
+        Accumulator = accumulator;
+    }
+
+    public ComputationResult(Vector data, bool accumulator, VectorDirection direction = VectorDirection.Unassigned)
+    {
+        VectorData = data;
+        Accumulator = accumulator;
+        Direction = direction;
+    }
+
+    public ComputationResult(ComputationResult res, VectorDirection direction)
+    {
+        OdData = res.OdData;
+        LiteralValue = res.LiteralValue;
+        VectorData = res.VectorData;
+        Direction = direction;
+    }
+
+    public ComputationResult(string errorMessage)
+    {
+        ErrorMessage = errorMessage;
+    }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 }

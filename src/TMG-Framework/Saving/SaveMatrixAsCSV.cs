@@ -16,112 +16,106 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using XTMF2;
 
-namespace TMG.Saving
+namespace TMG.Saving;
+
+[Module(Name = "Save Matrix To CSV", Description = "Saves a matrix to the given write stream.",
+    DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
+public class SaveMatrixAsCSV : BaseAction<(Matrix Matrix, WriteStream Stream)>
 {
-    [Module(Name = "Save Matrix To CSV", Description = "Saves a matrix to the given write stream.",
-        DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public class SaveMatrixAsCSV : BaseAction<(Matrix Matrix, WriteStream Stream)>
+    [Parameter(Name = "Third Normalized", DefaultValue = "True", Index = 0,
+        Description = "Should the data be saved in third normalized form?  If not it will be saved as a CSV Matrix")]
+    public IFunction<bool> ThirdNormalized = null!;
+
+    [Parameter(Name = "First Index Header", DefaultValue = "Origin", Index = 1,
+        Description = "The name of the first index.")]
+    public IFunction<string> FirstIndexHeader = null!;
+
+    [Parameter(Name = "Second Index Header", DefaultValue = "Destination", Index = 2,
+        Description = "The name of the second index.")]
+    public IFunction<string> SecondIndexHeader = null!;
+
+    [Parameter(Name = "Data Index Header", DefaultValue = "Data", Index = 3,
+        Description = "The name of the Data index.")]
+    public IFunction<string> DataIndexHeader = null!;
+
+    public override void Invoke((Matrix Matrix, WriteStream Stream) context)
     {
-        [Parameter(Name = "Third Normalized", DefaultValue = "True", Index = 0,
-            Description = "Should the data be saved in third normalized form?  If not it will be saved as a CSV Matrix")]
-        public IFunction<bool> ThirdNormalized = null!;
-
-        [Parameter(Name = "First Index Header", DefaultValue = "Origin", Index = 1,
-            Description = "The name of the first index.")]
-        public IFunction<string> FirstIndexHeader = null!;
-
-        [Parameter(Name = "Second Index Header", DefaultValue = "Destination", Index = 2,
-            Description = "The name of the second index.")]
-        public IFunction<string> SecondIndexHeader = null!;
-
-        [Parameter(Name = "Data Index Header", DefaultValue = "Data", Index = 3,
-            Description = "The name of the Data index.")]
-        public IFunction<string> DataIndexHeader = null!;
-
-        public override void Invoke((Matrix Matrix, WriteStream Stream) context)
+        if (ThirdNormalized.Invoke())
         {
-            if(ThirdNormalized.Invoke())
-            {
-                WriteThirdNormalized(context);
-            }
-            else
-            {
-                WriteCSVMatrix(context);
-            }
+            WriteThirdNormalized(context);
         }
-
-        private void WriteCSVMatrix((Matrix Matrix, WriteStream Stream) context)
+        else
         {
-            using var writer = new StreamWriter(context.Stream);
-            var matrix = context.Matrix;
-            var rowCategories = matrix.RowCategories;
-            var columnCategories = matrix.ColumnCategories;
-            var rowLength = rowCategories.Count;
-            var columnLength = columnCategories.Count;
-            writer.Write('"');
-            writer.Write(FirstIndexHeader.Invoke().Replace('"', '\''));
-            writer.Write('\\');
-            writer.Write(SecondIndexHeader.Invoke().Replace('"', '\''));
-            writer.Write('"');
-            for (int i = 0; i < columnLength; i++)
+            WriteCSVMatrix(context);
+        }
+    }
+
+    private void WriteCSVMatrix((Matrix Matrix, WriteStream Stream) context)
+    {
+        using var writer = new StreamWriter(context.Stream);
+        var matrix = context.Matrix;
+        var rowCategories = matrix.RowCategories;
+        var columnCategories = matrix.ColumnCategories;
+        var rowLength = rowCategories.Count;
+        var columnLength = columnCategories.Count;
+        writer.Write('"');
+        writer.Write(FirstIndexHeader.Invoke().Replace('"', '\''));
+        writer.Write('\\');
+        writer.Write(SecondIndexHeader.Invoke().Replace('"', '\''));
+        writer.Write('"');
+        for (int i = 0; i < columnLength; i++)
+        {
+            writer.Write(',');
+            writer.Write(columnCategories.GetSparseIndex(i));
+        }
+        writer.WriteLine();
+        var data = matrix.Data;
+        int pos = 0;
+        for (int i = 0; i < rowLength; i++)
+        {
+            writer.Write(rowCategories.GetSparseIndex(i));
+            for (int j = 0; j < columnLength; j++)
             {
                 writer.Write(',');
-                writer.Write(columnCategories.GetSparseIndex(i));
+                writer.Write(data[pos]);
             }
             writer.WriteLine();
+        }
+    }
+
+    private static void WriteWithQuotes(StreamWriter writer, string name)
+    {
+        writer.Write('"');
+        writer.Write(name.Replace('"', '\''));
+        writer.Write('"');
+    }
+
+    private void WriteThirdNormalized((Matrix Matrix, WriteStream Stream) context)
+    {
+        using (StreamWriter writer = new StreamWriter(context.Stream))
+        {
+            var matrix = context.Matrix;
+            var map = matrix.RowCategories;
+            var length = map.Count;
             var data = matrix.Data;
-            int pos = 0;
-            for (int i = 0; i < rowLength; i++)
+            WriteWithQuotes(writer, FirstIndexHeader.Invoke());
+            writer.Write(',');
+            WriteWithQuotes(writer, SecondIndexHeader.Invoke());
+            writer.Write(',');
+            WriteWithQuotes(writer, DataIndexHeader.Invoke());
+            writer.WriteLine();
+            for (int i = 0; i < data.Length; i++)
             {
-                writer.Write(rowCategories.GetSparseIndex(i));
-                for (int j = 0; j < columnLength; j++)
+                //ignore zeroed out data to save disk space
+                if (data[i] != 0.0)
                 {
+                    var (row, column) = matrix.GetSparseIndex(i);
+                    writer.Write(row);
                     writer.Write(',');
-                    writer.Write(data[pos]);
-                }
-                writer.WriteLine();
-            }
-        }
-
-        private static void WriteWithQuotes(StreamWriter writer, string name)
-        {
-            writer.Write('"');
-            writer.Write(name.Replace('"', '\''));
-            writer.Write('"');
-        }
-
-        private void WriteThirdNormalized((Matrix Matrix, WriteStream Stream) context)
-        {
-            using (StreamWriter writer = new StreamWriter(context.Stream))
-            {
-                var matrix = context.Matrix;
-                var map = matrix.RowCategories;
-                var length = map.Count;
-                var data = matrix.Data;
-                WriteWithQuotes(writer, FirstIndexHeader.Invoke());
-                writer.Write(',');
-                WriteWithQuotes(writer, SecondIndexHeader.Invoke());
-                writer.Write(',');
-                WriteWithQuotes(writer, DataIndexHeader.Invoke());
-                writer.WriteLine();
-                for (int i = 0; i < data.Length; i++)
-                {
-                    //ignore zeroed out data to save disk space
-                    if(data[i] != 0.0)
-                    {
-                        var (row, column) = matrix.GetSparseIndex(i);
-                        writer.Write(row);
-                        writer.Write(',');
-                        writer.Write(column);
-                        writer.Write(',');
-                        writer.WriteLine(data[i]);
-                    }
+                    writer.Write(column);
+                    writer.Write(',');
+                    writer.WriteLine(data[i]);
                 }
             }
         }

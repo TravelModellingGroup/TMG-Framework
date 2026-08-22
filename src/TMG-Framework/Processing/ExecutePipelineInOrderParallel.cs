@@ -16,33 +16,27 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Linq;
-using XTMF2;
 
-namespace TMG.Processing
+namespace TMG.Processing;
+
+[Module(Name = "Execute Pipeline In Order Parallel", Description = "Execute a given pipeline",
+    DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
+public sealed class ExecutePipelineInOrderParallel<T> : BaseFunction<IEnumerable<T>, IEnumerable<T>>
 {
-    [Module(Name = "Execute Pipeline In Order Parallel", Description = "Execute a given pipeline",
-        DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class ExecutePipelineInOrderParallel<T> : BaseFunction<IEnumerable<T>, IEnumerable<T>>
+    [SubModule(Index = 0, Name = "To Execute In Parallel", Required = true, Description = "The functions in order to execute the data through in parallel.")]
+    public IFunction<T, T> ToExecuteInParallel = null!;
+
+    [SubModule(Index = 1, Name = "To Execute In Serial", Required = false, Description = "The functions in order to execute the data through in parallel.")]
+    public IFunction<T, T>[] ToExecuteNotInParallel = null!;
+
+    public override IEnumerable<T> Invoke(IEnumerable<T> context)
     {
-        [SubModule(Index = 0, Name = "To Execute In Parallel", Required = true, Description = "The functions in order to execute the data through in parallel.")]
-        public IFunction<T, T> ToExecuteInParallel = null!;
-
-        [SubModule(Index = 1, Name = "To Execute In Serial", Required = false, Description = "The functions in order to execute the data through in parallel.")]
-        public IFunction<T,T>[] ToExecuteNotInParallel = null!;
-
-        public override IEnumerable<T> Invoke(IEnumerable<T> context)
+        var current = context.AsParallel().AsOrdered().Select(element => ToExecuteInParallel.Invoke(element)).AsSequential();
+        for (int i = 0; i < ToExecuteNotInParallel.Length; i++)
         {
-            var current = context.AsParallel().AsOrdered().Select(element => ToExecuteInParallel.Invoke(element)).AsSequential();
-            for (int i = 0; i < ToExecuteNotInParallel.Length; i++)
-            {
-                int localI = i;
-                current = current.Select(element => ToExecuteNotInParallel[localI].Invoke(element));
-            }
-            return current.AsEnumerable();
+            int localI = i;
+            current = current.Select(element => ToExecuteNotInParallel[localI].Invoke(element));
         }
+        return current.AsEnumerable();
     }
 }

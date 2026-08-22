@@ -16,17 +16,14 @@
     You should have received a copy of the GNU General Public License
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 
 namespace TMG.Utilities;
 
 public static partial class VectorHelper
 {
-        /// <summary>
+    /// <summary>
     /// Raises each element of the lhs span to the power of rhs and stores the result in dest.
     /// </summary>
     /// <param name="dest">The destination span.</param>

@@ -16,51 +16,45 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using XTMF2;
 
-namespace TMG.Saving
+namespace TMG.Saving;
+
+[Module(Name = "Save Vector To CSV", Description = "Saves a vector to the given write stream.",
+    DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
+public sealed class SaveVectorAsCSV : BaseAction<(Vector Data, WriteStream Stream)>
 {
-    [Module(Name = "Save Vector To CSV", Description = "Saves a vector to the given write stream.",
-        DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class SaveVectorAsCSV : BaseAction<(Vector Data, WriteStream Stream)>
+    public override void Invoke((Vector Data, WriteStream Stream) context)
     {
-        public override void Invoke((Vector Data, WriteStream Stream) context)
+        using (var writer = new StreamWriter(context.Stream))
         {
-            using (var writer = new StreamWriter(context.Stream))
+            var data = context.Data;
+            var flatData = data.Data;
+            var map = data.Categories;
+            WriteHeaders(writer);
+            var length = map.Count;
+            for (int i = 0; i < length; i++)
             {
-                var data = context.Data;
-                var flatData = data.Data;
-                var map = data.Categories;
-                WriteHeaders(writer);
-                var length = map.Count;
-                for (int i = 0; i < length; i++)
-                {
-                    writer.Write(map.GetSparseIndex(i));
-                    writer.Write(',');
-                    writer.WriteLine(flatData[i]);
-                }
+                writer.Write(map.GetSparseIndex(i));
+                writer.Write(',');
+                writer.WriteLine(flatData[i]);
             }
         }
+    }
 
-        [Parameter(Name = "Map Column Name", DefaultValue = "Zone", Description = "The header to give to the map indexes", Index = 0)]
-        public IFunction<string> MapColumnName = null!;
+    [Parameter(Name = "Map Column Name", DefaultValue = "Zone", Description = "The header to give to the map indexes", Index = 0)]
+    public IFunction<string> MapColumnName = null!;
 
-        [Parameter(Name = "Data Column Name", DefaultValue = "Data", Description = "The header to give to the data", Index = 1)]
-        public IFunction<string> DataColumnName = null!;
+    [Parameter(Name = "Data Column Name", DefaultValue = "Data", Description = "The header to give to the data", Index = 1)]
+    public IFunction<string> DataColumnName = null!;
 
-        private void WriteHeaders(StreamWriter writer)
-        {
-            writer.Write('\"');
-            writer.Write(MapColumnName.Invoke().Replace('\"', '\''));
-            writer.Write('\"');
-            writer.Write(',');
-            writer.Write('\"');
-            writer.Write(DataColumnName.Invoke());
-            writer.WriteLine('\"');
-        }
+    private void WriteHeaders(StreamWriter writer)
+    {
+        writer.Write('\"');
+        writer.Write(MapColumnName.Invoke().Replace('\"', '\''));
+        writer.Write('\"');
+        writer.Write(',');
+        writer.Write('\"');
+        writer.Write(DataColumnName.Invoke());
+        writer.WriteLine('\"');
     }
 }

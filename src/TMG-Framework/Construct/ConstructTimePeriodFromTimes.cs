@@ -16,26 +16,23 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 using XTMF2;
 
-namespace TMG.Construct
+namespace TMG.Construct;
+
+[Module(Name = "Construct Time Period from Times", Description = "Given the start and end times construct a time period.",
+    DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
+public sealed class ConstructTimePeriodFromTimes : BaseFunction<TimePeriod>
 {
-    [Module(Name = "Construct Time Period from Times", Description = "Given the start and end times construct a time period.",
-        DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class ConstructTimePeriodFromTimes : BaseFunction<TimePeriod>
+    [Parameter(Index = 0, Name = "Start Time", Required = true, Description = "The time to use as the starting point of the time period (Inclusive).")]
+    public IFunction<Time> StartTime = null!;
+
+    [Parameter(Index = 1, Name = "End Time", Required = true, Description = "The time to use as the ending point of the time period (Exclusive).")]
+    public IFunction<Time> EndTime = null!;
+
+    public override TimePeriod Invoke()
     {
-        [Parameter(Index = 0, Name = "Start Time", Required = true, Description = "The time to use as the starting point of the time period (Inclusive).")]
-        public IFunction<Time> StartTime = null!;
-
-        [Parameter(Index = 1, Name = "End Time", Required = true, Description = "The time to use as the ending point of the time period (Exclusive).")]
-        public IFunction<Time> EndTime = null!;
-
-        public override TimePeriod Invoke()
-        {
-            return new TimePeriod(StartTime.Invoke(), EndTime.Invoke());
-        }
+        return new TimePeriod(StartTime.Invoke(), EndTime.Invoke());
     }
 }

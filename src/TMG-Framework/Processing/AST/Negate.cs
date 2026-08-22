@@ -16,71 +16,64 @@
     You should have received a copy of the GNU General Public License
     along with XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Diagnostics.CodeAnalysis;
+
 using TMG.Utilities;
-using XTMF2;
 
-namespace TMG.Frameworks.Data.Processing.AST
+namespace TMG.Frameworks.Data.Processing.AST;
+
+public sealed class Negate : MonoExpression
 {
-    public sealed class Negate : MonoExpression
+    public Negate(int start) : base(start)
     {
-        public Negate(int start) : base(start)
+    }
+
+    internal override bool OptimizeAst(ref Expression ex,
+        [NotNullWhen(false)] ref string? error)
+    {
+        if (InnerExpression is null)
         {
+            error = "Unable to optimize Negate with null operand starting at position " + Start + "!";
+            return false;
         }
 
-        internal override bool OptimizeAst(ref Expression ex, 
-            [NotNullWhen(false)] ref string? error)
+        // Optimize our children first
+        if (!InnerExpression.OptimizeAst(ref InnerExpression, ref error))
         {
-            if (InnerExpression is null)
-            {
-                error = "Unable to optimize Negate with null operand starting at position " + Start + "!";
-                return false;
-            }
+            return false;
+        }
+        // optimize the case that we are a negative literal
+        if (ex is Literal l)
+        {
+            ex = new Literal(Start, -l.Value);
+        }
+        return true;
+    }
 
-            // Optimize our children first
-            if (!InnerExpression.OptimizeAst(ref InnerExpression, ref error))
-            {
-                return false;
-            }
-            // optimize the case that we are a negative literal
-            if (ex is Literal l)
-            {
-                ex = new Literal(Start, -l.Value);
-            }
-            return true;
+    public override ComputationResult Evaluate(IModule[] dataSources)
+    {
+        if (InnerExpression is null)
+        {
+            return new ComputationResult("Unable to evaluate Negate with null operand starting at position " + Start + "!");
         }
 
-        public override ComputationResult Evaluate(IModule[] dataSources)
+        var inner = InnerExpression.Evaluate(dataSources);
+        if (inner.IsValue)
         {
-            if (InnerExpression is null)
-            {
-                return new ComputationResult("Unable to evaluate Negate with null operand starting at position " + Start + "!");
-            }
-
-            var inner = InnerExpression.Evaluate(dataSources);
-            if (inner.IsValue)
-            {
-                return new ComputationResult(-inner.LiteralValue);
-            }
-            else if (inner.IsVectorResult)
-            {
-                var ret = inner.Accumulator ? inner.VectorData : new Vector(inner.VectorData);
-                VectorHelper.Negate(ret.Data, inner.VectorData.Data);
-                return new ComputationResult(ret, true, inner.Direction);
-            }
-            else
-            {
-                var ret = inner.Accumulator ? inner.OdData : new Matrix(inner.OdData);
-                var flatRet = ret.Data;
-                var flatInner = inner.OdData.Data;
-                VectorHelper.Negate(flatRet, flatInner);
-                return new ComputationResult(ret, true);
-            }
+            return new ComputationResult(-inner.LiteralValue);
+        }
+        else if (inner.IsVectorResult)
+        {
+            var ret = inner.Accumulator ? inner.VectorData : new Vector(inner.VectorData);
+            VectorHelper.Negate(ret.Data, inner.VectorData.Data);
+            return new ComputationResult(ret, true, inner.Direction);
+        }
+        else
+        {
+            var ret = inner.Accumulator ? inner.OdData : new Matrix(inner.OdData);
+            var flatRet = ret.Data;
+            var flatInner = inner.OdData.Data;
+            VectorHelper.Negate(flatRet, flatInner);
+            return new ComputationResult(ret, true);
         }
     }
 }

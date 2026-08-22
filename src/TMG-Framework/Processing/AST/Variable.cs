@@ -16,44 +16,41 @@
     You should have received a copy of the GNU General Public License
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Linq;
-using XTMF2;
 
-namespace TMG.Frameworks.Data.Processing.AST
+namespace TMG.Frameworks.Data.Processing.AST;
+
+public sealed class Variable : Value
 {
-    public sealed class Variable : Value
+    public readonly string Name;
+
+    public Variable(int start, string name) : base(start)
     {
-        public readonly string Name;
+        Name = name;
+    }
 
-        public Variable(int start, string name) : base(start)
+    public override ComputationResult Evaluate(IModule[] dataSources)
+    {
+        var source = dataSources.FirstOrDefault(d => d.Name == Name);
+        if (source == null)
         {
-            Name = name;
+            return new ComputationResult("Unable to find a data source named '" + Name + "'!");
         }
-
-        public override ComputationResult Evaluate(IModule[] dataSources)
+        if (source is IFunction<Matrix> odSource)
         {
-            var source = dataSources.FirstOrDefault(d => d.Name == Name);
-            if (source == null)
-            {
-                return new ComputationResult("Unable to find a data source named '" + Name + "'!");
-            }
-            if (source is IFunction<Matrix> odSource)
-            {
-                return new ComputationResult(odSource.Invoke(), false);
-            }
-            if (source is IFunction<Vector> vectorSource)
-            {
-                return new ComputationResult(vectorSource.Invoke(), false);
-            }
-            if (source is IFunction<float> valueSource)
-            {
-                return new ComputationResult(valueSource.Invoke());
-            }
-            if(source is IFunction<Categories> map)
-            {
-                return new ComputationResult(new Vector(map.Invoke()), true, ComputationResult.VectorDirection.Unassigned);
-            }
-            return new ComputationResult("The data source '" + Name + "' was not of a valid resource type!");
+            return new ComputationResult(odSource.Invoke(), false);
         }
+        if (source is IFunction<Vector> vectorSource)
+        {
+            return new ComputationResult(vectorSource.Invoke(), false);
+        }
+        if (source is IFunction<float> valueSource)
+        {
+            return new ComputationResult(valueSource.Invoke());
+        }
+        if (source is IFunction<Categories> map)
+        {
+            return new ComputationResult(new Vector(map.Invoke()), true, ComputationResult.VectorDirection.Unassigned);
+        }
+        return new ComputationResult("The data source '" + Name + "' was not of a valid resource type!");
     }
 }

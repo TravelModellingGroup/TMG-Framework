@@ -16,62 +16,58 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 using TMG.Utilities;
-using XTMF2;
 
-namespace TMG.Loading
+namespace TMG.Loading;
+
+[Module(Name = "Load Vector From CSV", Description = "Loads a map where each row has a different sparse index.",
+    DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
+public sealed class LoadVectorFromCSV : BaseFunction<ReadStream, Vector>
 {
-    [Module(Name = "Load Vector From CSV", Description = "Loads a map where each row has a different sparse index.",
-        DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadVectorFromCSV : BaseFunction<ReadStream, Vector>
+    [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+    public IFunction<Categories> Categories = null!;
+
+    [Parameter(DefaultValue = "0", Name = "Map Column", Index = 1, Description = "The 0 indexed column containing the sparse map index.")]
+    public IFunction<int> MapColumn = null!;
+
+    [Parameter(DefaultValue = "1", Name = "Data Column", Index = 2, Description = "The 0 indexed column containing the data to load index.")]
+    public IFunction<int> DataColumn = null!;
+
+    public override Vector Invoke(ReadStream stream)
     {
-        [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Categories> Categories = null!;
-
-        [Parameter(DefaultValue = "0", Name = "Map Column", Index = 1, Description = "The 0 indexed column containing the sparse map index.")]
-        public IFunction<int> MapColumn = null!;
-
-        [Parameter(DefaultValue = "1", Name = "Data Column", Index = 2, Description = "The 0 indexed column containing the data to load index.")]
-        public IFunction<int> DataColumn = null!;
-
-        public override Vector Invoke(ReadStream stream)
+        var map = Categories.Invoke();
+        var ret = new Vector(map);
+        var data = ret.Data;
+        var mapColumn = MapColumn.Invoke();
+        var dataColumn = DataColumn.Invoke();
+        if (mapColumn < 0 || dataColumn < 0)
         {
-            var map = Categories.Invoke();
-            var ret = new Vector(map);
-            var data = ret.Data;
-            var mapColumn = MapColumn.Invoke();
-            var dataColumn = DataColumn.Invoke();
-            if(mapColumn < 0 || dataColumn < 0)
+            throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
+        }
+        var minColumnSize = Math.Max(mapColumn, dataColumn);
+        using (var reader = new CsvReader(stream, true))
+        {
+            while (reader.LoadLine(out var columns))
             {
-                throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
-            }
-            var minColumnSize = Math.Max(mapColumn, dataColumn);
-            using (var reader = new CsvReader(stream, true))
-            {
-                while(reader.LoadLine(out var columns))
+                // This is strictly greater because the column size is 0 indexed
+                if (columns > minColumnSize)
                 {
-                    // This is strictly greater because the column size is 0 indexed
-                    if(columns > minColumnSize)
+                    int flatIndex;
+                    reader.Get(out int mapIndex, mapColumn);
+                    reader.Get(out float dataValue, dataColumn);
+                    if ((flatIndex = map.GetFlatIndex(mapIndex)) >= 0)
                     {
-                        int flatIndex;
-                        reader.Get(out int mapIndex, mapColumn);
-                        reader.Get(out float dataValue, dataColumn);
-                        if((flatIndex = map.GetFlatIndex(mapIndex)) >= 0)
-                        {
-                            // if we know where to put it
-                            data[flatIndex] = dataValue;
-                        }
-                        else
-                        {
-                            throw new XTMFRuntimeException(this, $"An invalid sparse map index was specified {mapIndex}!");
-                        }
+                        // if we know where to put it
+                        data[flatIndex] = dataValue;
+                    }
+                    else
+                    {
+                        throw new XTMFRuntimeException(this, $"An invalid sparse map index was specified {mapIndex}!");
                     }
                 }
             }
-            return ret;
         }
+        return ret;
     }
 }

@@ -16,11 +16,8 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 using TMG.Utilities;
-using XTMF2;
 
 namespace TMG.Loading;
 

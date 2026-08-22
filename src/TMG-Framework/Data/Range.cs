@@ -16,109 +16,106 @@
     You should have received a copy of the GNU General Public License
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
 
-namespace TMG
+namespace TMG;
+
+public readonly struct Range
 {
-    public readonly struct Range
+    public readonly int Start;
+    public readonly int Stop;
+
+    public Range(int start, int stop)
     {
-        public readonly int Start;
-        public readonly int Stop;
+        Start = start;
+        Stop = stop;
+    }
 
-        public Range(int start, int stop)
-        {
-            Start = start;
-            Stop = stop;
-        }
+    public static bool operator !=(Range first, Range other)
+    {
+        return (first.Start != other.Start) | (first.Stop != other.Stop);
+    }
 
-        public static bool operator !=(Range first, Range other)
-        {
-            return (first.Start != other.Start) | (first.Stop != other.Stop);
-        }
+    public static bool operator ==(Range first, Range other)
+    {
+        return (first.Start == other.Start) & (first.Stop == other.Stop);
+    }
 
-        public static bool operator ==(Range first, Range other)
+    public override bool Equals(object? obj)
+    {
+        if (obj is Range other)
         {
-            return (first.Start == other.Start) & (first.Stop == other.Stop);
+            return this == other;
         }
+        return false;
+    }
 
-        public override bool Equals(object? obj)
-        {
-            if (obj is Range other)
-            {
-                return this == other;
-            }
-            return false;
-        }
+    public override int GetHashCode()
+    {
+        return Start.GetHashCode() * Stop.GetHashCode();
+    }
 
-        public override int GetHashCode()
-        {
-            return Start.GetHashCode() * Stop.GetHashCode();
-        }
+    /// <summary>
+    /// Checks if a given value is inside the range defined by [Start, Stop)
+    /// </summary>
+    /// <param name="i"> The int value to check.</param>
+    /// <returns>True IFF i is greater than or equal to Start and i is less than Stop.</returns>
+    public bool Contains(int i)
+    {
+        return (i >= Start) & (i < Stop);
+    }
 
-        /// <summary>
-        /// Checks if a given value is inside the range defined by [Start, Stop)
-        /// </summary>
-        /// <param name="i"> The int value to check.</param>
-        /// <returns>True IFF i is greater than or equal to Start and i is less than Stop.</returns>
-        public bool Contains(int i)
-        {
-            return (i >= Start) & (i < Stop);
-        }
+    /// <summary>
+    /// Checks if a given value is inside the range defined by (Start, Stop)
+    /// </summary>
+    /// <param name="i">The int value to check</param>
+    /// <returns>True IFF i is less than Start and i is less than Stop.</returns>
+    public bool ContainsExcusive(int i)
+    {
+        return (i > Start) & (i < Stop);
+    }
 
-        /// <summary>
-        /// Checks if a given value is inside the range defined by (Start, Stop)
-        /// </summary>
-        /// <param name="i">The int value to check</param>
-        /// <returns>True IFF i is less than Start and i is less than Stop.</returns>
-        public bool ContainsExcusive(int i)
-        {
-            return (i > Start) & (i < Stop);
-        }
+    /// <summary>
+    /// Checks if a given value is inside the range defined by (Start, Stop)
+    /// </summary>
+    /// <param name="valueToFind">The value to check for</param>
+    /// <returns>True if the value is contained within the range</returns>
+    public bool ContainsExcusive(float valueToFind)
+    {
+        return (valueToFind > Start) & (valueToFind < Stop);
+    }
 
-        /// <summary>
-        /// Checks if a given value is inside the range defined by (Start, Stop)
-        /// </summary>
-        /// <param name="valueToFind">The value to check for</param>
-        /// <returns>True if the value is contained within the range</returns>
-        public bool ContainsExcusive(float valueToFind)
-        {
-            return (valueToFind > Start) & (valueToFind < Stop);
-        }
+    /// <summary>
+    /// Checks if a given value is inside the range defined by [Start, Stop]
+    /// </summary>
+    /// <param name="i">The int value to check</param>
+    /// <returns>True IFF i is greater than or equal to Start and i is less than or equal to Stop.</returns>
+    public bool ContainsInclusive(int i)
+    {
+        return (i >= Start) & (i <= Stop);
+    }
 
-        /// <summary>
-        /// Checks if a given value is inside the range defined by [Start, Stop]
-        /// </summary>
-        /// <param name="i">The int value to check</param>
-        /// <returns>True IFF i is greater than or equal to Start and i is less than or equal to Stop.</returns>
-        public bool ContainsInclusive(int i)
-        {
-            return (i >= Start) & (i <= Stop);
-        }
+    /// <summary>
+    /// Checks if a given value is inside the range defined by [Start, Stop]
+    /// </summary>
+    /// <param name="valueToFind">The value to check for</param>
+    /// <returns>True if the value is contained within the range</returns>
+    public bool ContainsInclusive(float valueToFind)
+    {
+        return (valueToFind >= Start) & (valueToFind <= Stop);
+    }
 
-        /// <summary>
-        /// Checks if a given value is inside the range defined by [Start, Stop]
-        /// </summary>
-        /// <param name="valueToFind">The value to check for</param>
-        /// <returns>True if the value is contained within the range</returns>
-        public bool ContainsInclusive(float valueToFind)
-        {
-            return (valueToFind >= Start) & (valueToFind <= Stop);
-        }
+    /// <summary>
+    /// Checks if another Range overlaps this one.
+    /// </summary>
+    /// <param name="other">The other range to check against.</param>
+    /// <returns></returns>
+    public bool Overlaps(Range other)
+    {
+        return ContainsInclusive(other.Start) || ContainsInclusive(other.Stop);
+    }
 
-        /// <summary>
-        /// Checks if another Range overlaps this one.
-        /// </summary>
-        /// <param name="other">The other range to check against.</param>
-        /// <returns></returns>
-        public bool Overlaps(Range other)
-        {
-            return ContainsInclusive(other.Start) || ContainsInclusive(other.Stop);
-        }
-
-        public override string ToString()
-        {
-            return String.Format("{0}-{1}", Start, Stop);
-        }
+    public override string ToString()
+    {
+        return String.Format("{0}-{1}", Start, Stop);
     }
 }

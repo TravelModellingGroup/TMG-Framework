@@ -16,128 +16,122 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Linq;
 using static TMG.Utilities.ExceptionHelper;
 using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 
-namespace TMG
+namespace TMG;
+
+/// <summary>
+/// 
+/// </summary>
+public sealed class Categories : IEnumerable<int>
 {
+    /// <summary>
+    /// Get the number of elements in the categories.
+    /// </summary>
+    public int Count => _elements.Count;
+
+    /// <summary>
+    /// TODO: Update the representation later on to something more efficient
+    /// </summary>
+    private readonly List<int> _elements;
+
+    /// <summary>
+    /// Create a Categories instance from a list of elements
+    /// </summary>
+    /// <param name="elements">The list of elements to use, values will be sorted, any duplicates will return in failure.</param>
+    /// <param name="error">The error message if creation fails</param>
+    /// <returns>True if creation succeeds, false otherwise</returns>
+    public static bool CreateCategories(List<int> elements,
+        [NotNullWhen(true)] out Categories? categories,
+        [NotNullWhen(false)] ref string? error)
+    {
+        elements = elements?.ToList() ?? throw new ArgumentNullException(nameof(elements));
+        elements.Sort();
+        for (int i = 1; i < elements.Count; i++)
+        {
+            if (elements[i - 1] == elements[i])
+            {
+                error = $"Found a duplicate category {elements[i]}!";
+                categories = null;
+                return false;
+            }
+        }
+        categories = new Categories(elements);
+        return true;
+    }
+
+    /// <summary>
+    /// Create a Categories instance from a list of elements
+    /// </summary>
+    /// <param name="elements">The list of elements to use, values will be sorted, any duplicates will return in failure.</param>
+    /// <param name="error">The error message if creation fails</param>
+    /// <returns>True if creation succeeds, false otherwise</returns>
+    public static bool CreateCategories(Span<int> elements,
+        [NotNullWhen(true)] out Categories? categories,
+        [NotNullWhen(false)] ref string? error)
+    {
+        var list = new List<int>(elements.ToArray());
+        list.Sort();
+        for (int i = 1; i < list.Count; i++)
+        {
+            if (list[i - 1] == list[i])
+            {
+                error = $"Found a duplicate category {list[i]}!";
+                categories = null;
+                return false;
+            }
+        }
+        categories = new Categories(list);
+        return true;
+    }
+
+    /// <summary>
+    /// Create a Categories instance from a list of elements
+    /// </summary>
+    /// <param name="elements">The sorted list of elements to use</param>
+    private Categories(List<int> elements)
+    {
+        if (elements == null)
+        {
+            ThrowParameterNull(nameof(elements));
+        }
+        _elements = elements;
+    }
+
+    /// <summary>
+    /// Gives the flat index of the specified sparse index, or less than 0 if the sparse index is not in the map.
+    /// </summary>
+    /// <param name="sparseIndex">The sparse index to look up</param>
+    /// <returns>Gives the flat index of the specified sparse index, or less than 0 if the sparse index is not in the map.</returns>
+    public int GetFlatIndex(CategoryIndex sparseIndex)
+    {
+        return _elements.BinarySearch(sparseIndex);
+    }
+
     /// <summary>
     /// 
     /// </summary>
-    public sealed class Categories : IEnumerable<int>
+    /// <param name="flatIndex"></param>
+    /// <returns></returns>
+    public CategoryIndex GetSparseIndex(int flatIndex)
     {
-        /// <summary>
-        /// Get the number of elements in the categories.
-        /// </summary>
-        public int Count => _elements.Count;
-
-        /// <summary>
-        /// TODO: Update the representation later on to something more efficient
-        /// </summary>
-        private readonly List<int> _elements;
-
-        /// <summary>
-        /// Create a Categories instance from a list of elements
-        /// </summary>
-        /// <param name="elements">The list of elements to use, values will be sorted, any duplicates will return in failure.</param>
-        /// <param name="error">The error message if creation fails</param>
-        /// <returns>True if creation succeeds, false otherwise</returns>
-        public static bool CreateCategories(List<int> elements, 
-            [NotNullWhen(true)] out Categories? categories,
-            [NotNullWhen(false)] ref string? error)
+        if (flatIndex < 0 || flatIndex >= _elements.Count)
         {
-            elements = elements?.ToList() ?? throw new ArgumentNullException(nameof(elements));
-            elements.Sort();
-            for (int i = 1; i < elements.Count; i++)
-            {
-                if(elements[i - 1] == elements[i])
-                {
-                    error = $"Found a duplicate category {elements[i]}!";
-                    categories = null;
-                    return false;
-                }
-            }
-            categories = new Categories(elements);
-            return true;
+            ThrowOutOfRangeException(nameof(flatIndex));
         }
+        return _elements[flatIndex];
+    }
 
-        /// <summary>
-        /// Create a Categories instance from a list of elements
-        /// </summary>
-        /// <param name="elements">The list of elements to use, values will be sorted, any duplicates will return in failure.</param>
-        /// <param name="error">The error message if creation fails</param>
-        /// <returns>True if creation succeeds, false otherwise</returns>
-        public static bool CreateCategories(Span<int> elements, 
-            [NotNullWhen(true)] out Categories? categories,
-            [NotNullWhen(false)] ref string? error)
-        {
-            var list = new List<int>(elements.ToArray());
-            list.Sort();
-            for (int i = 1; i < list.Count; i++)
-            {
-                if(list[i - 1] == list[i])
-                {
-                    error = $"Found a duplicate category {list[i]}!";
-                    categories = null;
-                    return false;
-                }
-            }
-            categories = new Categories(list);
-            return true;
-        }
+    /// <inheritdoc/>
+    public IEnumerator<int> GetEnumerator()
+    {
+        return _elements.GetEnumerator();
+    }
 
-        /// <summary>
-        /// Create a Categories instance from a list of elements
-        /// </summary>
-        /// <param name="elements">The sorted list of elements to use</param>
-        private Categories(List<int> elements)
-        {
-            if(elements == null)
-            {
-                ThrowParameterNull(nameof(elements));
-            }
-            _elements = elements;
-        }
-
-        /// <summary>
-        /// Gives the flat index of the specified sparse index, or less than 0 if the sparse index is not in the map.
-        /// </summary>
-        /// <param name="sparseIndex">The sparse index to look up</param>
-        /// <returns>Gives the flat index of the specified sparse index, or less than 0 if the sparse index is not in the map.</returns>
-        public int GetFlatIndex(CategoryIndex sparseIndex)
-        {
-            return _elements.BinarySearch(sparseIndex);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="flatIndex"></param>
-        /// <returns></returns>
-        public CategoryIndex GetSparseIndex(int flatIndex)
-        {
-            if(flatIndex < 0 || flatIndex >= _elements.Count)
-            {
-                ThrowOutOfRangeException(nameof(flatIndex));
-            }
-            return _elements[flatIndex];
-        }
-
-        /// <inheritdoc/>
-        public IEnumerator<int> GetEnumerator()
-        {
-            return _elements.GetEnumerator();
-        }
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable)_elements).GetEnumerator();
-        }
+    /// <inheritdoc/>
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return ((IEnumerable)_elements).GetEnumerator();
     }
 }

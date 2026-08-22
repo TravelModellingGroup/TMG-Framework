@@ -16,22 +16,16 @@
     You should have received a copy of the GNU General Public License
     along with XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
 
-namespace TMG
+namespace TMG;
+
+static class SpanHelper
 {
-    static class SpanHelper
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Span<U> NonPortableCast<T, U>(this Span<T> span)
+        where T : struct
+        where U : struct
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static Span<U> NonPortableCast<T,U>(this Span<T> span) 
-            where T : struct
-            where U : struct
-        {
-            return MemoryMarshal.Cast<T,U>(span);
-        }
+        return MemoryMarshal.Cast<T, U>(span);
     }
 }
