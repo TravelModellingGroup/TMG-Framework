@@ -16,74 +16,69 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+
 using TMG.Saving;
 using TMG.Test.Utilities;
-using XTMF2.RuntimeModules;
 
-namespace TMG.Test.Saving
+
+namespace TMG.Test.Saving;
+
+[TestClass]
+public class TestSaveMatrixAsMTX
 {
-    [TestClass]
-    public class TestSaveMatrixAsMTX
+    [TestMethod]
+    public void SaveMatrixAsMTXAsMatrix()
     {
-        [TestMethod]
-        public void SaveMatrixAsMTXAsMatrix()
+        var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
+        var a = new Matrix(categories, categories);
+        var fileName = Path.GetTempFileName();
+        try
         {
-            var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
-            var a = new Matrix(categories, categories);
-            var fileName = Path.GetTempFileName();
-            try
+            using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
-                {
-                    new SaveMatrixAsMTX().Invoke((a, writeStream));
-                }
-            }
-            finally
-            {
-                FileInfo file = new FileInfo(fileName);
-                if (file.Exists)
-                {
-                    file.Delete();
-                }
+                new SaveMatrixAsMTX().Invoke((a, writeStream));
             }
         }
-
-        [TestMethod]
-        public void SaveMatrixAsMTXAsMatrixAndLoad()
+        finally
         {
-            var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
-            var a = new Matrix(categories, categories);
-            var fileName = Path.GetTempFileName();
-            try
+            FileInfo file = new FileInfo(fileName);
+            if (file.Exists)
             {
-                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
-                {
-                    new SaveMatrixAsMTX().Invoke((a, writeStream));
-                }
-                // Now that the matrix has been saved attempt to load it back in.
-                using (var readStream = Helper.CreateReadStreamFromFile(fileName))
-                {
-                    var readMatrix = new TMG.Loading.LoadMatrixFromMTX()
-                    {
-                        Categories = Helper.CreateParameter(categories),
-                        ConvertBetweenZoneSystems = Helper.CreateParameter(false)
-                    }.Invoke(readStream);
-                    string? error = null;
-                    Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
-                }
+                file.Delete();
             }
-            finally
+        }
+    }
+
+    [TestMethod]
+    public void SaveMatrixAsMTXAsMatrixAndLoad()
+    {
+        var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
+        var a = new Matrix(categories, categories);
+        var fileName = Path.GetTempFileName();
+        try
+        {
+            using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                FileInfo file = new FileInfo(fileName);
-                if (file.Exists)
+                new SaveMatrixAsMTX().Invoke((a, writeStream));
+            }
+            // Now that the matrix has been saved attempt to load it back in.
+            using (var readStream = Helper.CreateReadStreamFromFile(fileName))
+            {
+                var readMatrix = new TMG.Loading.LoadMatrixFromMTX()
                 {
-                    file.Delete();
-                }
+                    Categories = Helper.CreateParameter(categories),
+                    ConvertBetweenZoneSystems = Helper.CreateParameter(false)
+                }.Invoke(readStream);
+                string? error = null;
+                Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
+            }
+        }
+        finally
+        {
+            FileInfo file = new FileInfo(fileName);
+            if (file.Exists)
+            {
+                file.Delete();
             }
         }
     }

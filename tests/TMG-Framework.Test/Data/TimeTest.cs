@@ -17,94 +17,94 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 
 namespace TMG.Test.Data;
 
-    [TestClass]
-    public class TimeTest
+[TestClass]
+public class TimeTest
+{
+    [TestMethod]
+    public void IntersectionBool_ReturnsTrue_WhenIntervalsOverlap()
     {
-        [TestMethod]
-        public void IntersectionBool_ReturnsTrue_WhenIntervalsOverlap()
-        {
-            var start1 = At(8, 0);
-            var end1 = At(9, 0);
-            var start2 = At(8, 30);
-            var end2 = At(10, 0);
+        var start1 = At(8, 0);
+        var end1 = At(9, 0);
+        var start2 = At(8, 30);
+        var end2 = At(10, 0);
 
-            var hasIntersection = Time.Intersection(start1, end1, start2, end2);
+        var hasIntersection = Time.Intersection(start1, end1, start2, end2);
 
-            Assert.IsTrue(hasIntersection);
-        }
-
-        [TestMethod]
-        public void IntersectionDuration_ReturnsExpectedDuration_WhenIntervalsOverlap()
-        {
-            var start1 = At(8, 0);
-            var end1 = At(9, 0);
-            var start2 = At(8, 30);
-            var end2 = At(10, 0);
-
-            var hasIntersection = Time.Intersection(start1, end1, start2, end2, out var duration);
-
-            Assert.IsTrue(hasIntersection);
-            Assert.AreEqual(At(0, 30), duration);
-        }
-
-        [TestMethod]
-        public void IntersectionDuration_ReturnsZeroDuration_WhenIntervalsTouch()
-        {
-            var start1 = At(8, 0);
-            var end1 = At(9, 0);
-            var start2 = At(9, 0);
-            var end2 = At(10, 0);
-
-            var hasIntersection = Time.Intersection(start1, end1, start2, end2, out var duration);
-
-            Assert.IsTrue(hasIntersection);
-            Assert.AreEqual(Time.Zero, duration);
-        }
-
-        [TestMethod]
-        public void IntersectionBounds_ReturnsExpectedStartAndEnd_WhenIntervalsOverlap()
-        {
-            var start1 = At(8, 0);
-            var end1 = At(9, 0);
-            var start2 = At(8, 30);
-            var end2 = At(10, 0);
-
-            var hasIntersection = Time.Intersection(start1, end1, start2, end2, out var intersectionStart, out var intersectionEnd);
-
-            Assert.IsTrue(hasIntersection);
-            Assert.AreEqual(At(8, 30), intersectionStart);
-            Assert.AreEqual(At(9, 0), intersectionEnd);
-        }
-
-        [TestMethod]
-        public void IntersectionOutputs_ReturnFalseAndZeroValues_WhenNoOverlap()
-        {
-            var start1 = At(8, 0);
-            var end1 = At(8, 30);
-            var start2 = At(9, 0);
-            var end2 = At(10, 0);
-
-            var hasDurationIntersection = Time.Intersection(start1, end1, start2, end2, out var duration);
-            var hasBoundIntersection = Time.Intersection(start1, end1, start2, end2, out var intersectionStart, out var intersectionEnd);
-
-            Assert.IsFalse(hasDurationIntersection);
-            Assert.AreEqual(Time.Zero, duration);
-            Assert.IsFalse(hasBoundIntersection);
-            Assert.AreEqual(Time.Zero, intersectionStart);
-            Assert.AreEqual(Time.Zero, intersectionEnd);
-        }
-
-        private static Time At(int hours, int minutes, int seconds = 0)
-        {
-            return new Time()
-            {
-                Hours = hours,
-                Minutes = minutes,
-                Seconds = seconds
-            };
-        }
+        Assert.IsTrue(hasIntersection);
     }
+
+    [TestMethod]
+    public void IntersectionDuration_ReturnsExpectedDuration_WhenIntervalsOverlap()
+    {
+        var start1 = At(8, 0);
+        var end1 = At(9, 0);
+        var start2 = At(8, 30);
+        var end2 = At(10, 0);
+
+        var hasIntersection = Time.Intersection(start1, end1, start2, end2, out var duration);
+
+        Assert.IsTrue(hasIntersection);
+        Assert.AreEqual(At(0, 30), duration);
+    }
+
+    [TestMethod]
+    public void IntersectionDuration_ReturnsZeroDuration_WhenIntervalsTouch()
+    {
+        var start1 = At(8, 0);
+        var end1 = At(9, 0);
+        var start2 = At(9, 0);
+        var end2 = At(10, 0);
+
+        var hasIntersection = Time.Intersection(start1, end1, start2, end2, out var duration);
+
+        Assert.IsTrue(hasIntersection);
+        Assert.AreEqual(Time.Zero, duration);
+    }
+
+    [TestMethod]
+    public void IntersectionBounds_ReturnsExpectedStartAndEnd_WhenIntervalsOverlap()
+    {
+        var start1 = At(8, 0);
+        var end1 = At(9, 0);
+        var start2 = At(8, 30);
+        var end2 = At(10, 0);
+
+        var hasIntersection = Time.Intersection(start1, end1, start2, end2, out var intersectionStart, out var intersectionEnd);
+
+        Assert.IsTrue(hasIntersection);
+        Assert.AreEqual(At(8, 30), intersectionStart);
+        Assert.AreEqual(At(9, 0), intersectionEnd);
+    }
+
+    [TestMethod]
+    public void IntersectionOutputs_ReturnFalseAndZeroValues_WhenNoOverlap()
+    {
+        var start1 = At(8, 0);
+        var end1 = At(8, 30);
+        var start2 = At(9, 0);
+        var end2 = At(10, 0);
+
+        var hasDurationIntersection = Time.Intersection(start1, end1, start2, end2, out var duration);
+        var hasBoundIntersection = Time.Intersection(start1, end1, start2, end2, out var intersectionStart, out var intersectionEnd);
+
+        Assert.IsFalse(hasDurationIntersection);
+        Assert.AreEqual(Time.Zero, duration);
+        Assert.IsFalse(hasBoundIntersection);
+        Assert.AreEqual(Time.Zero, intersectionStart);
+        Assert.AreEqual(Time.Zero, intersectionEnd);
+    }
+
+    private static Time At(int hours, int minutes, int seconds = 0)
+    {
+        return new Time()
+        {
+            Hours = hours,
+            Minutes = minutes,
+            Seconds = seconds
+        };
+    }
+}

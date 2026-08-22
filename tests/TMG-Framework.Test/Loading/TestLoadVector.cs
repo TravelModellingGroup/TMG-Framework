@@ -16,9 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.IO;
+
 using TMG.Loading;
 using TMG.Test.Utilities;
 

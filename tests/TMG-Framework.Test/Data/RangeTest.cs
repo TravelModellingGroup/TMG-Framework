@@ -16,87 +16,85 @@
     You should have received a copy of the GNU General Public License
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace TMG.Data.Testing
+namespace TMG.Data.Testing;
+
+/// <summary>
+///This is a test class for RangeSetSeriesTest and is intended
+///to contain all RangeSetSeriesTest Unit Tests
+///</summary>
+[TestClass()]
+public class RangeSetSeriesTest
 {
     /// <summary>
-    ///This is a test class for RangeSetSeriesTest and is intended
-    ///to contain all RangeSetSeriesTest Unit Tests
+    ///A test for RangeSetSeries Constructor
     ///</summary>
-    [TestClass()]
-    public class RangeSetSeriesTest
+    [TestMethod()]
+    public void RangeSetSeriesConstructorTest()
     {
-        /// <summary>
-        ///A test for RangeSetSeries Constructor
-        ///</summary>
-        [TestMethod()]
-        public void RangeSetSeriesConstructorTest()
-        {
-            List<RangeSet> tempRange = GenerateTempRange();
-            RangeSetSet target = new RangeSetSet(tempRange);
-            Assert.AreEqual(2, target.Count);
-        }
+        List<RangeSet> tempRange = GenerateTempRange();
+        RangeSetSet target = new RangeSetSet(tempRange);
+        Assert.AreEqual(2, target.Count);
+    }
 
-        /// <summary>
-        ///A test for ToString
-        ///</summary>
-        [TestMethod()]
-        public void ToStringTest()
-        {
-            List<RangeSet> tempRange = GenerateTempRange();
-            RangeSetSet target = new RangeSetSet(tempRange);
-            string expected = "{1-2,4-5},{11-12,14-15}";
-            var actual = target.ToString();
-            Assert.AreEqual(expected, actual);
-        }
+    /// <summary>
+    ///A test for ToString
+    ///</summary>
+    [TestMethod()]
+    public void ToStringTest()
+    {
+        List<RangeSet> tempRange = GenerateTempRange();
+        RangeSetSet target = new RangeSetSet(tempRange);
+        string expected = "{1-2,4-5},{11-12,14-15}";
+        var actual = target.ToString();
+        Assert.AreEqual(expected, actual);
+    }
 
-        /// <summary>
-        ///A test for TryParse
-        ///</summary>
-        [TestMethod()]
-        public void TryParseTestFail()
-        {
-            string? error = null;
-            string rangeString = "{1-2,4-5},{11-12,14-15";
-            bool actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet? output);
-            Assert.IsNotNull(error);
-            Assert.IsNull(output);
-            Assert.IsFalse(actual);
-        }
+    /// <summary>
+    ///A test for TryParse
+    ///</summary>
+    [TestMethod()]
+    public void TryParseTestFail()
+    {
+        string? error = null;
+        string rangeString = "{1-2,4-5},{11-12,14-15";
+        bool actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet? output);
+        Assert.IsNotNull(error);
+        Assert.IsNull(output);
+        Assert.IsFalse(actual);
+    }
 
-        /// <summary>
-        ///A test for TryParse
-        ///</summary>
-        [TestMethod()]
-        public void TryParseTestNonError()
-        {
-            string rangeString = "{1-2,4-5},{11-12,14-15}";
-            RangeSetSet outputExpected = new RangeSetSet(GenerateTempRange());
-            var actual = RangeSetSet.TryParse(rangeString, out RangeSetSet? output);
-            Assert.AreEqual(outputExpected, output);
-            Assert.IsTrue(actual);
-        }
+    /// <summary>
+    ///A test for TryParse
+    ///</summary>
+    [TestMethod()]
+    public void TryParseTestNonError()
+    {
+        string rangeString = "{1-2,4-5},{11-12,14-15}";
+        RangeSetSet outputExpected = new RangeSetSet(GenerateTempRange());
+        var actual = RangeSetSet.TryParse(rangeString, out RangeSetSet? output);
+        Assert.AreEqual(outputExpected, output);
+        Assert.IsTrue(actual);
+    }
 
-        /// <summary>
-        ///A test for TryParse
-        ///</summary>
-        [TestMethod()]
-        public void TryParseTestSuccess()
-        {
-            string? error = null;
-            string rangeString = "{1-2,4-5},{11-12,14-15}";
-            RangeSetSet outputExpected = new RangeSetSet(GenerateTempRange());
-            var actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet? output);
-            Assert.IsNull(error);
-            Assert.AreEqual(outputExpected, output);
-            Assert.IsTrue(actual);
-        }
+    /// <summary>
+    ///A test for TryParse
+    ///</summary>
+    [TestMethod()]
+    public void TryParseTestSuccess()
+    {
+        string? error = null;
+        string rangeString = "{1-2,4-5},{11-12,14-15}";
+        RangeSetSet outputExpected = new RangeSetSet(GenerateTempRange());
+        var actual = RangeSetSet.TryParse(ref error, rangeString, out RangeSetSet? output);
+        Assert.IsNull(error);
+        Assert.AreEqual(outputExpected, output);
+        Assert.IsTrue(actual);
+    }
 
-        private static List<RangeSet> GenerateTempRange()
-        {
-            List<RangeSet> tempRange = new List<RangeSet>()
+    private static List<RangeSet> GenerateTempRange()
+    {
+        List<RangeSet> tempRange = new List<RangeSet>()
             {
                 new RangeSet(new List<Range>()
                 {
@@ -109,7 +107,6 @@ namespace TMG.Data.Testing
                     new Range(14, 15)
                 })
             };
-            return tempRange;
-        }
+        return tempRange;
     }
 }

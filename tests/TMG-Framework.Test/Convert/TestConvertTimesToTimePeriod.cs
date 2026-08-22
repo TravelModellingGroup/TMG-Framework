@@ -17,15 +17,8 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using TMG;
 using TMG.Convert;
-using TMG.Frameworks.Data.Processing.AST;
-using TMG.Processing;
-using TMG.Select;
-using TMG.Test.Utilities;
+
 
 namespace TMG.Test.Convert
 {

@@ -16,135 +16,129 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using TMG;
-using TMG.Frameworks.Data.Processing.AST;
+
 using TMG.Processing;
 using TMG.Test.Utilities;
 
-namespace TMG.Test.Processing
+namespace TMG.Test.Processing;
+
+[TestClass]
+public class TestIntegerizeMatrix
 {
-    [TestClass]
-    public class TestIntegerizeMatrix
+    /// <summary>
+    /// This test just wants to make sure that the most basic case passes.
+    /// </summary>
+    [TestMethod]
+    public void IntegerizeZeroMatrix()
     {
-        /// <summary>
-        /// This test just wants to make sure that the most basic case passes.
-        /// </summary>
-        [TestMethod]
-        public void IntegerizeZeroMatrix()
+        string? error = null;
+        if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var zones, ref error))
         {
-            string? error = null;
-            if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var zones, ref error))
-            {
-                Assert.Fail(error);
-            }
-            if (!Categories.CreateCategories(new List<int>() { 1, 2, }, out var pds, ref error))
-            {
-                Assert.Fail(error);
-            }
-            Assert.IsTrue(CategoryMap.CreateCategoryMap(zones, pds, new List<(int originFlatIndex, int destinationFlatIndex)>()
-            {
-                new (0, 0),
-                new (1, 0),
-                new (2, 1),
-                new (3, 1)
-            }, out var map, ref error));
-            var inputMatrix = new Matrix(zones, zones);
-            var module = new IntegerizeMatrix()
-            {
-                RandomSeed = Helper.CreateParameter(12345),
-                InputMatrix = Helper.CreateParameter(inputMatrix),
-                ZoneToPDMap = Helper.CreateParameter(map)
-            };
-            var integerMatrix = module.Invoke();
-            Assert.IsNotNull(integerMatrix);
+            Assert.Fail(error);
         }
-
-        /// <summary>
-        /// This test just wants to make sure that a simple already integer matrix doesn't change.
-        /// </summary>
-        [TestMethod]
-        public void IntegerizeIdentityMatrix()
+        if (!Categories.CreateCategories(new List<int>() { 1, 2, }, out var pds, ref error))
         {
-            string? error = null;
-            if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var zones, ref error))
-            {
-                Assert.Fail(error);
-            }
-            if (!Categories.CreateCategories(new List<int>() { 1, 2, }, out var pds, ref error))
-            {
-                Assert.Fail(error);
-            }
-            Assert.IsTrue(CategoryMap.CreateCategoryMap(zones, pds, new List<(int originFlatIndex, int destinationFlatIndex)>()
-            {
-                new (0, 0),
-                new (1, 0),
-                new (2, 1),
-                new (3, 1)
-            }, out var map, ref error));
-            var inputMatrix = new Matrix(zones, zones);
-            inputMatrix.Data[0] = 1.0f;
-            inputMatrix.Data[3] = 1.0f;
-            var module = new IntegerizeMatrix()
-            {
-                RandomSeed = Helper.CreateParameter(12345),
-                InputMatrix = Helper.CreateParameter(inputMatrix),
-                ZoneToPDMap = Helper.CreateParameter(map)
-            };
-            var integerMatrix = module.Invoke();
-            Assert.IsNotNull(integerMatrix);
-            Assert.AreEqual(1.0f, integerMatrix.Data[0], 0.00000001f);
-            Assert.AreEqual(0.0f, integerMatrix.Data[1], 0.00000001f);
-            Assert.AreEqual(0.0f, integerMatrix.Data[2], 0.00000001f);
-            Assert.AreEqual(1.0f, integerMatrix.Data[3], 0.00000001f);
+            Assert.Fail(error);
         }
-
-        /// <summary>
-        /// Test that we can actually integerize a real matrix.
-        /// </summary>
-        [TestMethod]
-        public void IntegerizeRealMatrix()
-        {
-            string? error = null;
-            if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var zones, ref error))
-            {
-                Assert.Fail(error);
-            }
-            if (!Categories.CreateCategories(new List<int>() { 1, 2, }, out var pds, ref error))
-            {
-                Assert.Fail(error);
-            }
-            Assert.IsTrue(CategoryMap.CreateCategoryMap(zones, pds, new List<(int originFlatIndex, int destinationFlatIndex)>()
+        Assert.IsTrue(CategoryMap.CreateCategoryMap(zones, pds, new List<(int originFlatIndex, int destinationFlatIndex)>()
             {
                 new (0, 0),
                 new (1, 0),
                 new (2, 1),
                 new (3, 1)
             }, out var map, ref error));
-            var random = new Random(12345);
-            var inputMatrix = new Matrix(zones, zones);
-            for (int i = 0; i < inputMatrix.Data.Length; i++)
-            {
-                inputMatrix.Data[i] = (float)random.NextDouble();
-            }
-            var module = new IntegerizeMatrix()
-            {
-                RandomSeed = Helper.CreateParameter(12345),
-                InputMatrix = Helper.CreateParameter(inputMatrix.Clone()),
-                ZoneToPDMap = Helper.CreateParameter(map)
-            };
-            var integerMatrix = module.Invoke();
-            Assert.IsNotNull(integerMatrix);
+        var inputMatrix = new Matrix(zones, zones);
+        var module = new IntegerizeMatrix()
+        {
+            RandomSeed = Helper.CreateParameter(12345),
+            InputMatrix = Helper.CreateParameter(inputMatrix),
+            ZoneToPDMap = Helper.CreateParameter(map)
+        };
+        var integerMatrix = module.Invoke();
+        Assert.IsNotNull(integerMatrix);
+    }
 
-            // Make sure they are close to integers and only +- 1 from the original values
-            for (int i = 0; i < integerMatrix.Data.Length; i++)
+    /// <summary>
+    /// This test just wants to make sure that a simple already integer matrix doesn't change.
+    /// </summary>
+    [TestMethod]
+    public void IntegerizeIdentityMatrix()
+    {
+        string? error = null;
+        if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var zones, ref error))
+        {
+            Assert.Fail(error);
+        }
+        if (!Categories.CreateCategories(new List<int>() { 1, 2, }, out var pds, ref error))
+        {
+            Assert.Fail(error);
+        }
+        Assert.IsTrue(CategoryMap.CreateCategoryMap(zones, pds, new List<(int originFlatIndex, int destinationFlatIndex)>()
             {
-                Assert.AreEqual(inputMatrix.Data[i], integerMatrix.Data[i], 1.000001f);
-                Assert.AreEqual(Math.Truncate(integerMatrix.Data[i]), (double)integerMatrix.Data[0], 1.000001f);
-            }
+                new (0, 0),
+                new (1, 0),
+                new (2, 1),
+                new (3, 1)
+            }, out var map, ref error));
+        var inputMatrix = new Matrix(zones, zones);
+        inputMatrix.Data[0] = 1.0f;
+        inputMatrix.Data[3] = 1.0f;
+        var module = new IntegerizeMatrix()
+        {
+            RandomSeed = Helper.CreateParameter(12345),
+            InputMatrix = Helper.CreateParameter(inputMatrix),
+            ZoneToPDMap = Helper.CreateParameter(map)
+        };
+        var integerMatrix = module.Invoke();
+        Assert.IsNotNull(integerMatrix);
+        Assert.AreEqual(1.0f, integerMatrix.Data[0], 0.00000001f);
+        Assert.AreEqual(0.0f, integerMatrix.Data[1], 0.00000001f);
+        Assert.AreEqual(0.0f, integerMatrix.Data[2], 0.00000001f);
+        Assert.AreEqual(1.0f, integerMatrix.Data[3], 0.00000001f);
+    }
+
+    /// <summary>
+    /// Test that we can actually integerize a real matrix.
+    /// </summary>
+    [TestMethod]
+    public void IntegerizeRealMatrix()
+    {
+        string? error = null;
+        if (!Categories.CreateCategories(new List<int>() { 1, 2, 3, 4 }, out var zones, ref error))
+        {
+            Assert.Fail(error);
+        }
+        if (!Categories.CreateCategories(new List<int>() { 1, 2, }, out var pds, ref error))
+        {
+            Assert.Fail(error);
+        }
+        Assert.IsTrue(CategoryMap.CreateCategoryMap(zones, pds, new List<(int originFlatIndex, int destinationFlatIndex)>()
+            {
+                new (0, 0),
+                new (1, 0),
+                new (2, 1),
+                new (3, 1)
+            }, out var map, ref error));
+        var random = new Random(12345);
+        var inputMatrix = new Matrix(zones, zones);
+        for (int i = 0; i < inputMatrix.Data.Length; i++)
+        {
+            inputMatrix.Data[i] = (float)random.NextDouble();
+        }
+        var module = new IntegerizeMatrix()
+        {
+            RandomSeed = Helper.CreateParameter(12345),
+            InputMatrix = Helper.CreateParameter(inputMatrix.Clone()),
+            ZoneToPDMap = Helper.CreateParameter(map)
+        };
+        var integerMatrix = module.Invoke();
+        Assert.IsNotNull(integerMatrix);
+
+        // Make sure they are close to integers and only +- 1 from the original values
+        for (int i = 0; i < integerMatrix.Data.Length; i++)
+        {
+            Assert.AreEqual(inputMatrix.Data[i], integerMatrix.Data[i], 1.000001f);
+            Assert.AreEqual(Math.Truncate(integerMatrix.Data[i]), (double)integerMatrix.Data[0], 1.000001f);
         }
     }
 }

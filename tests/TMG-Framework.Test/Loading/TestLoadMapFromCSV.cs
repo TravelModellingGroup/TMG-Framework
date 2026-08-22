@@ -17,45 +17,35 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using TMG;
-using TMG.Frameworks.Data.Processing.AST;
-using XTMF2;
-using XTMF2.RuntimeModules;
-using TMG.Loading;
 using TMG.Test.Utilities;
 
-namespace TMG.Test.Loading
+namespace TMG.Test.Loading;
+
+[TestClass]
+public class TestLoadMapFromCSV
 {
-    [TestClass]
-    public class TestLoadMapFromCSV
+
+    [TestMethod]
+    public void TestLoadingMapFromCSV()
     {
-
-        [TestMethod]
-        public void TestLoadingMapFromCSV()
+        var mapFilePath = MapHelper.WriteCSV(64);
+        var result = MapHelper.LoadMap(mapFilePath);
+        Assert.AreEqual(64, result.Count);
+        for (int i = 0; i < result.Count; i++)
         {
-            var mapFilePath = MapHelper.WriteCSV(64);
-            var result = MapHelper.LoadMap(mapFilePath);
-            Assert.AreEqual(64, result.Count);
-            for (int i = 0; i < result.Count; i++)
-            {
-                Assert.AreEqual((CategoryIndex)(i + 1), result.GetSparseIndex(i));
-            }
+            Assert.AreEqual((CategoryIndex)(i + 1), result.GetSparseIndex(i));
         }
+    }
 
-        [TestMethod]
-        public void TestLoadingMapFromCSVDefinedBackwards()
+    [TestMethod]
+    public void TestLoadingMapFromCSVDefinedBackwards()
+    {
+        var mapFilePath = MapHelper.WriteBackwardsCSV(64);
+        var result = MapHelper.LoadMap(mapFilePath);
+        Assert.AreEqual(64, result.Count);
+        for (int i = 0; i < result.Count; i++)
         {
-            var mapFilePath = MapHelper.WriteBackwardsCSV(64);
-            var result = MapHelper.LoadMap(mapFilePath);
-            Assert.AreEqual(64, result.Count);
-            for (int i = 0; i < result.Count; i++)
-            {
-                Assert.AreEqual((CategoryIndex)(i + 1), result.GetSparseIndex(i));
-            }
+            Assert.AreEqual((CategoryIndex)(i + 1), result.GetSparseIndex(i));
         }
     }
 }

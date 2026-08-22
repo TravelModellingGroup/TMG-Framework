@@ -17,40 +17,33 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using TMG;
-using TMG.Frameworks.Data.Processing.AST;
-using TMG.Processing;
 using TMG.Select;
 using TMG.Test.Utilities;
 
-namespace TMG.Test.Select
+namespace TMG.Test.Select;
+
+[TestClass]
+public class TestSelectGivenTime
 {
-    [TestClass]
-    public class TestSelectGivenTime
+    [TestMethod]
+    public void SelectDataGivenTime()
     {
-        [TestMethod]
-        public void SelectDataGivenTime()
+        var selector = new SelectGivenTime<int>()
         {
-            var selector = new SelectGivenTime<int>()
+            Name = "Selection Module",
+            DefaultTimePeriod = Helper.CreateParameter(0, "Default Value"),
+            TimePeriodData = new[]
             {
-                Name = "Selection Module",
-                DefaultTimePeriod = Helper.CreateParameter(0, "Default Value"),
-                TimePeriodData = new []
-                {
                     Helper.CreateParameter((new TimePeriod(Time.FromMinutes(60), Time.FromMinutes(120)), 1), "First"),
                     Helper.CreateParameter((new TimePeriod(Time.FromMinutes(120), Time.FromMinutes(240)), 2), "Second"),
                     Helper.CreateParameter((new TimePeriod(Time.FromMinutes(250), Time.FromMinutes(360)), 3), "Third")
                 }
-            };
-            Assert.AreEqual(1, selector.Invoke(Time.FromMinutes(60.0f)));
-            Assert.AreEqual(2, selector.Invoke(Time.FromMinutes(120.0f)));
-            Assert.AreEqual(1, selector.Invoke(Time.FromMinutes(240.0f)));
-            Assert.AreEqual(1, selector.Invoke(Time.FromMinutes(360.0f)));
-            Assert.AreEqual(3, selector.Invoke(Time.FromMinutes(250.0f)));
-            Assert.AreEqual(3, selector.Invoke(Time.FromMinutes(270.0f)));
-        }
+        };
+        Assert.AreEqual(1, selector.Invoke(Time.FromMinutes(60.0f)));
+        Assert.AreEqual(2, selector.Invoke(Time.FromMinutes(120.0f)));
+        Assert.AreEqual(1, selector.Invoke(Time.FromMinutes(240.0f)));
+        Assert.AreEqual(1, selector.Invoke(Time.FromMinutes(360.0f)));
+        Assert.AreEqual(3, selector.Invoke(Time.FromMinutes(250.0f)));
+        Assert.AreEqual(3, selector.Invoke(Time.FromMinutes(270.0f)));
     }
 }

@@ -16,42 +16,37 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using XTMF2;
-using System.Reflection;
-using System.Collections.Generic;
-namespace TMG.Test.Data
-{
-    [TestClass]
-    public class VectorTest
-    {
-        [TestMethod]
-        public void CreateVector()
-        {
-            var map = CreateMap();
-            var vector = new Vector(map);
-            var flatData = vector.Data;
-            for (int i = 0; i < flatData.Length; i++)
-            {
-                flatData[i] = i;
-            }
-            Assert.AreEqual(0, vector[2]);
-            Assert.AreEqual(1, vector[4]);
-            Assert.AreEqual(2, vector[6]);
-            Assert.AreEqual(3, vector[8]);
-            Assert.AreEqual(4, vector[10]);
-            Assert.AreEqual(0, vector[12]);
-        }
 
-        private static Categories CreateMap()
+namespace TMG.Test.Data;
+
+[TestClass]
+public class VectorTest
+{
+    [TestMethod]
+    public void CreateVector()
+    {
+        var map = CreateMap();
+        var vector = new Vector(map);
+        var flatData = vector.Data;
+        for (int i = 0; i < flatData.Length; i++)
         {
-            string? error = null;
-            if (!Categories.CreateCategories(new List<int>() { 2, 6, 4, 8, 10 }, out var categories, ref error))
-            {
-                Assert.Fail(error);
-            }
-            return categories;
+            flatData[i] = i;
         }
+        Assert.AreEqual(0, vector[2]);
+        Assert.AreEqual(1, vector[4]);
+        Assert.AreEqual(2, vector[6]);
+        Assert.AreEqual(3, vector[8]);
+        Assert.AreEqual(4, vector[10]);
+        Assert.AreEqual(0, vector[12]);
+    }
+
+    private static Categories CreateMap()
+    {
+        string? error = null;
+        if (!Categories.CreateCategories(new List<int>() { 2, 6, 4, 8, 10 }, out var categories, ref error))
+        {
+            Assert.Fail(error);
+        }
+        return categories;
     }
 }

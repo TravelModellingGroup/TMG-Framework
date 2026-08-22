@@ -16,136 +16,129 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using XTMF2;
 using XTMF2.RuntimeModules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
 
 [assembly: Parallelize]
 
-namespace TMG.Test.Utilities
+namespace TMG.Test.Utilities;
+
+internal static class Helper
 {
-    internal static class Helper
+    /// <summary>
+    /// Generate a new basic parameter with the given value
+    /// </summary>
+    /// <typeparam name="T">The return type</typeparam>
+    /// <param name="value">The value to be returned</param>
+    /// <param name="moduleName">The name of the module to create.</param>
+    /// <returns></returns>
+    internal static IFunction<T> CreateParameter<T>(T value, string? moduleName = null)
     {
-        /// <summary>
-        /// Generate a new basic parameter with the given value
-        /// </summary>
-        /// <typeparam name="T">The return type</typeparam>
-        /// <param name="value">The value to be returned</param>
-        /// <param name="moduleName">The name of the module to create.</param>
-        /// <returns></returns>
-        internal static IFunction<T> CreateParameter<T>(T value, string? moduleName = null)
+        return new BasicParameter<T>()
         {
-            return new BasicParameter<T>()
-            {
-                Name = moduleName,
-                Value = value
-            };
+            Name = moduleName,
+            Value = value
+        };
+    }
+
+    private class CustomizableModule<T, K> : BaseFunction<T, K>
+    {
+        private Func<T, K> _inner;
+
+        public CustomizableModule(Func<T, K> inner)
+        {
+            _inner = inner;
         }
 
-        private class CustomizableModule<T, K> : BaseFunction<T, K>
+        public override K Invoke(T context)
         {
-            private Func<T, K> _inner;
-
-            public CustomizableModule(Func<T, K> inner)
-            {
-                _inner = inner;
-            }
-
-            public override K Invoke(T context)
-            {
-                return _inner(context);
-            }
+            return _inner(context);
         }
+    }
 
-        /// <summary>
-        /// Generate a simple module
-        /// </summary>
-        /// <typeparam name="T">InputType</typeparam>
-        /// <typeparam name="K">OutputType</typeparam>
-        /// <param name="innerFunction">Processing logic</param>
-        /// <returns>A module that executes the function passed in.</returns>
-        internal static IFunction<T, K> CreateModule<T, K>(Func<T, K> innerFunction, string? moduleName = null)
+    /// <summary>
+    /// Generate a simple module
+    /// </summary>
+    /// <typeparam name="T">InputType</typeparam>
+    /// <typeparam name="K">OutputType</typeparam>
+    /// <param name="innerFunction">Processing logic</param>
+    /// <returns>A module that executes the function passed in.</returns>
+    internal static IFunction<T, K> CreateModule<T, K>(Func<T, K> innerFunction, string? moduleName = null)
+    {
+        return new CustomizableModule<T, K>(innerFunction)
         {
-            return new CustomizableModule<T, K>(innerFunction)
-            {
-                Name = moduleName
-            };
+            Name = moduleName
+        };
+    }
+
+
+    /// <summary>
+    /// Create a ReadStream from the given file path.
+    /// </summary>
+    /// <param name="fileName">The path to the file to read.</param>
+    /// <returns>A ReadStream for the given file.</returns>
+    internal static ReadStream CreateReadStreamFromFile(string fileName)
+    {
+        return (new OpenReadStreamFromFile()
+        {
+            FilePath = CreateParameter(fileName)
+        }).Invoke();
+    }
+
+    /// <summary>
+    /// Create a WriteStream to the given file path.
+    /// </summary>
+    /// <param name="fileName">The path to the file to write.</param>
+    /// <returns>A WriteStream for the given file.</returns>
+    internal static WriteStream CreateWriteStreamFromFile(string fileName)
+    {
+        return (new OpenWriteStreamFromFile()
+        {
+            FilePath = CreateParameter(fileName)
+        }).Invoke();
+    }
+
+    /// <summary>
+    /// Assert that the given action throws an exception of the given type.
+    /// Leave the exception type null to allow any exception.
+    /// </summary>
+    /// <param name="action"></param>
+    /// <param name="expectedExceptionType"></param>
+    public static void ThrowsException(Action action, Type? expectedExceptionType = null)
+    {
+        try
+        {
+            action();
+            Assert.Fail("Expected exception of type " + (expectedExceptionType?.FullName ?? "null"));
         }
-
-
-        /// <summary>
-        /// Create a ReadStream from the given file path.
-        /// </summary>
-        /// <param name="fileName">The path to the file to read.</param>
-        /// <returns>A ReadStream for the given file.</returns>
-        internal static ReadStream CreateReadStreamFromFile(string fileName)
+        catch (Exception ex)
         {
-            return (new OpenReadStreamFromFile()
+            if (expectedExceptionType is not null && ex.GetType() != expectedExceptionType)
             {
-                FilePath = CreateParameter(fileName)
-            }).Invoke();
-        }
-
-        /// <summary>
-        /// Create a WriteStream to the given file path.
-        /// </summary>
-        /// <param name="fileName">The path to the file to write.</param>
-        /// <returns>A WriteStream for the given file.</returns>
-        internal static WriteStream CreateWriteStreamFromFile(string fileName)
-        {
-            return (new OpenWriteStreamFromFile()
-            {
-                FilePath = CreateParameter(fileName)
-            }).Invoke();
-        }
-
-        /// <summary>
-        /// Assert that the given action throws an exception of the given type.
-        /// Leave the exception type null to allow any exception.
-        /// </summary>
-        /// <param name="action"></param>
-        /// <param name="expectedExceptionType"></param>
-        public static void ThrowsException(Action action, Type? expectedExceptionType = null)
-        {
-            try
-            {
-                action();
-                Assert.Fail("Expected exception of type " + (expectedExceptionType?.FullName ?? "null"));
-            }
-            catch (Exception ex)
-            {
-                if (expectedExceptionType is not null && ex.GetType() != expectedExceptionType)
-                {
-                    Assert.Fail("Expected exception of type " + expectedExceptionType.FullName + " but got " + ex.GetType().FullName);
-                }
+                Assert.Fail("Expected exception of type " + expectedExceptionType.FullName + " but got " + ex.GetType().FullName);
             }
         }
+    }
 
-        /// <summary>
-        /// Assert that the given action throws an exception of the given type.
-        /// Leave the exception type null to allow any exception.
-        /// </summary>
-        /// <param name="action"></param>
-        /// <param name="expectedExceptionType"></param>
-        public static void ThrowsException<T>(Action action)
-            where T : Exception
+    /// <summary>
+    /// Assert that the given action throws an exception of the given type.
+    /// Leave the exception type null to allow any exception.
+    /// </summary>
+    /// <param name="action"></param>
+    /// <param name="expectedExceptionType"></param>
+    public static void ThrowsException<T>(Action action)
+        where T : Exception
+    {
+        try
         {
-            try
+            action();
+            Assert.Fail("Expected exception of type " + typeof(T).FullName);
+        }
+        catch (Exception ex)
+        {
+            if (ex.GetType() != typeof(T))
             {
-                action();
-                Assert.Fail("Expected exception of type " + typeof(T).FullName);
-            }
-            catch (Exception ex)
-            {
-                if (ex.GetType() != typeof(T))
-                {
-                    Assert.Fail("Expected exception of type " + typeof(T).FullName + " but got " + ex.GetType().FullName);
-                }
+                Assert.Fail("Expected exception of type " + typeof(T).FullName + " but got " + ex.GetType().FullName);
             }
         }
     }

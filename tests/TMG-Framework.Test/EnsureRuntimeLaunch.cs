@@ -16,21 +16,18 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using XTMF2;
-using System.Reflection;
 
-namespace TMG.Test
+using XTMF2;
+
+namespace TMG.Test;
+
+[TestClass]
+public class EnsureRuntimeLaunch
 {
-    [TestClass]
-    public class EnsureRuntimeLaunch
+    [TestMethod]
+    public void LaunchRuntime()
     {
-        [TestMethod]
-        public void LaunchRuntime()
-        {
-            var runtime = XTMFRuntime.CreateRuntime();
-            runtime.SystemConfiguration.LoadAssembly(typeof(Range).GetTypeInfo().Assembly);
-        }
+        var runtime = XTMFRuntime.CreateRuntime();
+        runtime.SystemConfiguration.LoadAssembly(typeof(Range).GetTypeInfo().Assembly);
     }
 }
