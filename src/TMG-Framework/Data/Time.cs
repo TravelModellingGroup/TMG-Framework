@@ -27,12 +27,6 @@ namespace TMG
     /// </summary>
     public struct Time : IComparable<Time>
     {
-        public static Time EndOfDay = new Time() { Hours = 28 };
-
-        public static Time OneQuantum;
-
-        public static Time StartOfDay = new Time() { Hours = 4 };
-
         /// <summary>
         /// Our internal representation, to the millisecond
         /// </summary>
@@ -52,7 +46,14 @@ namespace TMG
 
         public Time(DateTime time)
         {
-            _internalTime = ((60 * (60 * time.Hour) + time.Minute) + time.Second) * 1000 + time.Millisecond;
+            var hours = time.Hour;
+            var minutes = time.Minute;
+            var seconds = time.Second;
+            var milliseconds = time.Millisecond;
+            var hourToMilliseconds = hours * 3600000L;
+            var minuteToMilliseconds = minutes * 60000L;
+            var secondToMilliseconds = seconds * 1000L;
+            _internalTime = (hourToMilliseconds + minuteToMilliseconds) + (secondToMilliseconds + milliseconds);
         }
 
         /// <summary>
@@ -115,52 +116,25 @@ namespace TMG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Intersection(Time start1, Time end1, Time start2, Time end2, out Time intersection)
         {
-            if ((end1._internalTime < start2._internalTime)
-                | (end2._internalTime < start1._internalTime))
-            {
-                intersection = new Time();
-                return false;
-            }
-            // passenger is first
-            if (start1._internalTime <= start2._internalTime)
-            {
-                intersection._internalTime =
-                    (end1._internalTime >= end2._internalTime) ? end2._internalTime - start2._internalTime : end1._internalTime - start2._internalTime;
-                return true;
-            }
-            else
-            {
-                // passenger is second
-                intersection._internalTime =
-                    (end1._internalTime >= end2._internalTime) ? end2._internalTime - start1._internalTime : end1._internalTime - start1._internalTime;
-                return true;
-            }
+            var intersectionStart = Math.Max(start1._internalTime, start2._internalTime);
+            var intersectionEnd = Math.Min(end1._internalTime, end2._internalTime);
+            var intersectionDuration = intersectionEnd - intersectionStart;
+            var mask = ~(intersectionDuration >> 63);
+
+            intersection._internalTime = intersectionDuration & mask;
+            return mask != 0L;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Intersection(Time start1, Time end1, Time start2, Time end2, out Time intersectionStart, out Time intersectionEnd)
         {
-            if (end1._internalTime < start2._internalTime
-                || end2._internalTime < start1._internalTime)
-            {
-                intersectionStart = new Time();
-                intersectionEnd = new Time();
-                return false;
-            }
-            // passenger is first
-            if (start1._internalTime <= start2._internalTime)
-            {
-                intersectionStart._internalTime = start2._internalTime;
-                intersectionEnd._internalTime = (end1._internalTime >= end2._internalTime) ? end2._internalTime : end1._internalTime;
-                return true;
-            }
-            else
-            {
-                // passenger is second
-                intersectionStart._internalTime = start1._internalTime;
-                intersectionEnd._internalTime = (end1._internalTime >= end2._internalTime) ? end2._internalTime : end1._internalTime;
-                return true;
-            }
+            var start = Math.Max(start1._internalTime, start2._internalTime);
+            var end = Math.Min(end1._internalTime, end2._internalTime);
+            var mask = ~((end - start) >> 63);
+
+            intersectionStart._internalTime = start & mask;
+            intersectionEnd._internalTime = end & mask;
+            return mask != 0L;
         }
 
         /// <summary>
@@ -497,7 +471,7 @@ namespace TMG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int CompareTo(Time other)
         {
-            return _internalTime < other._internalTime ? -1 : (_internalTime == other._internalTime ? 0 : 1);
+            return _internalTime.CompareTo(other._internalTime);
         }
 
         public override bool Equals(object? obj)
