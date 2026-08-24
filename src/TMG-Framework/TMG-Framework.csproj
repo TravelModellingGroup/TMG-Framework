@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>TMG</RootNamespace>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
     <Authors>University of Toronto</Authors>
     <Company>University of Toronto</Company>
     <Description>A set of modules for XTMF2 to provide assistance in Travel Demand Modelling.</Description>

@@ -17,491 +17,485 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+namespace TMG.Utilities;
 
-namespace TMG.Utilities
+public sealed class CsvReader : IDisposable
 {
-    public sealed class CsvReader : IDisposable
+    internal char[] LineBuffer = new char[512];
+
+    internal int LinePosition;
+
+    /// <summary>
+    /// The reader we use to get the IO data
+    /// </summary>
+    private readonly BinaryReader Reader;
+
+    /// <summary>
+    /// The segments set when we read in a line
+    /// </summary>
+    private CsvPartition[] Data = new CsvPartition[50];
+
+    private char[] DataBuffer = new char[0x4000];
+    private char[]? DataBuffer2;
+
+    private int DataBufferLength;
+
+    private int DataBufferPosition;
+
+    private readonly bool SpacesAsSeperator;
+
+    private readonly string[] _headers;
+    public ReadOnlySpan<string> Headers => _headers;
+
+    public long LineNumber { get; private set; }
+
+    /// <summary>
+    /// Create a link to a CSV file
+    /// </summary>
+    /// <param name="fileName"></param>
+    /// <param name="spacesAsSeperator">If true, spaces outside of spaces will denote breaks for columns</param>
+    public CsvReader(string fileName, bool spacesAsSeperator = false)
     {
-        internal char[] LineBuffer = new char[512];
-
-        internal int LinePosition;
-
-        /// <summary>
-        /// The reader we use to get the IO data
-        /// </summary>
-        private readonly BinaryReader Reader;
-
-        /// <summary>
-        /// The segments set when we read in a line
-        /// </summary>
-        private CsvPartition[] Data = new CsvPartition[50];
-
-        private char[] DataBuffer = new char[0x4000];
-        private char[]? DataBuffer2;
-
-        private int DataBufferLength;
-
-        private int DataBufferPosition;
-
-        private readonly bool SpacesAsSeperator;
-
-        private readonly string[] _headers;
-        public ReadOnlySpan<string> Headers => _headers;
-
-        public long LineNumber { get; private set; }
-
-        /// <summary>
-        /// Create a link to a CSV file
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <param name="spacesAsSeperator">If true, spaces outside of spaces will denote breaks for columns</param>
-        public CsvReader(string fileName, bool spacesAsSeperator = false)
+        FileName = fileName;
+        Reader = new BinaryReader(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+        BaseStream = Reader.BaseStream;
+        DataBufferLength = -1;
+        SpacesAsSeperator = spacesAsSeperator;
+        _headers = LoadLine(out int columns) && columns > 0 ? new string[columns] : Array.Empty<string>();
+        for (int i = 0; i < _headers.Length; i++)
         {
-            FileName = fileName;
-            Reader = new BinaryReader(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-            BaseStream = Reader.BaseStream;
-            DataBufferLength = -1;
-            SpacesAsSeperator = spacesAsSeperator;
-            _headers = LoadLine(out int columns) && columns > 0 ? new string[columns] : Array.Empty<string>();
-            for (int i = 0; i < _headers.Length; i++)
-            {
-                Get(out _headers[i], i);
-            }
+            Get(out _headers[i], i);
         }
-
-        public CsvReader(Stream stream, bool spacesAsSeperator = false)
-        {
-            FileName = "Stream";
-            Reader = new BinaryReader(stream, System.Text.Encoding.UTF8, true);
-            BaseStream = Reader.BaseStream;
-            DataBufferLength = -1;
-            SpacesAsSeperator = spacesAsSeperator;
-            _headers = LoadLine(out int columns) && columns > 0 ? new string[columns] : Array.Empty<string>();
-            for (int i = 0; i < _headers.Length; i++)
-            {
-                Get(out _headers[i], i);
-            }
-        }
-
-        public Stream BaseStream
-        {
-            get;
-        }
-
-        public bool EndOfFile => DataBufferLength == 0;
-
-        /// <summary>
-        /// The file name
-        /// </summary>
-        public string FileName { get; }
-
-        public void Close()
-        {
-            Dispose(false);
-        }
-
-        /// <summary>
-        /// Find the index of the column with the given header.
-        /// </summary>
-        /// <param name="header">The name of the header to search for.</param>
-        /// <returns>The index for the column with the given name. -1 if the header is not found.</returns>
-        public int GetColumnIndexWithHeader(string header)
-        {
-            for (int i = 0; i < _headers.Length; i++)
-            {
-                if(header.Equals(_headers[i], StringComparison.OrdinalIgnoreCase))
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        /// <summary>
-        ///Get a float from a col position
-        /// </summary>
-        /// <param name="item">Where to put the data</param>
-        /// <param name="pos">Which column to read from, 0 indexed</param>
-        public void Get(out float item, int pos)
-        {
-            var data = Data[pos];
-            item = float.Parse(LineBuffer.AsSpan(data.Start, data.End - data.Start));
-        }
-
-        /// <summary>
-        ///Get a double from a col position
-        /// </summary>
-        /// <param name="item">Where to put the data</param>
-        /// <param name="pos">Which column to read from, 0 indexed</param>
-        public void Get(out double item, int pos)
-        {
-            var data = Data[pos];
-            item = double.Parse(LineBuffer.AsSpan(data.Start, data.End - data.Start));
-        }
-
-        /// <summary>
-        /// Get an int from a col position
-        /// </summary>
-        /// <param name="item">Where to put the data</param>
-        /// <param name="pos">Which column to read from, 0 indexed</param>
-        public void Get(out int item, int pos)
-        {
-            var data = Data[pos];
-            item = int.Parse(LineBuffer.AsSpan(data.Start, data.End - data.Start));
-        }
-
-        /// <summary>
-        /// Get a character out
-        /// </summary>
-        /// <param name="item">Where to put the data</param>
-        /// <param name="pos">Which column to read from, 0 indexed</param>
-        public void Get(out char item, int pos)
-        {
-            item = LineBuffer[Data[pos].Start];
-        }
-
-        /// <summary>
-        /// Get a string out
-        /// </summary>
-        /// <param name="item">Where to put the data</param>
-        /// <param name="pos">Which column to read from, 0 indexed</param>
-        public void Get(out string item, int pos)
-        {
-            var data = Data[pos];
-            item = new string(LineBuffer, data.Start, data.End - data.Start);
-        }
-
-        /// <summary>
-        /// Get a read-only span of a string out
-        /// </summary>
-        /// <param name="item">Where to initialize the span</param>
-        /// <param name="pos">Which column to read from, 0 indexed</param>
-        public void Get(out ReadOnlySpan<char> item, int pos)
-        {
-            var data = Data[pos];
-            item = LineBuffer.AsSpan(data.Start, data.End - data.Start);
-        }
-
-        /// <summary>
-        /// Reads in a line and gives the number of columns
-        /// </summary>
-        /// <returns>The number of columns returned</returns>
-        public int LoadLine()
-        {
-            LoadLine(out int res);
-            return res;
-        }
-
-        /// <summary>
-        /// Reads in a line and gives the number of columns
-        /// </summary>
-        /// <param name="columns">The number of columns read in for this line.</param>
-        /// <returns>True if data was read. (Not end of file)</returns>
-        public bool LoadLine(out int columns)
-        {
-            var numberOfColumns = 0;
-            LinePosition = 0;
-            if (Reader == null) throw new IOException("No file has been loaded!");
-            if (FastEndOfFile())
-            {
-                columns = 0;
-                return false;
-            }
-            LineNumber++;
-            var prevEnd = -1;
-            var addOne = false;
-            var i = 0;
-            var prevC = '\0';
-            var quote = false;
-            var previousWasQuote = false;
-            if (SpacesAsSeperator)
-            {
-                while (true)
-                {
-                    char c;
-                    // make sure there is data
-                    if (DataBufferPosition >= DataBufferLength)
-                    {
-                        LoadInData();
-                        // if we are at the end of file just end it
-                        if (DataBufferLength <= 0)
-                        {
-                            if (addOne)
-                            {
-                                Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
-                            }
-                            columns = numberOfColumns;
-                            return columns > 0;
-                        }
-                    }
-                    c = DataBuffer[DataBufferPosition++];
-                    if ((prevC == '\r' && c != '\n' && c != '\0') || (c == '\n') || (c == '\0'))
-                    {
-                        // Create a new column if this is a Linux file format.
-                        if (prevC != '\r')
-                        {
-                            if (Data.Length <= numberOfColumns)
-                            {
-                                ExpandDataSections();
-                            }
-                            Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
-                            addOne = false;
-                        }
-                        else if (prevC == '\r' && c != '\n' && c != '\0')
-                        {
-                            // If it was just a MAC encoded line ending then we need to process the current character in the next load.
-                            DataBufferPosition--;
-                            addOne = false;
-                        }
-                        break;
-                    }
-                    if (c == '"')
-                    {
-                        if (previousWasQuote)
-                        {
-                            // if the previous was a quote, reactive quote mode and
-                            // add it to the line buffer
-                            previousWasQuote = false;
-                            quote = true;
-                        }
-                        else
-                        {
-                            previousWasQuote = true;
-                            if (prevEnd == i - 1)
-                            {
-                                quote = true;
-                                continue;
-                            }
-                            if (quote)
-                            {
-                                quote = false;
-                                continue;
-                            }
-                        }
-                        // if it is just in the middle continue on
-                    }
-                    else
-                    {
-                        previousWasQuote = false;
-                    }
-                    if (LinePosition >= LineBuffer.Length)
-                    {
-                        Array.Resize(ref LineBuffer, LineBuffer.Length * 2);
-                    }
-                    LineBuffer[LinePosition++] = c;
-                    // if a comma or an end quote followed by a comma
-                    if ((!quote && (c == ',' || c == '\t' || (prevC != ' ' && c == ' ')))
-                        || c == '\r')
-                    {
-                        addOne = false;
-                        if (Data.Length <= numberOfColumns)
-                        {
-                            ExpandDataSections();
-                        }
-                        Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, prevEnd = i);
-                    }
-                    else
-                    {
-                        addOne = true;
-                    }
-                    prevC = c;
-                    i++;
-                }
-            }
-            else
-            {
-                while (true)
-                {
-                    char c;
-                    // make sure there is data
-                    if (DataBufferPosition >= DataBufferLength)
-                    {
-                        LoadInData();
-                        // if we are at the end of file just end it
-                        if (DataBufferLength <= 0)
-                        {
-                            if (addOne)
-                            {
-                                Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
-                            }
-                            columns = numberOfColumns;
-                            return columns > 0;
-                        }
-                    }
-                    c = DataBuffer[DataBufferPosition++];
-                    if ((prevC == '\r' && c != '\n' && c != '\0') || (c == '\n') || (c == '\0'))
-                    {
-                        // Create a new column if this is a Linux file format.
-                        if (prevC != '\r')
-                        {
-                            if (Data.Length <= numberOfColumns)
-                            {
-                                ExpandDataSections();
-                            }
-                            Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
-                            addOne = false;
-                        }
-                        else if (prevC == '\r' && c != '\n' && c != '\0')
-                        {
-                            // If it was just a MAC encoded line ending then we need to process the current character in the next load.
-                            DataBufferPosition--;
-                            addOne = false;
-                        }
-                        break;
-                    }
-                    if (c == '"')
-                    {
-                        if (previousWasQuote)
-                        {
-                            // if the previous was a quote, reactive quote mode and
-                            // add it to the line buffer
-                            previousWasQuote = false;
-                            quote = true;
-                        }
-                        else
-                        {
-                            previousWasQuote = true;
-                            if (prevEnd == i - 1)
-                            {
-                                quote = true;
-                                continue;
-                            }
-                            if (quote)
-                            {
-                                quote = false;
-                                continue;
-                            }
-                        }
-                        // if it is just in the middle continue on
-                    }
-                    else
-                    {
-                        previousWasQuote = false;
-                    }
-                    if (LinePosition >= LineBuffer.Length)
-                    {
-                        Array.Resize(ref LineBuffer, LineBuffer.Length * 2);
-                    }
-                    LineBuffer[LinePosition++] = c;
-                    // if a comma or an end quote followed by a comma
-                    if ((!quote && (c == ',' || c == '\t'))
-                        || c == '\r')
-                    {
-                        addOne = false;
-                        if (Data.Length <= numberOfColumns)
-                        {
-                            ExpandDataSections();
-                        }
-                        Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, prevEnd = i);
-                    }
-                    else
-                    {
-                        addOne = true;
-                    }
-                    prevC = c;
-                    i++;
-                }
-            }
-            // check to see if there was actually no data
-            if (LinePosition == 0 || (numberOfColumns == 1 && Data[0].End == 0))
-            {
-                columns = 0;
-            }
-            else
-            {
-                columns = addOne ? numberOfColumns + 1 : numberOfColumns;
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Reset to go to the start
-        /// </summary>
-        public void Reset()
-        {
-            Reader.BaseStream.Seek(0, SeekOrigin.Begin);
-            DataBuffer2 = null;
-            DataBufferLength = -1;
-            LineNumber = 0;
-        }
-
-        private void ExpandDataSections()
-        {
-            Array.Resize(ref Data, Data.Length * 2);
-        }
-
-        private bool FastEndOfFile()
-        {
-            return DataBufferLength == 0;
-        }
-
-        private volatile bool NextDataReady;
-        private volatile int NextDataBufferLength;
-
-        private void LoadInData()
-        {
-            if (DataBuffer2 == null)
-            {
-                DataBuffer2 = new char[0x4000];
-                NextDataBufferLength = Reader.Read(DataBuffer2, 0, DataBuffer.Length);
-                NextDataReady = true;
-            }
-            // spin-wait on this being ready until the data is ready
-            while (!NextDataReady)
-            {
-            }
-            DataBufferPosition = 0;
-            var temp = DataBuffer;
-            DataBuffer = DataBuffer2;
-            DataBuffer2 = temp;
-            DataBufferLength = NextDataBufferLength;
-            NextDataReady = false;
-            // load the next set of data in parallel
-            Task.Run(() =>
-            {
-                NextDataBufferLength = Reader.Read(DataBuffer2, 0, DataBuffer.Length);
-                Thread.MemoryBarrier();
-                NextDataReady = true;
-            });
-        }
-
-        private readonly struct CsvPartition
-        {
-            public readonly int End;
-            public readonly int Start;
-
-            public CsvPartition(int start, int end)
-            {
-                Start = start;
-                End = end;
-            }
-        }
-
-        #region IDisposable Members
-
-        private void Dispose(bool gcCalled)
-        {
-            if (!gcCalled)
-            {
-                GC.SuppressFinalize(this);
-            }
-            Reader.Dispose();
-        }
-
-        ~CsvReader()
-        {
-            Dispose(true);
-        }
-
-        public void Dispose()
-        {
-            Dispose(false);
-        }
-
-        #endregion IDisposable Members
     }
+
+    public CsvReader(Stream stream, bool spacesAsSeperator = false)
+    {
+        FileName = "Stream";
+        Reader = new BinaryReader(stream, System.Text.Encoding.UTF8, true);
+        BaseStream = Reader.BaseStream;
+        DataBufferLength = -1;
+        SpacesAsSeperator = spacesAsSeperator;
+        _headers = LoadLine(out int columns) && columns > 0 ? new string[columns] : Array.Empty<string>();
+        for (int i = 0; i < _headers.Length; i++)
+        {
+            Get(out _headers[i], i);
+        }
+    }
+
+    public Stream BaseStream
+    {
+        get;
+    }
+
+    public bool EndOfFile => DataBufferLength == 0;
+
+    /// <summary>
+    /// The file name
+    /// </summary>
+    public string FileName { get; }
+
+    public void Close()
+    {
+        Dispose(false);
+    }
+
+    /// <summary>
+    /// Find the index of the column with the given header.
+    /// </summary>
+    /// <param name="header">The name of the header to search for.</param>
+    /// <returns>The index for the column with the given name. -1 if the header is not found.</returns>
+    public int GetColumnIndexWithHeader(string header)
+    {
+        for (int i = 0; i < _headers.Length; i++)
+        {
+            if (header.Equals(_headers[i], StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    ///Get a float from a col position
+    /// </summary>
+    /// <param name="item">Where to put the data</param>
+    /// <param name="pos">Which column to read from, 0 indexed</param>
+    public void Get(out float item, int pos)
+    {
+        var data = Data[pos];
+        item = float.Parse(LineBuffer.AsSpan(data.Start, data.End - data.Start));
+    }
+
+    /// <summary>
+    ///Get a double from a col position
+    /// </summary>
+    /// <param name="item">Where to put the data</param>
+    /// <param name="pos">Which column to read from, 0 indexed</param>
+    public void Get(out double item, int pos)
+    {
+        var data = Data[pos];
+        item = double.Parse(LineBuffer.AsSpan(data.Start, data.End - data.Start));
+    }
+
+    /// <summary>
+    /// Get an int from a col position
+    /// </summary>
+    /// <param name="item">Where to put the data</param>
+    /// <param name="pos">Which column to read from, 0 indexed</param>
+    public void Get(out int item, int pos)
+    {
+        var data = Data[pos];
+        item = int.Parse(LineBuffer.AsSpan(data.Start, data.End - data.Start));
+    }
+
+    /// <summary>
+    /// Get a character out
+    /// </summary>
+    /// <param name="item">Where to put the data</param>
+    /// <param name="pos">Which column to read from, 0 indexed</param>
+    public void Get(out char item, int pos)
+    {
+        item = LineBuffer[Data[pos].Start];
+    }
+
+    /// <summary>
+    /// Get a string out
+    /// </summary>
+    /// <param name="item">Where to put the data</param>
+    /// <param name="pos">Which column to read from, 0 indexed</param>
+    public void Get(out string item, int pos)
+    {
+        var data = Data[pos];
+        item = new string(LineBuffer, data.Start, data.End - data.Start);
+    }
+
+    /// <summary>
+    /// Get a read-only span of a string out
+    /// </summary>
+    /// <param name="item">Where to initialize the span</param>
+    /// <param name="pos">Which column to read from, 0 indexed</param>
+    public void Get(out ReadOnlySpan<char> item, int pos)
+    {
+        var data = Data[pos];
+        item = LineBuffer.AsSpan(data.Start, data.End - data.Start);
+    }
+
+    /// <summary>
+    /// Reads in a line and gives the number of columns
+    /// </summary>
+    /// <returns>The number of columns returned</returns>
+    public int LoadLine()
+    {
+        LoadLine(out int res);
+        return res;
+    }
+
+    /// <summary>
+    /// Reads in a line and gives the number of columns
+    /// </summary>
+    /// <param name="columns">The number of columns read in for this line.</param>
+    /// <returns>True if data was read. (Not end of file)</returns>
+    public bool LoadLine(out int columns)
+    {
+        var numberOfColumns = 0;
+        LinePosition = 0;
+        if (Reader == null) throw new IOException("No file has been loaded!");
+        if (FastEndOfFile())
+        {
+            columns = 0;
+            return false;
+        }
+        LineNumber++;
+        var prevEnd = -1;
+        var addOne = false;
+        var i = 0;
+        var prevC = '\0';
+        var quote = false;
+        var previousWasQuote = false;
+        if (SpacesAsSeperator)
+        {
+            while (true)
+            {
+                char c;
+                // make sure there is data
+                if (DataBufferPosition >= DataBufferLength)
+                {
+                    LoadInData();
+                    // if we are at the end of file just end it
+                    if (DataBufferLength <= 0)
+                    {
+                        if (addOne)
+                        {
+                            Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
+                        }
+                        columns = numberOfColumns;
+                        return columns > 0;
+                    }
+                }
+                c = DataBuffer[DataBufferPosition++];
+                if ((prevC == '\r' && c != '\n' && c != '\0') || (c == '\n') || (c == '\0'))
+                {
+                    // Create a new column if this is a Linux file format.
+                    if (prevC != '\r')
+                    {
+                        if (Data.Length <= numberOfColumns)
+                        {
+                            ExpandDataSections();
+                        }
+                        Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
+                        addOne = false;
+                    }
+                    else if (prevC == '\r' && c != '\n' && c != '\0')
+                    {
+                        // If it was just a MAC encoded line ending then we need to process the current character in the next load.
+                        DataBufferPosition--;
+                        addOne = false;
+                    }
+                    break;
+                }
+                if (c == '"')
+                {
+                    if (previousWasQuote)
+                    {
+                        // if the previous was a quote, reactive quote mode and
+                        // add it to the line buffer
+                        previousWasQuote = false;
+                        quote = true;
+                    }
+                    else
+                    {
+                        previousWasQuote = true;
+                        if (prevEnd == i - 1)
+                        {
+                            quote = true;
+                            continue;
+                        }
+                        if (quote)
+                        {
+                            quote = false;
+                            continue;
+                        }
+                    }
+                    // if it is just in the middle continue on
+                }
+                else
+                {
+                    previousWasQuote = false;
+                }
+                if (LinePosition >= LineBuffer.Length)
+                {
+                    Array.Resize(ref LineBuffer, LineBuffer.Length * 2);
+                }
+                LineBuffer[LinePosition++] = c;
+                // if a comma or an end quote followed by a comma
+                if ((!quote && (c == ',' || c == '\t' || (prevC != ' ' && c == ' ')))
+                    || c == '\r')
+                {
+                    addOne = false;
+                    if (Data.Length <= numberOfColumns)
+                    {
+                        ExpandDataSections();
+                    }
+                    Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, prevEnd = i);
+                }
+                else
+                {
+                    addOne = true;
+                }
+                prevC = c;
+                i++;
+            }
+        }
+        else
+        {
+            while (true)
+            {
+                char c;
+                // make sure there is data
+                if (DataBufferPosition >= DataBufferLength)
+                {
+                    LoadInData();
+                    // if we are at the end of file just end it
+                    if (DataBufferLength <= 0)
+                    {
+                        if (addOne)
+                        {
+                            Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
+                        }
+                        columns = numberOfColumns;
+                        return columns > 0;
+                    }
+                }
+                c = DataBuffer[DataBufferPosition++];
+                if ((prevC == '\r' && c != '\n' && c != '\0') || (c == '\n') || (c == '\0'))
+                {
+                    // Create a new column if this is a Linux file format.
+                    if (prevC != '\r')
+                    {
+                        if (Data.Length <= numberOfColumns)
+                        {
+                            ExpandDataSections();
+                        }
+                        Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, i);
+                        addOne = false;
+                    }
+                    else if (prevC == '\r' && c != '\n' && c != '\0')
+                    {
+                        // If it was just a MAC encoded line ending then we need to process the current character in the next load.
+                        DataBufferPosition--;
+                        addOne = false;
+                    }
+                    break;
+                }
+                if (c == '"')
+                {
+                    if (previousWasQuote)
+                    {
+                        // if the previous was a quote, reactive quote mode and
+                        // add it to the line buffer
+                        previousWasQuote = false;
+                        quote = true;
+                    }
+                    else
+                    {
+                        previousWasQuote = true;
+                        if (prevEnd == i - 1)
+                        {
+                            quote = true;
+                            continue;
+                        }
+                        if (quote)
+                        {
+                            quote = false;
+                            continue;
+                        }
+                    }
+                    // if it is just in the middle continue on
+                }
+                else
+                {
+                    previousWasQuote = false;
+                }
+                if (LinePosition >= LineBuffer.Length)
+                {
+                    Array.Resize(ref LineBuffer, LineBuffer.Length * 2);
+                }
+                LineBuffer[LinePosition++] = c;
+                // if a comma or an end quote followed by a comma
+                if ((!quote && (c == ',' || c == '\t'))
+                    || c == '\r')
+                {
+                    addOne = false;
+                    if (Data.Length <= numberOfColumns)
+                    {
+                        ExpandDataSections();
+                    }
+                    Data[numberOfColumns++] = new CsvPartition(prevEnd + 1, prevEnd = i);
+                }
+                else
+                {
+                    addOne = true;
+                }
+                prevC = c;
+                i++;
+            }
+        }
+        // check to see if there was actually no data
+        if (LinePosition == 0 || (numberOfColumns == 1 && Data[0].End == 0))
+        {
+            columns = 0;
+        }
+        else
+        {
+            columns = addOne ? numberOfColumns + 1 : numberOfColumns;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Reset to go to the start
+    /// </summary>
+    public void Reset()
+    {
+        Reader.BaseStream.Seek(0, SeekOrigin.Begin);
+        DataBuffer2 = null;
+        DataBufferLength = -1;
+        LineNumber = 0;
+    }
+
+    private void ExpandDataSections()
+    {
+        Array.Resize(ref Data, Data.Length * 2);
+    }
+
+    private bool FastEndOfFile()
+    {
+        return DataBufferLength == 0;
+    }
+
+    private volatile bool NextDataReady;
+    private volatile int NextDataBufferLength;
+
+    private void LoadInData()
+    {
+        if (DataBuffer2 == null)
+        {
+            DataBuffer2 = new char[0x4000];
+            NextDataBufferLength = Reader.Read(DataBuffer2, 0, DataBuffer.Length);
+            NextDataReady = true;
+        }
+        // spin-wait on this being ready until the data is ready
+        while (!NextDataReady)
+        {
+        }
+        DataBufferPosition = 0;
+        var temp = DataBuffer;
+        DataBuffer = DataBuffer2;
+        DataBuffer2 = temp;
+        DataBufferLength = NextDataBufferLength;
+        NextDataReady = false;
+        // load the next set of data in parallel
+        Task.Run(() =>
+        {
+            NextDataBufferLength = Reader.Read(DataBuffer2, 0, DataBuffer.Length);
+            Thread.MemoryBarrier();
+            NextDataReady = true;
+        });
+    }
+
+    private readonly struct CsvPartition
+    {
+        public readonly int End;
+        public readonly int Start;
+
+        public CsvPartition(int start, int end)
+        {
+            Start = start;
+            End = end;
+        }
+    }
+
+    #region IDisposable Members
+
+    private void Dispose(bool gcCalled)
+    {
+        if (!gcCalled)
+        {
+            GC.SuppressFinalize(this);
+        }
+        Reader.Dispose();
+    }
+
+    ~CsvReader()
+    {
+        Dispose(true);
+    }
+
+    public void Dispose()
+    {
+        Dispose(false);
+    }
+
+    #endregion IDisposable Members
 }

@@ -16,23 +16,18 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using XTMF2;
-using System.Reflection;
 
-namespace TMG.Test.Data
+namespace TMG.Test.Data;
+
+[TestClass]
+public class RangeSetTest
 {
-    [TestClass]
-    public class RangeSetTest
+    [TestMethod]
+    public void TestRangeSetIntList()
     {
-        [TestMethod]
-        public void TestRangeSetIntList()
-        {
-            RangeSet rangeSet = new RangeSet(new[] { 1, 2, 3, 4, 5, 7, 8, 9, 10 });
-            Assert.AreEqual(2, rangeSet.Count);
-            Assert.AreEqual(new Range(1, 5), rangeSet[0]);
-            Assert.AreEqual(new Range(7, 10), rangeSet[1]);
-        }
+        RangeSet rangeSet = new RangeSet(new[] { 1, 2, 3, 4, 5, 7, 8, 9, 10 });
+        Assert.AreEqual(2, rangeSet.Count);
+        Assert.AreEqual(new Range(1, 5), rangeSet[0]);
+        Assert.AreEqual(new Range(7, 10), rangeSet[1]);
     }
 }

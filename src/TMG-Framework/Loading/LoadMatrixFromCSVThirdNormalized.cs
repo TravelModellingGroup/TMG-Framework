@@ -16,80 +16,76 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 using TMG.Utilities;
-using XTMF2;
 
-namespace TMG.Loading
+namespace TMG.Loading;
+
+[Module(Name = "Load Matrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
+    DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
+public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, Matrix>
 {
-    [Module(Name = "Load Matrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
-        DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, Matrix>
+    [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+    public IFunction<Categories> RowCategories = null!;
+
+    [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
+    public IFunction<Categories> ColumnCategories = null!;
+
+    [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the origin.")]
+    public IFunction<int> OriginColumn = null!;
+
+    [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the destination.")]
+    public IFunction<int> DestinationColumn = null!;
+
+    [Parameter(DefaultValue = "2", Name = "Data Column", Index = 4, Description = "The 0 indexed column containing the data to load index.")]
+    public IFunction<int> DataColumn = null!;
+
+    public override Matrix Invoke(ReadStream stream)
     {
-        [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
-        public IFunction<Categories> RowCategories = null!;
-
-        [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
-        public IFunction<Categories> ColumnCategories = null!;
-
-        [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the origin.")]
-        public IFunction<int> OriginColumn = null!;
-
-        [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the destination.")]
-        public IFunction<int> DestinationColumn = null!;
-
-        [Parameter(DefaultValue = "2", Name = "Data Column", Index = 4, Description = "The 0 indexed column containing the data to load index.")]
-        public IFunction<int> DataColumn = null!;
-
-        public override Matrix Invoke(ReadStream stream)
+        var rowCategories = RowCategories.Invoke();
+        var columnCategories = ColumnCategories.Invoke();
+        var rowSize = rowCategories.Count;
+        var ret = new Matrix(rowCategories, columnCategories);
+        var data = ret.Data;
+        var originColumn = OriginColumn.Invoke();
+        var destinationColumn = DestinationColumn.Invoke();
+        var dataColumn = DataColumn.Invoke();
+        if (originColumn < 0 || destinationColumn < 0 || dataColumn < 0)
         {
-            var rowCategories = RowCategories.Invoke();
-            var columnCategories = ColumnCategories.Invoke();
-            var rowSize = rowCategories.Count;
-            var ret = new Matrix(rowCategories, columnCategories);
-            var data = ret.Data;
-            var originColumn = OriginColumn.Invoke();
-            var destinationColumn = DestinationColumn.Invoke();
-            var dataColumn = DataColumn.Invoke();
-            if (originColumn < 0 || destinationColumn < 0 || dataColumn < 0)
+            throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
+        }
+        var minColumnSize = Math.Max(originColumn, dataColumn);
+        using (var reader = new CsvReader(stream, true))
+        {
+            reader.LoadLine();
+            while (reader.LoadLine(out var columns))
             {
-                throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
-            }
-            var minColumnSize = Math.Max(originColumn, dataColumn);
-            using (var reader = new CsvReader(stream, true))
-            {
-                reader.LoadLine();
-                while (reader.LoadLine(out var columns))
+                // This is strictly greater because the column size is 0 indexed
+                if (columns > minColumnSize)
                 {
-                    // This is strictly greater because the column size is 0 indexed
-                    if (columns > minColumnSize)
+                    int flatOrigin, flatDestination;
+                    reader.Get(out int originIndex, originColumn);
+                    reader.Get(out int destinationIndex, originColumn);
+                    reader.Get(out float dataValue, dataColumn);
+                    if ((flatOrigin = rowCategories.GetFlatIndex(originIndex)) >= 0 && (flatDestination = columnCategories.GetFlatIndex(destinationIndex)) >= 0)
                     {
-                        int flatOrigin, flatDestination;
-                        reader.Get(out int originIndex, originColumn);
-                        reader.Get(out int destinationIndex, originColumn);
-                        reader.Get(out float dataValue, dataColumn);
-                        if ((flatOrigin = rowCategories.GetFlatIndex(originIndex)) >= 0 && (flatDestination = columnCategories.GetFlatIndex(destinationIndex)) >= 0)
+                        // if we know where to put it
+                        data[flatOrigin * rowSize + flatDestination] = dataValue;
+                    }
+                    else
+                    {
+                        if (flatOrigin < 0)
                         {
-                            // if we know where to put it
-                            data[flatOrigin * rowSize + flatDestination] = dataValue;
+                            throw new XTMFRuntimeException(this, $"An invalid origin was specified {originIndex}!");
                         }
                         else
                         {
-                            if (flatOrigin < 0)
-                            {
-                                throw new XTMFRuntimeException(this, $"An invalid origin was specified {originIndex}!");
-                            }
-                            else
-                            {
-                                throw new XTMFRuntimeException(this, $"An invalid destination was specified {destinationIndex}!");
-                            }
+                            throw new XTMFRuntimeException(this, $"An invalid destination was specified {destinationIndex}!");
                         }
                     }
                 }
             }
-            return ret;
         }
+        return ret;
     }
 }

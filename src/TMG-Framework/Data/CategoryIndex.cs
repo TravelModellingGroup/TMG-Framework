@@ -16,107 +16,103 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
-namespace TMG
+namespace TMG;
+
+/// <summary>
+/// Represents an index into an object of Categories.
+/// </summary>
+public readonly struct CategoryIndex : IEquatable<CategoryIndex>, IComparable<CategoryIndex>, IEqualityComparer<CategoryIndex>
 {
-    /// <summary>
-    /// Represents an index into an object of Categories.
-    /// </summary>
-    public readonly struct CategoryIndex : IEquatable<CategoryIndex>, IComparable<CategoryIndex>, IEqualityComparer<CategoryIndex>
+    private readonly int _Value;
+
+    public CategoryIndex(int value)
     {
-        private readonly int _Value;
+        _Value = value;
+    }
 
-        public CategoryIndex(int value)
+    /// <summary>
+    /// Test if the value is a valid reference to the category
+    /// </summary>
+    public bool Exists => _Value >= 0;
+
+    public static implicit operator int(CategoryIndex index) => index._Value;
+
+    public static implicit operator CategoryIndex(int index) => new(index);
+
+    public static bool TryParse(string s, out CategoryIndex result)
+    {
+        if (!int.TryParse(s, out int temp))
         {
-            _Value = value;
+            result = temp;
+            return true;
         }
+        result = -1;
+        return false;
+    }
 
-        /// <summary>
-        /// Test if the value is a valid reference to the category
-        /// </summary>
-        public bool Exists => _Value >= 0;
+    public bool Equals(CategoryIndex x, CategoryIndex y)
+    {
+        return x._Value == y._Value;
+    }
 
-        public static implicit operator int(CategoryIndex index) => index._Value;
+    public int GetHashCode([DisallowNull] CategoryIndex obj)
+    {
+        return obj._Value.GetHashCode();
+    }
 
-        public static implicit operator CategoryIndex(int index) => new(index);
+    public int CompareTo(CategoryIndex other)
+    {
+        return _Value.CompareTo(other._Value);
+    }
 
-        public static bool TryParse(string s, out CategoryIndex result)
+    public bool Equals(CategoryIndex other)
+    {
+        return _Value == other._Value;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is CategoryIndex other)
         {
-            if (!int.TryParse(s, out int temp))
-            {
-                result = temp;
-                return true;
-            }
-            result = -1;
-            return false;
+            return Equals(other);
         }
+        return false;
+    }
 
-        public bool Equals(CategoryIndex x, CategoryIndex y)
-        {
-            return x._Value == y._Value;
-        }
+    public override int GetHashCode()
+    {
+        return _Value.GetHashCode();
+    }
 
-        public int GetHashCode([DisallowNull] CategoryIndex obj)
-        {
-            return obj._Value.GetHashCode();
-        }
+    public static bool operator ==(CategoryIndex left, CategoryIndex right)
+    {
+        return left._Value == right._Value;
+    }
 
-        public int CompareTo(CategoryIndex other)
-        {
-            return _Value.CompareTo(other._Value);
-        }
+    public static bool operator !=(CategoryIndex left, CategoryIndex right)
+    {
+        return left._Value != right._Value;
+    }
 
-        public bool Equals(CategoryIndex other)
-        {
-            return _Value == other._Value;
-        }
+    public static bool operator <(CategoryIndex left, CategoryIndex right)
+    {
+        return left._Value < right._Value;
+    }
 
-        public override bool Equals(object? obj)
-        {
-            if (obj is CategoryIndex other)
-            {
-                return Equals(other);
-            }
-            return false;
-        }
+    public static bool operator <=(CategoryIndex left, CategoryIndex right)
+    {
+        return left._Value <= right._Value;
+    }
 
-        public override int GetHashCode()
-        {
-            return _Value.GetHashCode();
-        }
+    public static bool operator >(CategoryIndex left, CategoryIndex right)
+    {
+        return left._Value > right._Value;
+    }
 
-        public static bool operator ==(CategoryIndex left, CategoryIndex right)
-        {
-            return left._Value == right._Value;
-        }
-
-        public static bool operator !=(CategoryIndex left, CategoryIndex right)
-        {
-            return left._Value != right._Value;
-        }
-
-        public static bool operator <(CategoryIndex left, CategoryIndex right)
-        {
-            return left._Value < right._Value;
-        }
-
-        public static bool operator <=(CategoryIndex left, CategoryIndex right)
-        {
-            return left._Value <= right._Value;
-        }
-
-        public static bool operator >(CategoryIndex left, CategoryIndex right)
-        {
-            return left._Value > right._Value;
-        }
-
-        public static bool operator >=(CategoryIndex left, CategoryIndex right)
-        {
-            return left._Value >= right._Value;
-        }
+    public static bool operator >=(CategoryIndex left, CategoryIndex right)
+    {
+        return left._Value >= right._Value;
     }
 }
+

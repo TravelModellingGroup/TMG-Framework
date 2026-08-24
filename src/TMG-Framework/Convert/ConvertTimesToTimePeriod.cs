@@ -16,13 +16,11 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 using XTMF2;
 
-namespace TMG.Convert
-{
+namespace TMG.Convert;
+
     [Module(Name = "Convert Times to Time Period", Description = "Takes in a start and end time to generate a time period.",
         DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
     public sealed class ConvertTimesToTimePeriod : BaseFunction<(Time start, Time end), TimePeriod>
@@ -32,4 +30,3 @@ namespace TMG.Convert
             return new TimePeriod(context.start, context.end);
         }
     }
-}

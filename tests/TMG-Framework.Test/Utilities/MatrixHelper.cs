@@ -16,133 +16,127 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Text;
+
 using TMG.Saving;
 
-namespace TMG.Test.Utilities
+namespace TMG.Test.Utilities;
+
+static class MatrixHelper
 {
-    static class MatrixHelper
+    internal static string WriteMatrixToCSVMatrix(Categories categories, float[][] data)
     {
-        internal static string WriteMatrixToCSVMatrix(Categories categories, float[][] data)
+        Assert.HasCount(categories.Count, data);
+        var fileName = Path.GetTempFileName();
+        try
         {
-            Assert.HasCount(categories.Count, data);
-            var fileName = Path.GetTempFileName();
-            try
-            {
-                var matrix = new Matrix(categories, categories);
-                
-                for (int i = 0; i < data.Length; i++)
-                {
-                    data[i].AsSpan().CopyTo(matrix.GetRow(i));    
-                }
-                var save = new SaveMatrixAsCSV()
-                {
-                    ThirdNormalized = Helper.CreateParameter(false),
-                    FirstIndexHeader = Helper.CreateParameter("Origin"),
-                    SecondIndexHeader = Helper.CreateParameter("Destination")
-                };
-                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
-                {
-                    save.Invoke((matrix, writeStream));
-                }
-                return fileName;
-            }
-            catch
-            {
-                File.Delete(fileName);
-                Assert.Fail("Unable to write matrix CSV file");
-                return null;
-            }
-        }
+            var matrix = new Matrix(categories, categories);
 
-        internal static string WriteMatrixToCSVThirdNormalized(Categories categories, float[][] data)
-        {
-            Assert.HasCount(categories.Count, data);
-            var fileName = Path.GetTempFileName();
-            try
+            for (int i = 0; i < data.Length; i++)
             {
-                var matrix = new Matrix(categories, categories);
-                for (int i = 0; i < data.Length; i++)
-                {
-                    data[i].AsSpan().CopyTo(matrix.GetRow(i));
-                }
-                var save = new SaveMatrixAsCSV()
-                {
-                    ThirdNormalized = Helper.CreateParameter(true),
-                    FirstIndexHeader = Helper.CreateParameter("Origin"),
-                    SecondIndexHeader = Helper.CreateParameter("Destination"),
-                    DataIndexHeader = Helper.CreateParameter("Data")
-                };
-                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
-                {
-                    save.Invoke((matrix, writeStream));
-                }
-                return fileName;
+                data[i].AsSpan().CopyTo(matrix.GetRow(i));
             }
-            catch
+            var save = new SaveMatrixAsCSV()
             {
-                File.Delete(fileName);
-                Assert.Fail("Unable to write matrix CSV file");
-                return null;
+                ThirdNormalized = Helper.CreateParameter(false),
+                FirstIndexHeader = Helper.CreateParameter("Origin"),
+                SecondIndexHeader = Helper.CreateParameter("Destination")
+            };
+            using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
+            {
+                save.Invoke((matrix, writeStream));
             }
+            return fileName;
         }
-
-        internal static bool Compare(Matrix expected, Matrix testCase, 
-            [NotNullWhen(false)] ref string? error)
+        catch
         {
-            if(expected.ColumnCategories != testCase.ColumnCategories)
+            File.Delete(fileName);
+            Assert.Fail("Unable to write matrix CSV file");
+            return null;
+        }
+    }
+
+    internal static string WriteMatrixToCSVThirdNormalized(Categories categories, float[][] data)
+    {
+        Assert.HasCount(categories.Count, data);
+        var fileName = Path.GetTempFileName();
+        try
+        {
+            var matrix = new Matrix(categories, categories);
+            for (int i = 0; i < data.Length; i++)
             {
-                error = "The column categories are not the same!";
+                data[i].AsSpan().CopyTo(matrix.GetRow(i));
+            }
+            var save = new SaveMatrixAsCSV()
+            {
+                ThirdNormalized = Helper.CreateParameter(true),
+                FirstIndexHeader = Helper.CreateParameter("Origin"),
+                SecondIndexHeader = Helper.CreateParameter("Destination"),
+                DataIndexHeader = Helper.CreateParameter("Data")
+            };
+            using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
+            {
+                save.Invoke((matrix, writeStream));
+            }
+            return fileName;
+        }
+        catch
+        {
+            File.Delete(fileName);
+            Assert.Fail("Unable to write matrix CSV file");
+            return null;
+        }
+    }
+
+    internal static bool Compare(Matrix expected, Matrix testCase,
+        [NotNullWhen(false)] ref string? error)
+    {
+        if (expected.ColumnCategories != testCase.ColumnCategories)
+        {
+            error = "The column categories are not the same!";
+            return false;
+        }
+        if (expected.RowCategories != testCase.RowCategories)
+        {
+            error = "The row categories are not the same!";
+            return false;
+        }
+        // compare the data
+        var expectedData = expected.Data;
+        var testData = testCase.Data;
+        for (int i = 0; i < testData.Length; i++)
+        {
+            if (expectedData[i] != testData[i])
+            {
+                error = $"Found different elements at position {i}: {expectedData[i]} != {testData[i]}!";
                 return false;
             }
-            if(expected.RowCategories != testCase.RowCategories)
-            {
-                error = "The row categories are not the same!";
-                return false;
-            }
-            // compare the data
-            var expectedData = expected.Data;
-            var testData = testCase.Data;
-            for (int i = 0; i < testData.Length; i++)
-            {
-                if(expectedData[i] != testData[i])
-                {
-                    error = $"Found different elements at position {i}: {expectedData[i]} != {testData[i]}!";
-                    return false;
-                }
-            }
-            return true;
         }
+        return true;
+    }
 
-        internal static string WriteMatrixToMTX(Categories categories, float[][] data)
+    internal static string WriteMatrixToMTX(Categories categories, float[][] data)
+    {
+        Assert.HasCount(categories.Count, data);
+        var fileName = Path.GetTempFileName();
+        try
         {
-            Assert.HasCount(categories.Count, data);
-            var fileName = Path.GetTempFileName();
-            try
+            var matrix = new Matrix(categories, categories);
+            for (int i = 0; i < data.Length; i++)
             {
-                var matrix = new Matrix(categories, categories);
-                for (int i = 0; i < data.Length; i++)
-                {
-                    data[i].AsSpan().CopyTo(matrix.GetRow(i));
-                }
-                var save = new SaveMatrixAsMTX();
-                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
-                {
-                    save.Invoke((matrix, writeStream));
-                }
-                return fileName;
+                data[i].AsSpan().CopyTo(matrix.GetRow(i));
             }
-            catch
+            var save = new SaveMatrixAsMTX();
+            using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                File.Delete(fileName);
-                Assert.Fail("Unable to write matrix CSV file");
-                return null;
+                save.Invoke((matrix, writeStream));
             }
+            return fileName;
+        }
+        catch
+        {
+            File.Delete(fileName);
+            Assert.Fail("Unable to write matrix CSV file");
+            return null;
         }
     }
 }

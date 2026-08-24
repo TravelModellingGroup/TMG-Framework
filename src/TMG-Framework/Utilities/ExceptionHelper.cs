@@ -16,49 +16,44 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
-namespace TMG.Utilities
+namespace TMG.Utilities;
+
+/// <summary>
+/// This class provides wrappers around common exception types.  The
+/// reason to use this is to help the JIT inline methods.  If a method
+/// throws an exception it can not be inlined however, if you call one of the
+/// exception helpers it can still be inlined.
+/// </summary>
+internal static class ExceptionHelper
 {
     /// <summary>
-    /// This class provides wrappers around common exception types.  The
-    /// reason to use this is to help the JIT inline methods.  If a method
-    /// throws an exception it can not be inlined however, if you call one of the
-    /// exception helpers it can still be inlined.
+    /// Invoke an out of range exception for a parameter with the given name.
     /// </summary>
-    internal static class ExceptionHelper
+    /// <param name="name">The name of the parameter that caused the out of range exception.</param>
+    [DoesNotReturn]
+    internal static void ThrowOutOfRangeException(string name)
     {
-        /// <summary>
-        /// Invoke an out of range exception for a parameter with the given name.
-        /// </summary>
-        /// <param name="name">The name of the parameter that caused the out of range exception.</param>
-        [DoesNotReturn]
-        internal static void ThrowOutOfRangeException(string name)
-        {
-            throw new ArgumentOutOfRangeException(name);
-        }
+        throw new ArgumentOutOfRangeException(name);
+    }
 
-        /// <summary>
-        /// Invoke an ArgumentNullException for a parameter with the given name.
-        /// </summary>
-        /// <param name="name">The name of the parameter that caused the ArgumentNullException.</param>
-        [DoesNotReturn]
-        internal static void ThrowParameterNull(string name)
-        {
-            throw new ArgumentNullException(name);
-        }
+    /// <summary>
+    /// Invoke an ArgumentNullException for a parameter with the given name.
+    /// </summary>
+    /// <param name="name">The name of the parameter that caused the ArgumentNullException.</param>
+    [DoesNotReturn]
+    internal static void ThrowParameterNull(string name)
+    {
+        throw new ArgumentNullException(name);
+    }
 
-        /// <summary>
-        /// Invoke an ArgumentNullException for a parameter with the given name.
-        /// </summary>
-        /// <param name="name">The name of the parameter that caused the ArgumentNullException.</param>
-        [DoesNotReturn]
-        internal static T ThrowParameterNull<T>(string name)
-        {
-            throw new ArgumentNullException(name);
-        }
+    /// <summary>
+    /// Invoke an ArgumentNullException for a parameter with the given name.
+    /// </summary>
+    /// <param name="name">The name of the parameter that caused the ArgumentNullException.</param>
+    [DoesNotReturn]
+    internal static T ThrowParameterNull<T>(string name)
+    {
+        throw new ArgumentNullException(name);
     }
 }

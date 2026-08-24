@@ -16,107 +16,101 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Text;
+
 using TMG.Saving;
 using TMG.Test.Utilities;
-using XTMF2.RuntimeModules;
 
-namespace TMG.Test.Saving
+namespace TMG.Test.Saving;
+
+[TestClass]
+public class TestSaveVectorAsCSV
 {
-    [TestClass]
-    public class TestSaveVectorAsCSV
+    [TestMethod]
+    public void SaveVectorAsCSV()
     {
-        [TestMethod]
-        public void SaveVectorAsCSV()
+        var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
+        var a = new Vector(categories);
+        var fileName = Path.GetTempFileName();
+        try
         {
-            var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
-            var a = new Vector(categories);
-            var fileName = Path.GetTempFileName();
-            try
+            using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
+                new SaveVectorAsCSV()
                 {
-                    new SaveVectorAsCSV()
-                    {
-                        MapColumnName = Helper.CreateParameter("Zones"),
-                        DataColumnName = Helper.CreateParameter("Data")
-                    }.Invoke((a, writeStream));
-                }
-            }
-            finally
-            {
-                FileInfo file = new FileInfo(fileName);
-                if (file.Exists)
-                {
-                    file.Delete();
-                }
+                    MapColumnName = Helper.CreateParameter("Zones"),
+                    DataColumnName = Helper.CreateParameter("Data")
+                }.Invoke((a, writeStream));
             }
         }
-
-        [TestMethod]
-        public void SaveVectorAsCSVAndLoad()
+        finally
         {
-            var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
-            var a = new Vector(categories);
-            var fileName = Path.GetTempFileName();
-            try
+            FileInfo file = new FileInfo(fileName);
+            if (file.Exists)
             {
-                using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
-                {
-                    new SaveVectorAsCSV()
-                    {
-                        MapColumnName = Helper.CreateParameter("Zones"),
-                        DataColumnName = Helper.CreateParameter("Data")
-                    }.Invoke((a, writeStream));
-                }
-                // Now that the matrix has been saved attempt to load it back in.
-                using (var readStream = Helper.CreateReadStreamFromFile(fileName))
-                {
-                    var readVector = new TMG.Loading.LoadVectorFromCSV()
-                    {
-                        Categories = Helper.CreateParameter(categories),
-                        MapColumn = Helper.CreateParameter(0),
-                        DataColumn = Helper.CreateParameter(1)
-                    }.Invoke(readStream);
-                    string? error = null;
-                    Assert.IsTrue(Compare(a, readVector, ref error), error);
-                }
+                file.Delete();
             }
-            finally
-            {
-                FileInfo file = new FileInfo(fileName);
-                if (file.Exists)
-                {
-                    file.Delete();
-                }
-            }
-        }
-
-        internal static bool Compare(Vector expected, Vector test, 
-            [NotNullWhen(false)] ref string? error)
-        {
-            if (expected.Categories != test.Categories)
-            {
-                error = "The categories are not the same!";
-                return false;
-            }
-            // compare the data
-            var expectedData = expected.Data;
-            var testData = test.Data;
-            for (int i = 0; i < testData.Length; i++)
-            {
-                if (expectedData[i] != testData[i])
-                {
-                    error = $"Found different elements at position {i}: {expectedData[i]} != {testData[i]}!";
-                    return false;
-                }
-            }
-            return true;
         }
     }
+
+    [TestMethod]
+    public void SaveVectorAsCSVAndLoad()
+    {
+        var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
+        var a = new Vector(categories);
+        var fileName = Path.GetTempFileName();
+        try
+        {
+            using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
+            {
+                new SaveVectorAsCSV()
+                {
+                    MapColumnName = Helper.CreateParameter("Zones"),
+                    DataColumnName = Helper.CreateParameter("Data")
+                }.Invoke((a, writeStream));
+            }
+            // Now that the matrix has been saved attempt to load it back in.
+            using (var readStream = Helper.CreateReadStreamFromFile(fileName))
+            {
+                var readVector = new TMG.Loading.LoadVectorFromCSV()
+                {
+                    Categories = Helper.CreateParameter(categories),
+                    MapColumn = Helper.CreateParameter(0),
+                    DataColumn = Helper.CreateParameter(1)
+                }.Invoke(readStream);
+                string? error = null;
+                Assert.IsTrue(Compare(a, readVector, ref error), error);
+            }
+        }
+        finally
+        {
+            FileInfo file = new FileInfo(fileName);
+            if (file.Exists)
+            {
+                file.Delete();
+            }
+        }
+    }
+
+    internal static bool Compare(Vector expected, Vector test,
+        [NotNullWhen(false)] ref string? error)
+    {
+        if (expected.Categories != test.Categories)
+        {
+            error = "The categories are not the same!";
+            return false;
+        }
+        // compare the data
+        var expectedData = expected.Data;
+        var testData = test.Data;
+        for (int i = 0; i < testData.Length; i++)
+        {
+            if (expectedData[i] != testData[i])
+            {
+                error = $"Found different elements at position {i}: {expectedData[i]} != {testData[i]}!";
+                return false;
+            }
+        }
+        return true;
+    }
 }
+

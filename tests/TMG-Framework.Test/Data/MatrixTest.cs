@@ -16,58 +16,52 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using XTMF2;
-using System.Reflection;
-using System.Collections.Generic;
 
-namespace TMG.Test.Data
+namespace TMG.Test.Data;
+
+[TestClass]
+public class MatrixTest
 {
-    [TestClass]
-    public class MatrixTest
+    [TestMethod]
+    public void CreateMatrix()
     {
-        [TestMethod]
-        public void CreateMatrix()
-        {
-            var categories = CreateMap();
-            var matrix = new Matrix(categories, categories);
-        }
+        var categories = CreateMap();
+        var matrix = new Matrix(categories, categories);
+    }
 
-        [TestMethod]
-        public void GetSparseRowIndex()
-        {
-            var categories = CreateMap();
-            var matrix = new Matrix(categories, categories);
-            var size = matrix.RowCategories.Count;
-            Assert.AreEqual(0, matrix.GetSparseRowIndex(2));
-            Assert.AreEqual(size * (3 - 1), matrix.GetSparseRowIndex(6));
-            Assert.AreEqual(size * (2 - 1), matrix.GetSparseRowIndex(4));
-            Assert.AreEqual(size * (size - 1), matrix.GetSparseRowIndex(10));
-            Assert.AreEqual(-1, matrix.GetSparseRowIndex(11));
-        }
+    [TestMethod]
+    public void GetSparseRowIndex()
+    {
+        var categories = CreateMap();
+        var matrix = new Matrix(categories, categories);
+        var size = matrix.RowCategories.Count;
+        Assert.AreEqual(0, matrix.GetSparseRowIndex(2));
+        Assert.AreEqual(size * (3 - 1), matrix.GetSparseRowIndex(6));
+        Assert.AreEqual(size * (2 - 1), matrix.GetSparseRowIndex(4));
+        Assert.AreEqual(size * (size - 1), matrix.GetSparseRowIndex(10));
+        Assert.AreEqual(-1, matrix.GetSparseRowIndex(11));
+    }
 
-        [TestMethod]
-        public void GetFlatRowIndex()
-        {
-            var categories = CreateMap();
-            var matrix = new Matrix(categories, categories);
-            var size = matrix.RowCategories.Count;
-            Assert.AreEqual(0, matrix.GetFlatRowIndex(0));
-            Assert.AreEqual(size * 1, matrix.GetFlatRowIndex(1));
-            Assert.AreEqual(size * 2, matrix.GetFlatRowIndex(2));
-            Assert.AreEqual(size * (size - 1), matrix.GetFlatRowIndex(size - 1));
-            Assert.AreEqual(-1, matrix.GetSparseRowIndex(7));
-        }
+    [TestMethod]
+    public void GetFlatRowIndex()
+    {
+        var categories = CreateMap();
+        var matrix = new Matrix(categories, categories);
+        var size = matrix.RowCategories.Count;
+        Assert.AreEqual(0, matrix.GetFlatRowIndex(0));
+        Assert.AreEqual(size * 1, matrix.GetFlatRowIndex(1));
+        Assert.AreEqual(size * 2, matrix.GetFlatRowIndex(2));
+        Assert.AreEqual(size * (size - 1), matrix.GetFlatRowIndex(size - 1));
+        Assert.AreEqual(-1, matrix.GetSparseRowIndex(7));
+    }
 
-        private static Categories CreateMap()
+    private static Categories CreateMap()
+    {
+        string? error = null;
+        if (!Categories.CreateCategories(new List<int>() { 2, 6, 4, 8, 10 }, out var categories, ref error))
         {
-            string? error = null;
-            if (!Categories.CreateCategories(new List<int>() { 2, 6, 4, 8, 10 }, out var categories, ref error))
-            {
-                Assert.Fail(error);
-            }
-            return categories;
+            Assert.Fail(error);
         }
+        return categories;
     }
 }

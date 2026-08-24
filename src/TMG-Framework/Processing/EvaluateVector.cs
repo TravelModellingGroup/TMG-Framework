@@ -16,61 +16,55 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
-using XTMF2;
-using TMG.Frameworks.Data.Processing.AST;
 
-namespace TMG.Processing
+namespace TMG.Processing;
+
+[Module(Name = "Evaluate Vector", Description = "Evaluate a vector given the expression.",
+    DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
+public class EvaluateVector : BaseFunction<Vector>
 {
-    [Module(Name = "Evaluate Vector", Description = "Evaluate a vector given the expression.",
-        DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-    public class EvaluateVector : BaseFunction<Vector>
+    [Parameter(Name = "Expression", Index = 0, Description = "The expression to compute using the following variables.")]
+    public IFunction<string> Expression = null!;
+
+    [SubModule(Name = "Variables", Description = "The variables to use in our expression", Index = 1)]
+    public IModule[] Variables = null!;
+
+    public override Vector Invoke()
     {
-        [Parameter(Name = "Expression", Index = 0, Description = "The expression to compute using the following variables.")]
-        public IFunction<string> Expression = null!;
-
-        [SubModule(Name = "Variables", Description = "The variables to use in our expression", Index = 1)]
-        public IModule[] Variables = null!;
-
-        public override Vector Invoke()
+        string? error = null;
+        // compile and optimize the expression
+        if (!TMG.Frameworks.Data.Processing.AST.Compiler.Compile(Expression.Invoke(), out var expression, ref error))
         {
-            string? error = null;
-            // compile and optimize the expression
-            if (!TMG.Frameworks.Data.Processing.AST.Compiler.Compile(Expression.Invoke(), out var expression, ref error))
-            {
-                throw new XTMFRuntimeException(this, error);
-            }
-            var result = expression.Evaluate(Variables);
-            if (result.Error)
-            {
-                throw new XTMFRuntimeException(this, result.ErrorMessage);
-            }
-            // this easy case, the expression was of the correct type
-            if (result.IsVectorResult)
-            {
-                return result.VectorData;
-            }
-            if (result.IsOdResult)
-            {
-                throw new XTMFRuntimeException(this, "The expression resulted in a matrix instead of a vector!");
-            }
-            throw new XTMFRuntimeException(this, "The expression resulted in a scalar instead of a vector!");
+            throw new XTMFRuntimeException(this, error);
         }
-
-        public override bool RuntimeValidation(ref string? error)
+        var result = expression.Evaluate(Variables);
+        if (result.Error)
         {
-            foreach (var module in Variables)
-            {
-                if (!(module is IFunction<Matrix> || module is IFunction<Vector> || module is IFunction<float>
-                    || module is IFunction<Categories>))
-                {
-                    error = $"Invalid variable module type {module.GetType().Name} from module {module.Name}!";
-                    return false;
-                }
-            }
-            return true;
+            throw new XTMFRuntimeException(this, result.ErrorMessage);
         }
+        // this easy case, the expression was of the correct type
+        if (result.IsVectorResult)
+        {
+            return result.VectorData;
+        }
+        if (result.IsOdResult)
+        {
+            throw new XTMFRuntimeException(this, "The expression resulted in a matrix instead of a vector!");
+        }
+        throw new XTMFRuntimeException(this, "The expression resulted in a scalar instead of a vector!");
+    }
+
+    public override bool RuntimeValidation(ref string? error)
+    {
+        foreach (var module in Variables)
+        {
+            if (!(module is IFunction<Matrix> || module is IFunction<Vector> || module is IFunction<float>
+                || module is IFunction<Categories>))
+            {
+                error = $"Invalid variable module type {module.GetType().Name} from module {module.Name}!";
+                return false;
+            }
+        }
+        return true;
     }
 }

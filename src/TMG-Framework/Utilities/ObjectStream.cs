@@ -16,28 +16,23 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
-using XTMF2;
 
-namespace TMG
+namespace TMG;
+
+public abstract class ObjectStream<OUT> : BaseFunction<OUT>
 {
-    public abstract class ObjectStream<OUT> : BaseFunction<OUT>
-    {
-        /// <summary>
-        /// Invoke this function to signal that the stream should
-        /// restart the stream.
-        /// </summary>
-        public abstract void Reset();
-    }
+    /// <summary>
+    /// Invoke this function to signal that the stream should
+    /// restart the stream.
+    /// </summary>
+    public abstract void Reset();
+}
 
-    public abstract class ObjectStream<IN,OUT> : BaseFunction<IN,OUT>
-    {
-        /// <summary>
-        /// Invoke this function to signal that the stream should
-        /// restart the stream.
-        /// </summary>
-        public abstract void Reset();
-    }
+public abstract class ObjectStream<IN, OUT> : BaseFunction<IN, OUT>
+{
+    /// <summary>
+    /// Invoke this function to signal that the stream should
+    /// restart the stream.
+    /// </summary>
+    public abstract void Reset();
 }

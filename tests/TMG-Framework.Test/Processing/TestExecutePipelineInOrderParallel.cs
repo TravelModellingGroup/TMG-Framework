@@ -17,51 +17,45 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using TMG;
-using TMG.Frameworks.Data.Processing.AST;
 using TMG.Processing;
 using TMG.Test.Utilities;
 using System.Numerics;
 
 
-namespace TMG.Test.Processing
+namespace TMG.Test.Processing;
+
+[TestClass]
+public class TestExecutePipelineInOrderParallel
 {
-    [TestClass]
-    public class TestExecutePipelineInOrderParallel
+    [TestMethod]
+    public void EnsureOrder()
     {
-        [TestMethod]
-        public void EnsureOrder()
+        ExecutePipelineInOrderParallel<int> module = new ExecutePipelineInOrderParallel<int>()
         {
-            ExecutePipelineInOrderParallel<int> module = new ExecutePipelineInOrderParallel<int>()
+            Name = "ModuleToTest",
+            ToExecuteInParallel = Helper.CreateModule((int input) => input * 2),
+            ToExecuteNotInParallel = new[]
             {
-                Name = "ModuleToTest",
-                ToExecuteInParallel = Helper.CreateModule((int input) => input * 2),
-                ToExecuteNotInParallel = new[]
-                {
                     Helper.CreateModule((int j) => j + 1)
                 }
-            };
-            var data = Enumerable.Range(0, 100).ToArray();
-            var result = module.Invoke(data).ToArray();
-            int i;
-            for (i = 0; i < data.Length - Vector<float>.Count; i += Vector<float>.Count)
+        };
+        var data = Enumerable.Range(0, 100).ToArray();
+        var result = module.Invoke(data).ToArray();
+        int i;
+        for (i = 0; i < data.Length - Vector<float>.Count; i += Vector<float>.Count)
+        {
+            if (!System.Numerics.Vector.EqualsAll(new Vector<int>(data, i), new Vector<int>(result, i)))
             {
-                if (!System.Numerics.Vector.EqualsAll(new Vector<int>(data, i), new Vector<int>(result, i)))
+                for (int j = 0; j < Vector<float>.Count; j++)
                 {
-                    for (int j = 0; j < Vector<float>.Count; j++)
-                    {
-                        Assert.AreEqual((i + j) * 2 + 1, result[i + j]);
-                    }
+                    Assert.AreEqual((i + j) * 2 + 1, result[i + j]);
                 }
             }
-            for (; i < data.Length; i++)
-            {
-                Assert.AreEqual(i * 2 + 1, result[i]);
-            }
+        }
+        for (; i < data.Length; i++)
+        {
+            Assert.AreEqual(i * 2 + 1, result[i]);
         }
     }
 }
+

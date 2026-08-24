@@ -16,34 +16,29 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using XTMF2;
-using System.Reflection;
-using System.Collections.Generic;
 
-namespace TMG.Test.Data
+namespace TMG.Test.Data;
+
+[TestClass]
+public class CategoriesTest
 {
-    [TestClass]
-    public class CategoriesTest
+    [TestMethod]
+    public void CreateMap()
     {
-        [TestMethod]
-        public void CreateMap()
+        string? error = null;
+        var set = new List<int>() { 2, 6, 4, 8, 10 };
+        if (!Categories.CreateCategories(set, out var categories, ref error))
         {
-            string? error = null;
-            var set = new List<int>() { 2, 6, 4, 8, 10 };
-            if (!Categories.CreateCategories(set, out var categories, ref error))
-            {
-                Assert.Fail(error);
-            }
-            Assert.AreEqual(set.Count, categories.Count);
-            Assert.AreEqual((CategoryIndex)4, categories.GetSparseIndex(1));
-            Assert.AreEqual((CategoryIndex)6, categories.GetSparseIndex(2));
-
-            Assert.AreEqual(0, categories.GetFlatIndex(2));
-            Assert.AreEqual(1, categories.GetFlatIndex(4));
-            Assert.AreEqual(2, categories.GetFlatIndex(6));
-            Assert.AreEqual(3, categories.GetFlatIndex(8));
+            Assert.Fail(error);
         }
+        Assert.AreEqual(set.Count, categories.Count);
+        Assert.AreEqual((CategoryIndex)4, categories.GetSparseIndex(1));
+        Assert.AreEqual((CategoryIndex)6, categories.GetSparseIndex(2));
+
+        Assert.AreEqual(0, categories.GetFlatIndex(2));
+        Assert.AreEqual(1, categories.GetFlatIndex(4));
+        Assert.AreEqual(2, categories.GetFlatIndex(6));
+        Assert.AreEqual(3, categories.GetFlatIndex(8));
     }
 }
+

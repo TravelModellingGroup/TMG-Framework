@@ -17,83 +17,77 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using TMG;
-using TMG.Frameworks.Data.Processing.AST;
 using TMG.Processing;
 using TMG.Test.Utilities;
-namespace TMG.Test.Processing
+
+namespace TMG.Test.Processing;
+
+[TestClass]
+public class TestAppendMatrixValueToCSV
 {
-    [TestClass]
-    public class TestAppendMatrixValueToCSV
+    [TestMethod]
+    public void AppendMatrixValueToCSV()
     {
-        [TestMethod]
-        public void AppendMatrixValueToCSV()
+        string csvFileName = Path.GetTempFileName();
+        string processedCsvFileName = Path.GetTempFileName();
+        try
         {
-            string csvFileName = Path.GetTempFileName();
-            string processedCsvFileName = Path.GetTempFileName();
-            try
+            var zoneSystem = MapHelper.LoadMap(64);
+            var matrix = new Matrix(zoneSystem, zoneSystem);
+            // Setup matrix
+            matrix.GetFromSparseIndexes(5, 2) = 10;
+            matrix.GetFromSparseIndexes(2, 5) = 11;
+
+            matrix.GetFromSparseIndexes(10, 4) = 12;
+            matrix.GetFromSparseIndexes(4, 10) = 13;
+            // Setup CSV
+
+            using (var writer = new StreamWriter(csvFileName))
             {
-                var zoneSystem = MapHelper.LoadMap(64);
-                var matrix = new Matrix(zoneSystem, zoneSystem);
-                // Setup matrix
-                matrix.GetFromSparseIndexes(5, 2) = 10;
-                matrix.GetFromSparseIndexes(2, 5) = 11;
-
-                matrix.GetFromSparseIndexes(10, 4) = 12;
-                matrix.GetFromSparseIndexes(4, 10) = 13;
-                // Setup CSV
-
-                using (var writer = new StreamWriter(csvFileName))
-                {
-                    writer.WriteLine("O,D,OtherData");
-                    writer.WriteLine("5,2,ABC");
-                    writer.WriteLine("2,5,DEF");
-                    writer.WriteLine("10,4,GHI");
-                    writer.WriteLine("4,10,GHI");
-                }
-
-                using (var readStream = Helper.CreateReadStreamFromFile(csvFileName))
-                using (var writeStream = Helper.CreateWriteStreamFromFile(processedCsvFileName))
-                {
-                    // Run append
-                    AppendMatrixValueToCSV appendModule = new AppendMatrixValueToCSV()
-                    {
-                        Name = "Append",
-                        Matrix = Helper.CreateParameter(matrix, "Matrix"),
-                        RowIndex = Helper.CreateParameter(0),
-                        ColumnIndex = Helper.CreateParameter(1),
-                        ColumnName = Helper.CreateParameter("MatrixValue"),
-                        InputStream = Helper.CreateParameter(readStream, "Reader"),
-                        OutputStream = Helper.CreateParameter(writeStream, "Writer")
-                    };
-                    appendModule.Invoke();
-                }
-
-                // Test Results
-                using (var reader = new StreamReader(processedCsvFileName))
-                {
-                    Assert.AreEqual("O,D,OtherData,MatrixValue", reader.ReadLine());
-                    Assert.AreEqual("5,2,ABC,10", reader.ReadLine());
-                    Assert.AreEqual("2,5,DEF,11", reader.ReadLine());
-                    Assert.AreEqual("10,4,GHI,12", reader.ReadLine());
-                    Assert.AreEqual("4,10,GHI,13", reader.ReadLine());
-                    Assert.IsNull(reader.ReadLine());
-                }
+                writer.WriteLine("O,D,OtherData");
+                writer.WriteLine("5,2,ABC");
+                writer.WriteLine("2,5,DEF");
+                writer.WriteLine("10,4,GHI");
+                writer.WriteLine("4,10,GHI");
             }
-            finally
+
+            using (var readStream = Helper.CreateReadStreamFromFile(csvFileName))
+            using (var writeStream = Helper.CreateWriteStreamFromFile(processedCsvFileName))
             {
-                if (File.Exists(csvFileName))
+                // Run append
+                AppendMatrixValueToCSV appendModule = new AppendMatrixValueToCSV()
                 {
-                    File.Delete(csvFileName);
-                }
-                if (File.Exists(processedCsvFileName))
-                {
-                    File.Delete(processedCsvFileName);
-                }
+                    Name = "Append",
+                    Matrix = Helper.CreateParameter(matrix, "Matrix"),
+                    RowIndex = Helper.CreateParameter(0),
+                    ColumnIndex = Helper.CreateParameter(1),
+                    ColumnName = Helper.CreateParameter("MatrixValue"),
+                    InputStream = Helper.CreateParameter(readStream, "Reader"),
+                    OutputStream = Helper.CreateParameter(writeStream, "Writer")
+                };
+                appendModule.Invoke();
+            }
+
+            // Test Results
+            using (var reader = new StreamReader(processedCsvFileName))
+            {
+                Assert.AreEqual("O,D,OtherData,MatrixValue", reader.ReadLine());
+                Assert.AreEqual("5,2,ABC,10", reader.ReadLine());
+                Assert.AreEqual("2,5,DEF,11", reader.ReadLine());
+                Assert.AreEqual("10,4,GHI,12", reader.ReadLine());
+                Assert.AreEqual("4,10,GHI,13", reader.ReadLine());
+                Assert.IsNull(reader.ReadLine());
+            }
+        }
+        finally
+        {
+            if (File.Exists(csvFileName))
+            {
+                File.Delete(csvFileName);
+            }
+            if (File.Exists(processedCsvFileName))
+            {
+                File.Delete(processedCsvFileName);
             }
         }
     }

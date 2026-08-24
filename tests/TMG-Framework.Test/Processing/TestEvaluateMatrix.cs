@@ -17,40 +17,35 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using TMG;
-using TMG.Frameworks.Data.Processing.AST;
 using TMG.Processing;
 using TMG.Test.Utilities;
 
-namespace TMG.Test.Processing
+namespace TMG.Test.Processing;
+
+[TestClass]
+public class TestEvaluateMatrix
 {
-    [TestClass]
-    public class TestEvaluateMatrix
+    [TestMethod]
+    public void LargeMatrixMathFMA()
     {
-        [TestMethod]
-        public void LargeMatrixMathFMA()
+        var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
+        var a = new Matrix(categories, categories);
+        var b = new Matrix(categories, categories);
+        var c = new Matrix(categories, categories);
+        var eval = new EvaluateMatrix()
         {
-            var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
-            var a = new Matrix(categories, categories);
-            var b = new Matrix(categories, categories);
-            var c = new Matrix(categories, categories);
-            var eval = new EvaluateMatrix()
+            Expression = Helper.CreateParameter("A * B + (C * 2 + 3)"),
+            Variables = new[]
             {
-                Expression = Helper.CreateParameter("A * B + (C * 2 + 3)"),
-                Variables = new[]
-                {
                     Helper.CreateParameter(a, "A"),
                     Helper.CreateParameter(b, "B"),
                     Helper.CreateParameter(c, "C"),
                 }
-            };
-            string? error = null;
-            Assert.IsTrue(eval.RuntimeValidation(ref error), error);
-            var res = eval.Invoke();
-            Assert.IsNotNull(res);
-        }
+        };
+        string? error = null;
+        Assert.IsTrue(eval.RuntimeValidation(ref error), error);
+        var res = eval.Invoke();
+        Assert.IsNotNull(res);
     }
 }
+

@@ -16,111 +16,106 @@
     You should have received a copy of the GNU General Public License
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace TMG.Test.Data
+namespace TMG.Test.Data;
+
+[TestClass]
+public class CategoryMapTest
 {
-    [TestClass]
-    public class CategoryMapTest
+    [TestMethod]
+    public void Aggregate()
     {
-        [TestMethod]
-        public void Aggregate()
+        string? error = null;
+        if (!Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, out var a, ref error))
         {
-            string? error = null;
-            if (!Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, out var a, ref error))
+            Assert.Fail(error);
+        }
+        Assert.IsNotNull(a, error);
+        if (!Categories.CreateCategories(new List<int> { 2, 4 }, out var b, ref error))
+        {
+            Assert.Fail(error);
+        }
+        Assert.IsNotNull(b, error);
+        Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
+            new List<(int originFlatIndex, int destinationFlatIndex)>()
             {
-                Assert.Fail(error);
-            }
-            Assert.IsNotNull(a, error);
-            if (!Categories.CreateCategories(new List<int> { 2, 4 }, out var b, ref error))
-            {
-                Assert.Fail(error);
-            }
-            Assert.IsNotNull(b, error);
-            Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
-                new List<(int originFlatIndex, int destinationFlatIndex)>()
-                {
                     (0, 0),
                     (1, 0),
                     (2, 1),
                     (3, 1)
-                }, out var map, ref error), error);
-            var va = new Vector(a);
-            va.Data[0] = 3;
-            va.Data[1] = 7;
-            va.Data[2] = 2;
-            va.Data[3] = 4;
-            Assert.IsTrue(map.AggregateToDestination(va, out var result, ref error), error);
-            Assert.AreEqual(2, result.Data.Length);
-            Assert.AreSame(b, result.Categories);
-            Assert.AreEqual(10, result.Data[0]);
-            Assert.AreEqual(6, result.Data[1]);
-        }
+            }, out var map, ref error), error);
+        var va = new Vector(a);
+        va.Data[0] = 3;
+        va.Data[1] = 7;
+        va.Data[2] = 2;
+        va.Data[3] = 4;
+        Assert.IsTrue(map.AggregateToDestination(va, out var result, ref error), error);
+        Assert.AreEqual(2, result.Data.Length);
+        Assert.AreSame(b, result.Categories);
+        Assert.AreEqual(10, result.Data[0]);
+        Assert.AreEqual(6, result.Data[1]);
+    }
 
-        [TestMethod]
-        public void CreateIndex()
+    [TestMethod]
+    public void CreateIndex()
+    {
+        string? error = null;
+        if (!Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, out var a, ref error))
         {
-            string? error = null;
-            if (!Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, out var a, ref error))
+            Assert.Fail(error);
+        }
+        Assert.IsNotNull(a, error);
+        if (!Categories.CreateCategories(new List<int> { 2, 4 }, out var b, ref error))
+        {
+            Assert.Fail(error);
+        }
+        Assert.IsNotNull(b, error);
+        Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
+            new List<(int originFlatIndex, int destinationFlatIndex)>()
             {
-                Assert.Fail(error);
-            }
-            Assert.IsNotNull(a, error);
-            if (!Categories.CreateCategories(new List<int> { 2, 4 }, out var b, ref error))
-            {
-                Assert.Fail(error);
-            }
-            Assert.IsNotNull(b, error);
-            Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
-                new List<(int originFlatIndex, int destinationFlatIndex)>()
-                {
                     (0, 0),
                     (1, 0),
                     (2, 1),
                     (3, 1)
-                }, out var map, ref error), error);
-            var index = map.CreateIndex();
-            Assert.AreEqual(0, (int)index[0]);
-            Assert.AreEqual(0, (int)index[1]);
-            Assert.AreEqual(1, (int)index[2]);
-            Assert.AreEqual(1, (int)index[3]);
-        }
+            }, out var map, ref error), error);
+        var index = map.CreateIndex();
+        Assert.AreEqual(0, (int)index[0]);
+        Assert.AreEqual(0, (int)index[1]);
+        Assert.AreEqual(1, (int)index[2]);
+        Assert.AreEqual(1, (int)index[3]);
+    }
 
-        [TestMethod]
-        public void CreateReverseIndex()
+    [TestMethod]
+    public void CreateReverseIndex()
+    {
+        string? error = null;
+        if (!Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, out var a, ref error))
         {
-            string? error = null;
-            if (!Categories.CreateCategories(new List<int> { 1, 3, 5, 7 }, out var a, ref error))
+            Assert.Fail(error);
+        }
+        Assert.IsNotNull(a, error);
+        if (!Categories.CreateCategories(new List<int> { 2, 4 }, out var b, ref error))
+        {
+            Assert.Fail(error);
+        }
+        Assert.IsNotNull(b, error);
+        Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
+            new List<(int originFlatIndex, int destinationFlatIndex)>()
             {
-                Assert.Fail(error);
-            }
-            Assert.IsNotNull(a, error);
-            if (!Categories.CreateCategories(new List<int> { 2, 4 }, out var b, ref error))
-            {
-                Assert.Fail(error);
-            }
-            Assert.IsNotNull(b, error);
-            Assert.IsTrue(CategoryMap.CreateCategoryMap(a, b,
-                new List<(int originFlatIndex, int destinationFlatIndex)>()
-                {
                     (0, 0),
                     (1, 0),
                     (2, 1),
                     (3, 1)
-                }, out var map, ref error), error);
-            var index = map.CreateReverseIndex();
-            var list = index[0];
-            Assert.HasCount(2, list);
-            Assert.AreEqual(0, (int)list[0]);
-            Assert.AreEqual(1, (int)list[1]);
+            }, out var map, ref error), error);
+        var index = map.CreateReverseIndex();
+        var list = index[0];
+        Assert.HasCount(2, list);
+        Assert.AreEqual(0, (int)list[0]);
+        Assert.AreEqual(1, (int)list[1]);
 
-            list = index[1];
-            Assert.HasCount(2, list);
-            Assert.AreEqual(2, (int)list[0]);
-            Assert.AreEqual(3, (int)list[1]);
-        }
+        list = index[1];
+        Assert.HasCount(2, list);
+        Assert.AreEqual(2, (int)list[0]);
+        Assert.AreEqual(3, (int)list[1]);
     }
 }
