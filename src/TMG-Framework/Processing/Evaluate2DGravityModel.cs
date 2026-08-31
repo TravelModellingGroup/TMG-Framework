@@ -25,13 +25,13 @@ namespace TMG.Processing;
 DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
 public sealed class Evaluate2DGravityModel : BaseFunction<Matrix>
 {
-    [SubModule(Name = "Production", Required = true, Index = 0, Description = "")]
+    [SubModule(Name = "Production", Required = true, Index = 0, Description = "The production vector for the gravity model.")]
     public IFunction<Vector> Production = null!;
 
-    [SubModule(Name = "Attraction", Required = true, Index = 1, Description = "")]
+    [SubModule(Name = "Attraction", Required = true, Index = 1, Description = "The attraction vector for the gravity model.")]
     public IFunction<Vector> Attraction = null!;
 
-    [SubModule(Name = "Friction", Required = true, Index = 2, Description = "")]
+    [SubModule(Name = "Friction", Required = true, Index = 2, Description = "The friction matrix for the gravity model.")]
     public IFunction<Matrix> Friction = null!;
 
     [Parameter(Name = "Max Iterations", Index = 3, DefaultValue = "100", Description = "The maximum number of iterations before terminating.")]
