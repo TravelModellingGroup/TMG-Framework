@@ -24,7 +24,7 @@ namespace TMG;
 /// </summary>
 public readonly struct CategoryIndex : IEquatable<CategoryIndex>, IComparable<CategoryIndex>, IEqualityComparer<CategoryIndex>
 {
-    private readonly int _Value;
+    private readonly nint _Value;
 
     public CategoryIndex(int value)
     {
@@ -36,9 +36,13 @@ public readonly struct CategoryIndex : IEquatable<CategoryIndex>, IComparable<Ca
     /// </summary>
     public bool Exists => _Value >= 0;
 
-    public static implicit operator int(CategoryIndex index) => index._Value;
+    public static implicit operator int(CategoryIndex index) => (int)index._Value;
 
     public static implicit operator CategoryIndex(int index) => new(index);
+
+    public static implicit operator nuint(CategoryIndex index) => (nuint)index._Value;
+
+    public static implicit operator nint(CategoryIndex index) => index._Value;
 
     public static bool TryParse(string s, out CategoryIndex result)
     {
