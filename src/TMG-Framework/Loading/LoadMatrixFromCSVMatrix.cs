@@ -17,28 +17,41 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.IO.Compression;
 using TMG.Utilities;
 
 namespace TMG.Loading;
 
 [Module(Name = "Load Matrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
     DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-public sealed class LoadMatrixFromCSVMatrix : BaseFunction<ReadStream, Matrix>
+public sealed class LoadMatrixFromCSVMatrix : BaseFunction<Matrix>
 {
-    [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+    [SubModule(Required = true, Name = "Input", Description = "The input CSV stream.", Index = 0)]
+    public IFunction<ReadStream> Input = null!;
+
+    [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
     public IFunction<Categories> RowCategories = null!;
 
-    [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
+    [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 2)]
     public IFunction<Categories> ColumnCategories = null!;
 
-    public override Matrix Invoke(ReadStream stream)
+    [Parameter(Required = true, DefaultValue = "false", Name = "Compressed", Description = "Whether the matrix is compressed.", Index = 3)]
+    public IFunction<bool> Compressed = null!;
+
+    public override Matrix Invoke()
     {
+        var stream = Input.Invoke();
         var columnCategories = ColumnCategories.Invoke();
         var rowCategories = RowCategories.Invoke();
+        var compressed = Compressed.Invoke();
         var ret = new Matrix(rowCategories, columnCategories);
         var flatData = ret.Data;
         var rowSize = columnCategories.Count;
-        using (var reader = new CsvReader(stream, true))
+        using var decompressor = compressed
+            ? new GZipStream(stream, CompressionMode.Decompress, true)
+            : null;
+        Stream inputStream = decompressor is null ? stream : decompressor;
+        using (var reader = new CsvReader(inputStream, true))
         {
             var headers = reader.Headers;
             // read in the destination indexes

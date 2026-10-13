@@ -17,6 +17,8 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.IO.Compression;
+
 namespace TMG.Saving;
 
 [Module(Name = "Save Vector To CSV", Description = "Saves a vector to the given write stream.",
@@ -25,7 +27,10 @@ public sealed class SaveVectorAsCSV : BaseAction<(Vector Data, WriteStream Strea
 {
     public override void Invoke((Vector Data, WriteStream Stream) context)
     {
-        using (var writer = new StreamWriter(context.Stream))
+        Stream outputStream = Compressed.Invoke()
+            ? new GZipStream(context.Stream, CompressionMode.Compress)
+            : context.Stream;
+        using (var writer = new StreamWriter(outputStream))
         {
             var data = context.Data;
             var flatData = data.Data;
@@ -46,6 +51,9 @@ public sealed class SaveVectorAsCSV : BaseAction<(Vector Data, WriteStream Strea
 
     [Parameter(Name = "Data Column Name", DefaultValue = "Data", Description = "The header to give to the data", Index = 1)]
     public IFunction<string> DataColumnName = null!;
+
+    [Parameter(Name = "Compressed", DefaultValue = "False", Description = "Should the CSV file be compressed (csv.gz)?", Index = 2)]
+    public IFunction<bool> Compressed = null!;
 
     private void WriteHeaders(StreamWriter writer)
     {

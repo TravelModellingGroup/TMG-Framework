@@ -17,27 +17,40 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.IO.Compression;
+
 namespace TMG.Loading;
 
 [Module(Name = "Load SparseMatrix From MTX", Description = "Loads a matrix of data in the shape of the SparseMap from an EMME matrix file.",
 DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-public sealed class LoadMatrixFromMTX : BaseFunction<ReadStream, Matrix>
+public sealed class LoadMatrixFromMTX : BaseFunction<Matrix>
 {
-    [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+    [SubModule(Required = true, Name = "Input", Description = "The input MTX stream.", Index = 0)]
+    public IFunction<ReadStream> Input = null!;
+    
+    [SubModule(Required = true, Name = "Map", Description = "The sparse map this vector will be shaped in.", Index = 1)]
     public IFunction<Categories> Categories = null!;
 
-    [Parameter(Name = "Convert Between Zone Systems", DefaultValue = "false", Description = "A function that converts between the zone system of the matrix and the zone system of the map.", Index = 1)]
+    [Parameter(Name = "Convert Between Zone Systems", DefaultValue = "false", Description = "A function that converts between the zone system of the matrix and the zone system of the map.", Index = 2)]
     public IFunction<bool> ConvertBetweenZoneSystems = null!;
+
+    [Parameter(Name = "Compressed", DefaultValue = "False", Index = 3,
+        Description = "Is the MTX file compressed (mtx.gz)?")]
+    public IFunction<bool> Compressed = null!;
 
     private const uint MagicNumber = 0xC4D4F1B2;
 
     private const int FloatType = 0x1;
 
-    public override Matrix Invoke(ReadStream context)
+    public override Matrix Invoke()
     {
+        var stream = Input.Invoke();
         var categories = Categories.Invoke();
         var matrix = new Matrix(categories, categories);
-        using (var reader = new BinaryReader(context))
+        Stream readStream = Compressed.Invoke()
+            ? new GZipStream(stream, CompressionMode.Decompress)
+            : stream;
+        using (var reader = new BinaryReader(readStream))
         {
             var magic = reader.ReadUInt32();
             if (magic != MagicNumber)

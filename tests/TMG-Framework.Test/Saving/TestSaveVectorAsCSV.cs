@@ -38,7 +38,8 @@ public class TestSaveVectorAsCSV
                 new SaveVectorAsCSV()
                 {
                     MapColumnName = Helper.CreateParameter("Zones"),
-                    DataColumnName = Helper.CreateParameter("Data")
+                    DataColumnName = Helper.CreateParameter("Data"),
+                    Compressed = Helper.CreateParameter(false)
                 }.Invoke((a, writeStream));
             }
         }
@@ -65,7 +66,8 @@ public class TestSaveVectorAsCSV
                 new SaveVectorAsCSV()
                 {
                     MapColumnName = Helper.CreateParameter("Zones"),
-                    DataColumnName = Helper.CreateParameter("Data")
+                    DataColumnName = Helper.CreateParameter("Data"),
+                    Compressed = Helper.CreateParameter(true)
                 }.Invoke((a, writeStream));
             }
             // Now that the matrix has been saved attempt to load it back in.
@@ -75,7 +77,8 @@ public class TestSaveVectorAsCSV
                 {
                     Categories = Helper.CreateParameter(categories),
                     MapColumn = Helper.CreateParameter(0),
-                    DataColumn = Helper.CreateParameter(1)
+                    DataColumn = Helper.CreateParameter(1),
+                    Compressed = Helper.CreateParameter(true)
                 }.Invoke(readStream);
                 string? error = null;
                 Assert.IsTrue(Compare(a, readVector, ref error), error);
