@@ -17,6 +17,7 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.IO.Compression;
 using TMG.Utilities;
 
 namespace TMG.Loading;
@@ -34,6 +35,9 @@ public sealed class LoadVectorFromCSV : BaseFunction<ReadStream, Vector>
     [Parameter(DefaultValue = "1", Name = "Data Column", Index = 2, Description = "The 0 indexed column containing the data to load index.")]
     public IFunction<int> DataColumn = null!;
 
+    [Parameter(DefaultValue = "false", Name = "Compressed", Index = 3, Description = "Whether the vector is compressed.")]
+    public IFunction<bool> Compressed = null!;
+
     public override Vector Invoke(ReadStream stream)
     {
         var map = Categories.Invoke();
@@ -41,12 +45,17 @@ public sealed class LoadVectorFromCSV : BaseFunction<ReadStream, Vector>
         var data = ret.Data;
         var mapColumn = MapColumn.Invoke();
         var dataColumn = DataColumn.Invoke();
+        var compressed = Compressed.Invoke();
         if (mapColumn < 0 || dataColumn < 0)
         {
             throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
         }
         var minColumnSize = Math.Max(mapColumn, dataColumn);
-        using (var reader = new CsvReader(stream, true))
+        using var decompressor = compressed
+            ? new GZipStream(stream, CompressionMode.Decompress, true)
+            : null;
+        Stream inputStream = decompressor is null ? stream : decompressor;
+        using (var reader = new CsvReader(inputStream, true))
         {
             while (reader.LoadLine(out var columns))
             {

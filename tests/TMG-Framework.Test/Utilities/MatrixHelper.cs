@@ -37,13 +37,16 @@ static class MatrixHelper
             }
             var save = new SaveMatrixAsCSV()
             {
+                Matrix = Helper.CreateParameter(matrix),
                 ThirdNormalized = Helper.CreateParameter(false),
+                Compressed = Helper.CreateParameter(false),
                 FirstIndexHeader = Helper.CreateParameter("Origin"),
                 SecondIndexHeader = Helper.CreateParameter("Destination")
             };
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                save.Invoke((matrix, writeStream));
+                save.WriteTo = Helper.CreateParameter(writeStream);
+                save.Invoke();
             }
             return fileName;
         }
@@ -68,14 +71,17 @@ static class MatrixHelper
             }
             var save = new SaveMatrixAsCSV()
             {
+                Matrix = Helper.CreateParameter(matrix),
                 ThirdNormalized = Helper.CreateParameter(true),
+                Compressed = Helper.CreateParameter(false),
                 FirstIndexHeader = Helper.CreateParameter("Origin"),
                 SecondIndexHeader = Helper.CreateParameter("Destination"),
                 DataIndexHeader = Helper.CreateParameter("Data")
             };
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                save.Invoke((matrix, writeStream));
+                save.WriteTo = Helper.CreateParameter(writeStream);
+                save.Invoke();
             }
             return fileName;
         }
@@ -125,10 +131,15 @@ static class MatrixHelper
             {
                 data[i].AsSpan().CopyTo(matrix.GetRow(i));
             }
-            var save = new SaveMatrixAsMTX();
+            var save = new SaveMatrixAsMTX()
+            {
+                Matrix = Helper.CreateParameter(matrix),
+                Compressed = Helper.CreateParameter(false)
+            };
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                save.Invoke((matrix, writeStream));
+                save.WriteTo = Helper.CreateParameter(writeStream);
+                save.Invoke();
             }
             return fileName;
         }

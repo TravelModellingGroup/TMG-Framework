@@ -33,16 +33,19 @@ public class TestSaveMatrixAsCSV
             FirstIndexHeader = Helper.CreateParameter("First"),
             SecondIndexHeader = Helper.CreateParameter("Second"),
             DataIndexHeader = Helper.CreateParameter("Data"),
-            ThirdNormalized = Helper.CreateParameter(false)
+            ThirdNormalized = Helper.CreateParameter(false),
+            Compressed = Helper.CreateParameter(false)
         };
         var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
         var a = new Matrix(categories, categories);
+        module.Matrix = Helper.CreateParameter(a);
         var fileName = Path.GetTempFileName();
         try
         {
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                module.Invoke((a, writeStream));
+                module.WriteTo = Helper.CreateParameter(writeStream);
+                module.Invoke();
             }
         }
         finally
@@ -63,25 +66,30 @@ public class TestSaveMatrixAsCSV
             FirstIndexHeader = Helper.CreateParameter("First"),
             SecondIndexHeader = Helper.CreateParameter("Second"),
             DataIndexHeader = Helper.CreateParameter("Data"),
-            ThirdNormalized = Helper.CreateParameter(false)
+            ThirdNormalized = Helper.CreateParameter(false),
+            Compressed = Helper.CreateParameter(true)
         };
         var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
         var a = new Matrix(categories, categories);
+        module.Matrix = Helper.CreateParameter(a);
         var fileName = Path.GetTempFileName();
         try
         {
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                module.Invoke((a, writeStream));
+                module.WriteTo = Helper.CreateParameter(writeStream);
+                module.Invoke();
             }
             // Now that the matrix has been saved attempt to load it back in.
             using (var readStream = Helper.CreateReadStreamFromFile(fileName))
             {
                 var readMatrix = new TMG.Loading.LoadMatrixFromCSVMatrix()
                 {
+                    Input = Helper.CreateParameter(readStream),
                     RowCategories = Helper.CreateParameter(categories),
-                    ColumnCategories = Helper.CreateParameter(categories)
-                }.Invoke(readStream);
+                    ColumnCategories = Helper.CreateParameter(categories),
+                    Compressed = Helper.CreateParameter(true)
+                }.Invoke();
                 string? error = null;
                 Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
             }
@@ -104,16 +112,19 @@ public class TestSaveMatrixAsCSV
             FirstIndexHeader = Helper.CreateParameter("First"),
             SecondIndexHeader = Helper.CreateParameter("Second"),
             DataIndexHeader = Helper.CreateParameter("Data"),
-            ThirdNormalized = Helper.CreateParameter(true)
+            ThirdNormalized = Helper.CreateParameter(true),
+            Compressed = Helper.CreateParameter(false)
         };
         var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
         var a = new Matrix(categories, categories);
+        module.Matrix = Helper.CreateParameter(a);
         var fileName = Path.GetTempFileName();
         try
         {
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                module.Invoke((a, writeStream));
+                module.WriteTo = Helper.CreateParameter(writeStream);
+                module.Invoke();
             }
         }
         finally
@@ -134,16 +145,19 @@ public class TestSaveMatrixAsCSV
             FirstIndexHeader = Helper.CreateParameter("First"),
             SecondIndexHeader = Helper.CreateParameter("Second"),
             DataIndexHeader = Helper.CreateParameter("Data"),
-            ThirdNormalized = Helper.CreateParameter(true)
+            ThirdNormalized = Helper.CreateParameter(true),
+            Compressed = Helper.CreateParameter(true)
         };
         var categories = MapHelper.LoadMap(MapHelper.WriteCSV(2000));
         var a = new Matrix(categories, categories);
+        module.Matrix = Helper.CreateParameter(a);
         var fileName = Path.GetTempFileName();
         try
         {
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                module.Invoke((a, writeStream));
+                module.WriteTo = Helper.CreateParameter(writeStream);
+                module.Invoke();
             }
             // Now that the matrix has been saved attempt to load it back in.
             using (var readStream = Helper.CreateReadStreamFromFile(fileName))
@@ -155,6 +169,7 @@ public class TestSaveMatrixAsCSV
                     OriginColumn = Helper.CreateParameter(0),
                     DestinationColumn = Helper.CreateParameter(1),
                     DataColumn = Helper.CreateParameter(2),
+                    Compressed = Helper.CreateParameter(true)
                 }.Invoke(readStream);
                 string? error = null;
                 Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);

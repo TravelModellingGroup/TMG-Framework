@@ -17,6 +17,7 @@
     along with TMG-Framework for XTMF2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.IO.Compression;
 using TMG.Utilities;
 
 namespace TMG.Loading;
@@ -40,6 +41,9 @@ public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, 
     [Parameter(DefaultValue = "2", Name = "Data Column", Index = 4, Description = "The 0 indexed column containing the data to load index.")]
     public IFunction<int> DataColumn = null!;
 
+    [Parameter(DefaultValue = "false", Name = "Compressed", Index = 5, Description = "Whether the matrix is compressed.")]
+    public IFunction<bool> Compressed = null!;
+
     public override Matrix Invoke(ReadStream stream)
     {
         var rowCategories = RowCategories.Invoke();
@@ -50,12 +54,17 @@ public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, 
         var originColumn = OriginColumn.Invoke();
         var destinationColumn = DestinationColumn.Invoke();
         var dataColumn = DataColumn.Invoke();
+        var compressed = Compressed.Invoke();
         if (originColumn < 0 || destinationColumn < 0 || dataColumn < 0)
         {
             throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
         }
         var minColumnSize = Math.Max(originColumn, dataColumn);
-        using (var reader = new CsvReader(stream, true))
+        using var decompressor = compressed
+            ? new GZipStream(stream, CompressionMode.Decompress, true)
+            : null;
+        Stream inputStream = decompressor is null ? stream : decompressor;
+        using (var reader = new CsvReader(inputStream, true))
         {
             reader.LoadLine();
             while (reader.LoadLine(out var columns))

@@ -42,6 +42,7 @@ public class TestLoadMatrix
         var matrixFileName = MatrixHelper.WriteMatrixToCSVMatrix(map, data);
         var matrixLoader = new LoadMatrixFromCSVMatrix()
         {
+            Compressed = Helper.CreateParameter(false),
             ColumnCategories = Helper.CreateParameter(map),
             RowCategories = Helper.CreateParameter(map)
         };
@@ -50,7 +51,8 @@ public class TestLoadMatrix
             FilePath = Helper.CreateParameter(matrixFileName)
         }).Invoke())
         {
-            var vector = matrixLoader.Invoke(stream);
+            matrixLoader.Input = Helper.CreateParameter(stream);
+            var vector = matrixLoader.Invoke();
             Assert.AreSame(map, vector.RowCategories);
             var vData = vector.Data;
             for (int i = 0; i < map.Count; i++)
@@ -86,7 +88,8 @@ public class TestLoadMatrix
             ColumnCategories = Helper.CreateParameter(map),
             OriginColumn = Helper.CreateParameter(0),
             DestinationColumn = Helper.CreateParameter(0),
-            DataColumn = Helper.CreateParameter(0)
+            DataColumn = Helper.CreateParameter(0),
+            Compressed = Helper.CreateParameter(false)
         };
         using (var stream = (new OpenReadStreamFromFile()
         {
@@ -123,30 +126,33 @@ public class TestLoadMatrix
             }
         }
         var matrixFileName = MatrixHelper.WriteMatrixToMTX(map, data);
+        using var stream = new OpenReadStreamFromFile()
+        {
+            FilePath = Helper.CreateParameter(matrixFileName)
+        }.Invoke();
+
         var matrixLoader = new LoadMatrixFromMTX()
         {
             Categories = Helper.CreateParameter(map),
-            ConvertBetweenZoneSystems = Helper.CreateParameter(false)
+            ConvertBetweenZoneSystems = Helper.CreateParameter(false),
+            Compressed = Helper.CreateParameter(false),
+            Input = Helper.CreateParameter(stream),
         };
-        using (var stream = (new OpenReadStreamFromFile()
+        
+        var vector = matrixLoader.Invoke();
+        Assert.AreSame(map, vector.RowCategories);
+        var vData = vector.Data;
+        for (int i = 0; i < map.Count; i++)
         {
-            FilePath = Helper.CreateParameter(matrixFileName)
-        }).Invoke())
-        {
-            var vector = matrixLoader.Invoke(stream);
-            Assert.AreSame(map, vector.RowCategories);
-            var vData = vector.Data;
-            for (int i = 0; i < map.Count; i++)
+            for (int j = 0; j < map.Count; j++)
             {
-                for (int j = 0; j < map.Count; j++)
+                if (Math.Abs((2.0f + i * j) - vData[i * map.Count + j]) < 0.00001f)
                 {
-                    if (Math.Abs((2.0f + i * j) - vData[i * map.Count + j]) < 0.00001f)
-                    {
-                        Assert.AreEqual(2.0f + i * j, vData[i * map.Count + j], 0.00001f);
-                    }
+                    Assert.AreEqual(2.0f + i * j, vData[i * map.Count + j], 0.00001f);
                 }
             }
         }
+        
     }
 
     [TestMethod]
@@ -164,29 +170,32 @@ public class TestLoadMatrix
             }
         }
         var matrixFileName = MatrixHelper.WriteMatrixToMTX(bigMap, data);
-        var matrixLoader = new LoadMatrixFromMTX()
-        {
-            Categories = Helper.CreateParameter(smallMap),
-            ConvertBetweenZoneSystems = Helper.CreateParameter(true)
-        };
-        using (var stream = (new OpenReadStreamFromFile()
+        using var stream = new OpenReadStreamFromFile()
         {
             FilePath = Helper.CreateParameter(matrixFileName)
-        }).Invoke())
+        }.Invoke();
+
+        var matrixLoader = new LoadMatrixFromMTX()
         {
-            var matrix = matrixLoader.Invoke(stream);
-            Assert.AreSame(smallMap, matrix.RowCategories);
-            var vData = matrix.Data;
-            for (int i = 0; i < smallMap.Count; i++)
+            Input = Helper.CreateParameter(stream),
+            Categories = Helper.CreateParameter(smallMap),
+            ConvertBetweenZoneSystems = Helper.CreateParameter(true),
+            Compressed = Helper.CreateParameter(false),
+        };
+        
+        var matrix = matrixLoader.Invoke();
+        Assert.AreSame(smallMap, matrix.RowCategories);
+        var vData = matrix.Data;
+        for (int i = 0; i < smallMap.Count; i++)
+        {
+            for (int j = 0; j < smallMap.Count; j++)
             {
-                for (int j = 0; j < smallMap.Count; j++)
+                if (Math.Abs((2.0f + i * j) - vData[i * smallMap.Count + j]) < 0.00001f)
                 {
-                    if (Math.Abs((2.0f + i * j) - vData[i * smallMap.Count + j]) < 0.00001f)
-                    {
-                        Assert.AreEqual(2.0f + i * j, vData[i * smallMap.Count + j], 0.00001f);
-                    }
+                    Assert.AreEqual(2.0f + i * j, vData[i * smallMap.Count + j], 0.00001f);
                 }
             }
         }
+        
     }
 }

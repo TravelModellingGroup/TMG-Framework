@@ -36,7 +36,12 @@ public class TestSaveMatrixAsMTX
         {
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                new SaveMatrixAsMTX().Invoke((a, writeStream));
+                new SaveMatrixAsMTX()
+                {
+                    Matrix = Helper.CreateParameter(a),
+                    WriteTo = Helper.CreateParameter(writeStream),
+                    Compressed = Helper.CreateParameter(false)
+                }.Invoke();
             }
         }
         finally
@@ -59,19 +64,25 @@ public class TestSaveMatrixAsMTX
         {
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
-                new SaveMatrixAsMTX().Invoke((a, writeStream));
+                new SaveMatrixAsMTX()
+                {
+                    Matrix = Helper.CreateParameter(a),
+                    WriteTo = Helper.CreateParameter(writeStream),
+                    Compressed = Helper.CreateParameter(true)
+                }.Invoke();
             }
             // Now that the matrix has been saved attempt to load it back in.
-            using (var readStream = Helper.CreateReadStreamFromFile(fileName))
+            using var readStream = Helper.CreateReadStreamFromFile(fileName);
+            
+            var readMatrix = new TMG.Loading.LoadMatrixFromMTX()
             {
-                var readMatrix = new TMG.Loading.LoadMatrixFromMTX()
-                {
-                    Categories = Helper.CreateParameter(categories),
-                    ConvertBetweenZoneSystems = Helper.CreateParameter(false)
-                }.Invoke(readStream);
-                string? error = null;
-                Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
-            }
+                Input = Helper.CreateParameter(readStream),
+                Categories = Helper.CreateParameter(categories),
+                ConvertBetweenZoneSystems = Helper.CreateParameter(false),
+                Compressed = Helper.CreateParameter(true)
+            }.Invoke();
+            string? error = null;
+            Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
         }
         finally
         {

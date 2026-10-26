@@ -39,7 +39,8 @@ public class TestLoadVector
         {
             Categories = Helper.CreateParameter(map),
             MapColumn = Helper.CreateParameter(0),
-            DataColumn = Helper.CreateParameter(1)
+            DataColumn = Helper.CreateParameter(1),
+            Compressed = Helper.CreateParameter(false)
         };
         using (var stream = Helper.CreateReadStreamFromFile(vectorFileName))
         {
@@ -67,7 +68,8 @@ public class TestLoadVector
             var save = new TMG.Saving.SaveVectorAsCSV()
             {
                 MapColumnName = Helper.CreateParameter("Zone"),
-                DataColumnName = Helper.CreateParameter("Data")
+                DataColumnName = Helper.CreateParameter("Data"),
+                Compressed = Helper.CreateParameter(false)
             };
             using (var writeStream = Helper.CreateWriteStreamFromFile(fileName))
             {
