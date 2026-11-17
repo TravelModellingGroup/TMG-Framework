@@ -82,21 +82,22 @@ public class TestLoadMatrix
             }
         }
         var matrixFileName = MatrixHelper.WriteMatrixToCSVThirdNormalized(map, data);
-        var matrixLoader = new LoadMatrixFromCSVThirdNormalized()
-        {
-            RowCategories = Helper.CreateParameter(map),
-            ColumnCategories = Helper.CreateParameter(map),
-            OriginColumn = Helper.CreateParameter(0),
-            DestinationColumn = Helper.CreateParameter(0),
-            DataColumn = Helper.CreateParameter(0),
-            Compressed = Helper.CreateParameter(false)
-        };
         using (var stream = (new OpenReadStreamFromFile()
         {
             FilePath = Helper.CreateParameter(matrixFileName)
         }).Invoke())
         {
-            var vector = matrixLoader.Invoke(stream);
+            var matrixLoader = new LoadMatrixFromCSVThirdNormalized()
+            {
+                Input = Helper.CreateParameter(stream),
+                RowCategories = Helper.CreateParameter(map),
+                ColumnCategories = Helper.CreateParameter(map),
+                OriginColumn = Helper.CreateParameter(0),
+                DestinationColumn = Helper.CreateParameter(0),
+                DataColumn = Helper.CreateParameter(0),
+                Compressed = Helper.CreateParameter(false)
+            };
+            var vector = matrixLoader.Invoke();
             Assert.AreSame(map, vector.RowCategories);
             var vData = vector.Data;
             for (int i = 0; i < map.Count; i++)
@@ -138,7 +139,7 @@ public class TestLoadMatrix
             Compressed = Helper.CreateParameter(false),
             Input = Helper.CreateParameter(stream),
         };
-        
+
         var vector = matrixLoader.Invoke();
         Assert.AreSame(map, vector.RowCategories);
         var vData = vector.Data;
@@ -152,7 +153,7 @@ public class TestLoadMatrix
                 }
             }
         }
-        
+
     }
 
     [TestMethod]
@@ -182,7 +183,7 @@ public class TestLoadMatrix
             ConvertBetweenZoneSystems = Helper.CreateParameter(true),
             Compressed = Helper.CreateParameter(false),
         };
-        
+
         var matrix = matrixLoader.Invoke();
         Assert.AreSame(smallMap, matrix.RowCategories);
         var vData = matrix.Data;
@@ -196,6 +197,6 @@ public class TestLoadMatrix
                 }
             }
         }
-        
+
     }
 }

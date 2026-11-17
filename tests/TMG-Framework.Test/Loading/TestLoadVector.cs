@@ -35,16 +35,18 @@ public class TestLoadVector
             data[i] = 2.0f + i;
         }
         var vectorFileName = WriteVectorCSV(map, data);
-        LoadVectorFromCSV vecLoader = new LoadVectorFromCSV()
-        {
-            Categories = Helper.CreateParameter(map),
-            MapColumn = Helper.CreateParameter(0),
-            DataColumn = Helper.CreateParameter(1),
-            Compressed = Helper.CreateParameter(false)
-        };
+        
         using (var stream = Helper.CreateReadStreamFromFile(vectorFileName))
         {
-            var vector = vecLoader.Invoke(stream);
+            LoadVectorFromCSV vecLoader = new LoadVectorFromCSV()
+            {
+                Input = Helper.CreateParameter(stream),
+                Categories = Helper.CreateParameter(map),
+                MapColumn = Helper.CreateParameter(0),
+                DataColumn = Helper.CreateParameter(1),
+                Compressed = Helper.CreateParameter(false)
+            };
+            var vector = vecLoader.Invoke();
             Assert.AreSame(map, vector.Categories);
             var vData = vector.Data;
             for (int i = 0; i < vData.Length; i++)

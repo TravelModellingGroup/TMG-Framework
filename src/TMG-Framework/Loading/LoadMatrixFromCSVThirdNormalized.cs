@@ -24,27 +24,30 @@ namespace TMG.Loading;
 
 [Module(Name = "Load Matrix From CSV", Description = "Loads a matrix of data in the shape of the SparseMap from a CSV in third normalized form.",
     DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, Matrix>
+public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<Matrix>
 {
-    [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+    [SubModule(Required = true, Name = "Input", Description = "The input CSV stream.", Index = 0)]
+    public IFunction<ReadStream> Input = null!;
+
+    [SubModule(Required = true, Name = "Row Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
     public IFunction<Categories> RowCategories = null!;
 
-    [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
+    [SubModule(Required = true, Name = "Column Categories", Description = "The sparse map this vector will be shaped in.", Index = 2)]
     public IFunction<Categories> ColumnCategories = null!;
 
-    [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 2, Description = "The 0 indexed column containing the sparse map index for the origin.")]
+    [Parameter(DefaultValue = "0", Name = "Origin Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the origin.")]
     public IFunction<int> OriginColumn = null!;
 
-    [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the destination.")]
+    [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 4, Description = "The 0 indexed column containing the sparse map index for the destination.")]
     public IFunction<int> DestinationColumn = null!;
 
-    [Parameter(DefaultValue = "2", Name = "Data Column", Index = 4, Description = "The 0 indexed column containing the data to load index.")]
+    [Parameter(DefaultValue = "2", Name = "Data Column", Index = 5, Description = "The 0 indexed column containing the data to load index.")]
     public IFunction<int> DataColumn = null!;
 
-    [Parameter(DefaultValue = "false", Name = "Compressed", Index = 5, Description = "Whether the matrix is compressed.")]
+    [Parameter(DefaultValue = "false", Name = "Compressed", Index = 6, Description = "Whether the matrix is compressed.")]
     public IFunction<bool> Compressed = null!;
 
-    public override Matrix Invoke(ReadStream stream)
+    public override Matrix Invoke()
     {
         var rowCategories = RowCategories.Invoke();
         var columnCategories = ColumnCategories.Invoke();
@@ -60,6 +63,7 @@ public sealed class LoadMatrixFromCSVThirdNormalized : BaseFunction<ReadStream, 
             throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
         }
         var minColumnSize = Math.Max(originColumn, dataColumn);
+        var stream = Input.Invoke();
         using var decompressor = compressed
             ? new GZipStream(stream, CompressionMode.Decompress, true)
             : null;

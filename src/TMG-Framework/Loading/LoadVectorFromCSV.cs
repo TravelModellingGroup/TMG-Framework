@@ -24,21 +24,24 @@ namespace TMG.Loading;
 
 [Module(Name = "Load Vector From CSV", Description = "Loads a map where each row has a different sparse index.",
     DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
-public sealed class LoadVectorFromCSV : BaseFunction<ReadStream, Vector>
+public sealed class LoadVectorFromCSV : BaseFunction<Vector>
 {
-    [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 0)]
+    [SubModule(Required = true, Name = "Input", Description = "The input CSV stream.", Index = 0)]
+    public IFunction<ReadStream> Input = null!;
+
+    [SubModule(Required = true, Name = "Categories", Description = "The sparse map this vector will be shaped in.", Index = 1)]
     public IFunction<Categories> Categories = null!;
 
-    [Parameter(DefaultValue = "0", Name = "Map Column", Index = 1, Description = "The 0 indexed column containing the sparse map index.")]
+    [Parameter(DefaultValue = "0", Name = "Map Column", Index = 2, Description = "The 0 indexed column containing the sparse map index.")]
     public IFunction<int> MapColumn = null!;
 
-    [Parameter(DefaultValue = "1", Name = "Data Column", Index = 2, Description = "The 0 indexed column containing the data to load index.")]
+    [Parameter(DefaultValue = "1", Name = "Data Column", Index = 3, Description = "The 0 indexed column containing the data to load index.")]
     public IFunction<int> DataColumn = null!;
 
-    [Parameter(DefaultValue = "false", Name = "Compressed", Index = 3, Description = "Whether the vector is compressed.")]
+    [Parameter(DefaultValue = "false", Name = "Compressed", Index = 4, Description = "Whether the vector is compressed.")]
     public IFunction<bool> Compressed = null!;
 
-    public override Vector Invoke(ReadStream stream)
+    public override Vector Invoke()
     {
         var map = Categories.Invoke();
         var ret = new Vector(map);
@@ -51,6 +54,7 @@ public sealed class LoadVectorFromCSV : BaseFunction<ReadStream, Vector>
             throw new XTMFRuntimeException(this, "Column indexes must be greater than or equal to zero!");
         }
         var minColumnSize = Math.Max(mapColumn, dataColumn);
+        var stream = Input.Invoke();
         using var decompressor = compressed
             ? new GZipStream(stream, CompressionMode.Decompress, true)
             : null;
