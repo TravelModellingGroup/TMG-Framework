@@ -25,19 +25,19 @@ namespace TMG.Loading;
     DocumentationLink = "http://tmg.utoronto.ca/doc/2.0")]
 public class LoadCategoryMapFromThirdNormalizedCSV : BaseFunction<CategoryMap>
 {
-    [SubModule(Index = 0, Required = true, Name = "Base Categories", Description = "The categories that this map from to the Destination Categories.")]
+    [SubModule(Index = 1, Required = true, Name = "Base Categories", Description = "The categories that this map from to the Destination Categories.")]
     public IFunction<Categories> BaseCategories = null!;
 
-    [SubModule(Index = 1, Required = false, Name = "Destination Categories", Description = "The categories that this map to from the Base Categories.  If not linked the CSV will create a new one based on the destination values found.")]
+    [SubModule(Index = 2, Required = false, Name = "Destination Categories", Description = "The categories that this map to from the Base Categories.  If not linked the CSV will create a new one based on the destination values found.")]
     public IFunction<Categories>? DestinationCategories;
 
-    [SubModule(Index = 2, Required = true, Name = "CSV Stream", Description = "The stream that we will read from.")]
+    [SubModule(Index = 3, Required = true, Name = "CSV Stream", Description = "The stream that we will read from.")]
     public IFunction<ReadStream> CSVStream = null!;
 
-    [Parameter(DefaultValue = "0", Name = "Base Column", Index = 3, Description = "The 0 indexed column containing the sparse map index for the base category index.")]
+    [Parameter(DefaultValue = "0", Name = "Base Column", Index = 4, Description = "The 0 indexed column containing the sparse map index for the base category index.")]
     public IFunction<int> BaseColumn = null!;
 
-    [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 4, Description = "The 0 indexed column containing the sparse map index for the destination category index.")]
+    [Parameter(DefaultValue = "1", Name = "Destination Column", Index = 5, Description = "The 0 indexed column containing the sparse map index for the destination category index.")]
     public IFunction<int> DestinationColumn = null!;
 
     public override CategoryMap Invoke()

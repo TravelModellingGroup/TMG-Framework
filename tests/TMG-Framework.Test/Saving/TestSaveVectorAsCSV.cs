@@ -75,11 +75,12 @@ public class TestSaveVectorAsCSV
             {
                 var readVector = new TMG.Loading.LoadVectorFromCSV()
                 {
+                    Input = Helper.CreateParameter(readStream),
                     Categories = Helper.CreateParameter(categories),
                     MapColumn = Helper.CreateParameter(0),
                     DataColumn = Helper.CreateParameter(1),
                     Compressed = Helper.CreateParameter(true)
-                }.Invoke(readStream);
+                }.Invoke();
                 string? error = null;
                 Assert.IsTrue(Compare(a, readVector, ref error), error);
             }

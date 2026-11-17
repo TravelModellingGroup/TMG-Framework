@@ -164,13 +164,14 @@ public class TestSaveMatrixAsCSV
             {
                 var readMatrix = new TMG.Loading.LoadMatrixFromCSVThirdNormalized()
                 {
+                    Input = Helper.CreateParameter(readStream),
                     RowCategories = Helper.CreateParameter(categories),
                     ColumnCategories = Helper.CreateParameter(categories),
                     OriginColumn = Helper.CreateParameter(0),
                     DestinationColumn = Helper.CreateParameter(1),
                     DataColumn = Helper.CreateParameter(2),
                     Compressed = Helper.CreateParameter(true)
-                }.Invoke(readStream);
+                }.Invoke();
                 string? error = null;
                 Assert.IsTrue(MatrixHelper.Compare(a, readMatrix, ref error), error);
             }
