@@ -51,7 +51,9 @@ public sealed class FunctionCall : Value
         IfNaN,
         Normalize,
         NormalizeColumns,
-        NormalizeRows
+        NormalizeRows,
+        Max,
+        Min
     }
 
     private readonly FunctionType _type;
@@ -173,6 +175,12 @@ public sealed class FunctionCall : Value
                 return true;
             case "normalizerows":
                 type = FunctionType.NormalizeRows;
+                return true;
+            case "max":
+                type = FunctionType.Max;
+                return true;
+            case "min":
+                type = FunctionType.Min;
                 return true;
             default:
                 error = "The function '" + call + "' is undefined!";
@@ -436,9 +444,178 @@ public sealed class FunctionCall : Value
                     return new ComputationResult("NormalizeRows requires 1 parameter, a matrix to be normalized.");
                 }
                 return ComputeNormalizeRows(values);
+            case FunctionType.Max:
+                if (values.Length is < 1 or > 2)
+                {
+                    return new ComputationResult("Max requires 1 or 2 parameters!");
+                }
+                return ComputeMinMax(values, true);
+            case FunctionType.Min:
+                if (values.Length is < 1 or > 2)
+                {
+                    return new ComputationResult("Min requires 1 or 2 parameters!");
+                }
+                return ComputeMinMax(values, false);
 
         }
         return new ComputationResult("An undefined function was executed!");
+    }
+
+    private ComputationResult ComputeMinMax(ComputationResult[] values, bool maximum)
+    {
+        var functionName = maximum ? "Max" : "Min";
+        if (values.Length == 1)
+        {
+            var value = values[0];
+            if (value.IsValue)
+            {
+                return value;
+            }
+
+            var data = value.IsVectorResult ? value.VectorData.Data : value.OdData.Data;
+            if (data.Length == 0)
+            {
+                return new ComputationResult($"{functionName} cannot be applied to an empty vector or matrix.");
+            }
+
+            return new ComputationResult(maximum ? VectorHelper.Max(data) : VectorHelper.Min(data));
+        }
+
+        var left = values[0];
+        var right = values[1];
+        if (left.IsValue && right.IsValue)
+        {
+            return new ComputationResult(maximum
+                ? VectorHelper.Max(left.LiteralValue, right.LiteralValue)
+                : VectorHelper.Min(left.LiteralValue, right.LiteralValue));
+        }
+
+        if (left.IsVectorResult && right.IsVectorResult)
+        {
+            if (left.VectorData.Data.Length != right.VectorData.Data.Length)
+            {
+                return new ComputationResult($"{functionName} requires vectors of the same length.");
+            }
+
+            var outputVector = left.Accumulator ? left.VectorData : new Vector(left.VectorData);
+            var output = outputVector.Data;
+            var leftData = left.VectorData.Data;
+            var rightData = right.VectorData.Data;
+            if (maximum)
+            {
+                VectorHelper.Max(output, leftData, rightData);
+            }
+            else
+            {
+                VectorHelper.Min(output, leftData, rightData);
+            }
+            return new ComputationResult(outputVector, true, left.Direction);
+        }
+
+        if (left.IsOdResult && right.IsOdResult)
+        {
+            if (left.OdData.NumberOfRows != right.OdData.NumberOfRows
+                || left.OdData.NumberOfColumns != right.OdData.NumberOfColumns)
+            {
+                return new ComputationResult($"{functionName} requires matrices of the same dimensions.");
+            }
+
+            var outputMatrix = left.Accumulator ? left.OdData : new Matrix(left.OdData);
+            var output = outputMatrix.Data;
+            var leftData = left.OdData.Data;
+            var rightData = right.OdData.Data;
+            if (maximum)
+            {
+                VectorHelper.Max(output, leftData, rightData);
+            }
+            else
+            {
+                VectorHelper.Min(output, leftData, rightData);
+            }
+            return new ComputationResult(outputMatrix, true);
+        }
+
+        if (left.IsVectorResult && right.IsValue || left.IsValue && right.IsVectorResult)
+        {
+            var vector = left.IsVectorResult ? left : right;
+            var scalar = left.IsValue ? left.LiteralValue : right.LiteralValue;
+            var outputVector = vector.Accumulator ? vector.VectorData : new Vector(vector.VectorData);
+            var output = outputVector.Data;
+            var source = vector.VectorData.Data;
+            if (maximum)
+            {
+                VectorHelper.Max(output, source, scalar);
+            }
+            else
+            {
+                VectorHelper.Min(output, source, scalar);
+            }
+            return new ComputationResult(outputVector, true, vector.Direction);
+        }
+
+        if (left.IsOdResult && right.IsValue || left.IsValue && right.IsOdResult)
+        {
+            var matrix = left.IsOdResult ? left : right;
+            var scalar = left.IsValue ? left.LiteralValue : right.LiteralValue;
+            var outputMatrix = matrix.Accumulator ? matrix.OdData : new Matrix(matrix.OdData);
+            var output = outputMatrix.Data;
+            var source = matrix.OdData.Data;
+            if (maximum)
+            {
+                VectorHelper.Max(output, source, scalar);
+            }
+            else
+            {
+                VectorHelper.Min(output, source, scalar);
+            }
+            return new ComputationResult(outputMatrix, true);
+        }
+
+        var matrixValue = left.IsOdResult ? left : right;
+        var vectorValue = left.IsVectorResult ? left : right;
+        if (vectorValue.Direction == ComputationResult.VectorDirection.Unassigned)
+        {
+            return new ComputationResult($"{functionName} cannot combine a matrix and a vector without an assigned orientation.");
+        }
+
+        var matrixData = matrixValue.OdData;
+        var vectorData = vectorValue.VectorData.Data;
+        var vectorLength = vectorData.Length;
+        var requiredVectorLength = vectorValue.Direction == ComputationResult.VectorDirection.Vertical
+            ? matrixData.NumberOfRows
+            : matrixData.NumberOfColumns;
+        if (vectorLength != requiredVectorLength)
+        {
+            return new ComputationResult($"{functionName} requires the vector length to match the matrix dimension for its orientation.");
+        }
+
+        var resultMatrix = matrixValue.Accumulator ? matrixData : new Matrix(matrixData);
+        var columnCount = matrixData.NumberOfColumns;
+        for (int row = 0; row < matrixData.NumberOfRows; row++)
+        {
+            var sourceRow = matrixData.GetRow(row);
+            var outputRow = resultMatrix.GetRow(row);
+            if (vectorValue.Direction == ComputationResult.VectorDirection.Vertical)
+            {
+                if (maximum)
+                {
+                    VectorHelper.Max(outputRow, sourceRow, vectorData[row]);
+                }
+                else
+                {
+                    VectorHelper.Min(outputRow, sourceRow, vectorData[row]);
+                }
+            }
+            else if (maximum)
+            {
+                VectorHelper.Max(outputRow, sourceRow, vectorData);
+            }
+            else
+            {
+                VectorHelper.Min(outputRow, sourceRow, vectorData);
+            }
+        }
+        return new ComputationResult(resultMatrix, true);
     }
 
     private ComputationResult ComputeNormalizeColumns(ComputationResult[] values)
